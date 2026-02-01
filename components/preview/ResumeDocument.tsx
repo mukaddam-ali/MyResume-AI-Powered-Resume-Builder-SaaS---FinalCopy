@@ -10,154 +10,78 @@ import { PdfFormattedText } from '@/components/preview/PdfFormattedText';
 // TODO: Host static TTF fonts locally for PDF compatibility
 
 // Register Google Fonts for PDF consistency
-Font.register({
-    family: 'Inter',
-    fonts: [
-        { src: 'https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf', fontWeight: 400 },
-        { src: 'https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf', fontWeight: 700 },
-    ],
-});
+// Font registration is handled externally:
+// - Server: lib/fonts-server.ts (using local fs)
+// - Client: lib/fonts-client.ts (using URLs)
 
-Font.register({
-    family: 'Roboto',
-    fonts: [
-        { src: 'https://fonts.gstatic.com/s/roboto/v50/KFOMCnqEu92Fr1ME7kSn66aGLdTylUAMQXC89YmC2DPNWubEbWmT.ttf', fontWeight: 400 },
-        { src: 'https://fonts.gstatic.com/s/roboto/v50/KFOMCnqEu92Fr1ME7kSn66aGLdTylUAMQXC89YmC2DPNWuYjammT.ttf', fontWeight: 700 },
-        { src: 'https://fonts.gstatic.com/s/roboto/v50/KFOKCnqEu92Fr1Mu53ZEC9_Vu3r1gIhOszmOClHrs6ljXfMMLoHQiA8.ttf', fontWeight: 400, fontStyle: 'italic' },
-        { src: 'https://fonts.gstatic.com/s/roboto/v50/KFOKCnqEu92Fr1Mu53ZEC9_Vu3r1gIhOszmOClHrs6ljXfMMLmbXiA8.ttf', fontWeight: 700, fontStyle: 'italic' },
-    ],
-});
-
-Font.register({
-    family: 'Lora',
-    fonts: [
-        { src: 'https://fonts.gstatic.com/s/lora/v37/0QI6MX1D_JOuGQbT0gvTJPa787weuyJG.ttf', fontWeight: 400 },
-        { src: 'https://fonts.gstatic.com/s/lora/v37/0QI6MX1D_JOuGQbT0gvTJPa787z5vCJG.ttf', fontWeight: 700 },
-        { src: 'https://fonts.gstatic.com/s/lora/v37/0QI8MX1D_JOuMw_hLdO6T2wV9KnW-MoFkqg.ttf', fontWeight: 400, fontStyle: 'italic' },
-        { src: 'https://fonts.gstatic.com/s/lora/v37/0QI8MX1D_JOuMw_hLdO6T2wV9KnW-C0Ckqg.ttf', fontWeight: 700, fontStyle: 'italic' },
-    ],
-});
-
-Font.register({
-    family: 'Playfair Display',
-    fonts: [
-        { src: 'https://fonts.gstatic.com/s/playfairdisplay/v40/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKdFvUDQ.ttf', fontWeight: 400 },
-        { src: 'https://fonts.gstatic.com/s/playfairdisplay/v40/nuFvD-vYSZviVYUb_rj3ij__anPXJzDwcbmjWBN2PKeiukDQ.ttf', fontWeight: 700 },
-        { src: 'https://fonts.gstatic.com/s/playfairdisplay/v40/nuFRD-vYSZviVYUb_rj3ij__anPXDTnCjmHKM4nYO7KN_qiTbtY.ttf', fontWeight: 400, fontStyle: 'italic' },
-        { src: 'https://fonts.gstatic.com/s/playfairdisplay/v40/nuFRD-vYSZviVYUb_rj3ij__anPXDTnCjmHKM4nYO7KN_k-UbtY.ttf', fontWeight: 700, fontStyle: 'italic' },
-    ],
-});
-
-Font.register({
-    family: 'Oswald',
-    fonts: [
-        { src: 'https://fonts.gstatic.com/s/oswald/v57/TK3_WkUHHAIjg75cFRf3bXL8LICs1_FvgUE.ttf', fontWeight: 400 },
-        { src: 'https://fonts.gstatic.com/s/oswald/v57/TK3_WkUHHAIjg75cFRf3bXL8LICs1xZogUE.ttf', fontWeight: 700 },
-    ],
-});
-
-Font.register({
-    family: 'Merriweather',
-    fonts: [
-        { src: 'https://fonts.gstatic.com/s/merriweather/v33/u-4D0qyriQwlOrhSvowK_l5UcA6zuSYEqOzpPe3HOZJ5eX1WtLaQwmYiScCmDxhtNOKl8yDr3icqEw.ttf', fontWeight: 400 },
-        { src: 'https://fonts.gstatic.com/s/merriweather/v33/u-4D0qyriQwlOrhSvowK_l5UcA6zuSYEqOzpPe3HOZJ5eX1WtLaQwmYiScCmDxhtNOKl8yDrOSAqEw.ttf', fontWeight: 700 },
-        { src: 'https://fonts.gstatic.com/s/merriweather/v33/u-4B0qyriQwlOrhSvowK_l5-eTxCVx0ZbwLvKH2Gk9hLmp0v5yA-xXPqCzLvPee1XYk_XSf-FmTCUF3w.ttf', fontWeight: 400, fontStyle: 'italic' },
-        { src: 'https://fonts.gstatic.com/s/merriweather/v33/u-4B0qyriQwlOrhSvowK_l5-eTxCVx0ZbwLvKH2Gk9hLmp0v5yA-xXPqCzLvPee1XYk_XSf-FmQlV13w.ttf', fontWeight: 700, fontStyle: 'italic' },
-    ],
-});
-
-Font.register({
-    family: 'JetBrains Mono',
-    fonts: [
-        { src: 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKxjPQ.ttf', fontWeight: 400 },
-        { src: 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8L6tjPQ.ttf', fontWeight: 700 },
-        { src: 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDba2o-flEEny0FZhsfKu5WU4xD-IQ-PuZJJXxfpAO-LflOQ.ttf', fontWeight: 400, fontStyle: 'italic' },
-        { src: 'https://fonts.gstatic.com/s/jetbrainsmono/v24/tDba2o-flEEny0FZhsfKu5WU4xD-IQ-PuZJJXxfpAO9seVOQ.ttf', fontWeight: 700, fontStyle: 'italic' },
-    ],
-});
-
-Font.register({
-    family: 'Open Sans',
-    fonts: [
-        { src: 'https://fonts.gstatic.com/s/opensans/v44/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0C4n.ttf', fontWeight: 400 },
-        { src: 'https://fonts.gstatic.com/s/opensans/v44/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsg-1y4n.ttf', fontWeight: 700 },
-        { src: 'https://fonts.gstatic.com/s/opensans/v44/memQYaGs126MiZpBA-UFUIcVXSCEkx2cmqvXlWq8tWZ0Pw86hd0Rk8ZkaVc.ttf', fontWeight: 400, fontStyle: 'italic' },
-        { src: 'https://fonts.gstatic.com/s/opensans/v44/memQYaGs126MiZpBA-UFUIcVXSCEkx2cmqvXlWq8tWZ0Pw86hd0RkyFjaVc.ttf', fontWeight: 700, fontStyle: 'italic' },
-    ],
-});
-
-Font.register({
-    family: 'Lato',
-    fonts: [
-        { src: 'https://fonts.gstatic.com/s/lato/v25/S6uyw4BMUTPHvxk.ttf', fontWeight: 400 },
-        { src: 'https://fonts.gstatic.com/s/lato/v25/S6u9w4BMUTPHh6UVew8.ttf', fontWeight: 700 },
-        { src: 'https://fonts.gstatic.com/s/lato/v25/S6u8w4BMUTPHjxswWw.ttf', fontWeight: 400, fontStyle: 'italic' },
-        { src: 'https://fonts.gstatic.com/s/lato/v25/S6u_w4BMUTPHjxsI5wqPHA.ttf', fontWeight: 700, fontStyle: 'italic' },
-    ],
-});
-
-Font.register({
-    family: 'Montserrat',
-    fonts: [
-        { src: 'https://fonts.gstatic.com/s/montserrat/v31/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtr6Ew-.ttf', fontWeight: 400 },
-        { src: 'https://fonts.gstatic.com/s/montserrat/v31/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCuM70w-.ttf', fontWeight: 700 },
-        { src: 'https://fonts.gstatic.com/s/montserrat/v31/JTUFjIg1_i6t8kCHKm459Wx7xQYXK0vOoz6jq6R9aX8.ttf', fontWeight: 400, fontStyle: 'italic' },
-        { src: 'https://fonts.gstatic.com/s/montserrat/v31/JTUFjIg1_i6t8kCHKm459Wx7xQYXK0vOoz6jq0N6aX8.ttf', fontWeight: 700, fontStyle: 'italic' },
-    ],
-});
-
-Font.register({
-    family: 'Poppins',
-    fonts: [
-        { src: 'https://fonts.gstatic.com/s/poppins/v24/pxiEyp8kv8JHgFVrFJA.ttf', fontWeight: 400 },
-        { src: 'https://fonts.gstatic.com/s/poppins/v24/pxiByp8kv8JHgFVrLCz7V1s.ttf', fontWeight: 700 },
-        { src: 'https://fonts.gstatic.com/s/poppins/v24/pxiGyp8kv8JHgFVrJJLedw.ttf', fontWeight: 400, fontStyle: 'italic' },
-        { src: 'https://fonts.gstatic.com/s/poppins/v24/pxiDyp8kv8JHgFVrJJLmy15lEA.ttf', fontWeight: 700, fontStyle: 'italic' },
-    ],
-});
-
-Font.register({
-    family: 'Source Sans 3',
-    fonts: [
-        { src: 'https://fonts.gstatic.com/s/sourcesans3/v19/nwpBtKy2OAdR1K-IwhWudF-R9QMylBJAV3Bo8Ky461EN.ttf', fontWeight: 400 },
-        { src: 'https://fonts.gstatic.com/s/sourcesans3/v19/nwpBtKy2OAdR1K-IwhWudF-R9QMylBJAV3Bo8Kxf7FEN.ttf', fontWeight: 700 },
-        { src: 'https://fonts.gstatic.com/s/sourcesans3/v19/nwpDtKy2OAdR1K-IwhWudF-R3woAa8opPOrG97lwqLlO9C4.ttf', fontWeight: 400, fontStyle: 'italic' },
-        { src: 'https://fonts.gstatic.com/s/sourcesans3/v19/nwpDtKy2OAdR1K-IwhWudF-R3woAa8opPOrG97lwqF5J9C4.ttf', fontWeight: 700, fontStyle: 'italic' },
-    ],
-});
-
-// Font family mapping - maps user selection to PDF-registered fonts
+// Font family mapping - maps user selection to registered PDF fonts
+// IMPORTANT: Corrupted fonts (~1.6KB) are mapped to working fallbacks to prevent crashes
 const PDF_FONT_MAP: Record<string, string> = {
-    'inter': 'Inter',
+    // Force ALL fonts to Roboto
     'roboto': 'Roboto',
-    'open-sans': 'Open Sans',
-    'lato': 'Lato',
-    'montserrat': 'Montserrat',
-    'poppins': 'Poppins',
-    'source-sans': 'Source Sans 3',
-    'lora': 'Lora',
-    'playfair': 'Playfair Display',
-    'oswald': 'Oswald',
-    'merriweather': 'Merriweather',
-    'jetbrains': 'JetBrains Mono',
+    'open-sans': 'Roboto',
+    'opensans': 'Roboto',
+    'lato': 'Roboto',
+    'nunito': 'Roboto',
+    'merriweather': 'Roboto',
+    'lora': 'Roboto',
+    'playfair': 'Roboto',
+    'librebaskerville': 'Roboto',
+    'inter': 'Roboto',
+    'montserrat': 'Roboto',
+    'poppins': 'Roboto',
+    'source-sans': 'Roboto',
+    'sourcesans': 'Roboto',
+    'oswald': 'Roboto',
+    'jetbrains': 'Roboto',
+    'courier': 'Roboto',
 };
 
 
 // Define which fonts are premium
-const PREMIUM_FONTS = ['lora', 'playfair', 'oswald', 'merriweather', 'jetbrains'];
+// DISABLED: Premium fonts have corrupted files, temporarily disable premium restrictions
+const PREMIUM_FONTS: string[] = [];
+
+// List of known working fonts (verified file sizes > 2KB)
+// These are guaranteed to work - all other fonts map to these via PDF_FONT_MAP
+const VERIFIED_WORKING_FONTS = ['Roboto', 'Open Sans', 'Lato', 'Helvetica'];
 
 export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, userTier?: 'free' | 'pro' }) => {
-    const { personalInfo, education, experience, projects, skills, selectedTemplate, themeColor: customThemeColor, contentScale = 1, isBrandingEnabled = true, fontFamily: fontId = 'inter', sectionOrder = ['personal', 'education', 'experience', 'projects', 'skills'], sectionScales, sectionTitles = {} } = data;
+    // Data is already normalized by normalizeResumeData() in the API route
+    // All arrays are guaranteed to exist and be proper arrays
+    // skills is guaranteed to be string[]
+    const {
+        personalInfo,
+        education,
+        experience,
+        projects,
+        skills, // Now guaranteed to be string[] from normalization
+        selectedTemplate,
+        themeColor,
+        contentScale,
+        isBrandingEnabled,
+        fontFamily,
+        sectionOrder,
+        sectionScales,
+        sectionTitles
+    } = data;
 
-    // Enforce free tier: fall back to 'inter' if user is free and has a premium font
-    const effectiveFontId = (userTier === 'free' && PREMIUM_FONTS.includes(fontId)) ? 'inter' : fontId;
+    const customThemeColor = themeColor;
+    const fontId = fontFamily;
 
-    // Map to PDF-compatible font
-    const pdfFontFamily = PDF_FONT_MAP[effectiveFontId] || 'Helvetica';
+    const effectiveFontId = fontId || 'roboto';
+
+    // Client-Side Rendering: Enable Custom Fonts
+    // map user selection to registered font family
+    let pdfFontFamily = PDF_FONT_MAP[effectiveFontId.toLowerCase()] || 'Helvetica';
+
+    // Fallback if mapping fails
+    if (!pdfFontFamily) pdfFontFamily = 'Helvetica';
+
+    console.log(`Font "${effectiveFontId}" → "${pdfFontFamily}"`);
 
     // Use default if not set
     const accentColor = customThemeColor || '#112e51';
-
 
 
     // Helper to scale styles dynamically
@@ -401,6 +325,10 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
         mainItemCity: { fontSize: 9, color: '#6b7280', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4 },
         mainItemDesc: { fontSize: 9, lineHeight: 1.4 },
         headerBlock: { marginBottom: 24 },
+        skillText: {
+            fontSize: 9,
+            color: '#FFFFFF',
+        },
     }, s);
 
     const modernStyles = getModernStyles(1);
@@ -475,6 +403,19 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
             color: '#4b5563',
         },
         itemCity: { fontSize: 8.5, fontStyle: 'italic', marginBottom: 2 },
+        skillPill: {
+            backgroundColor: '#f3f4f6',
+            paddingHorizontal: 10,
+            paddingVertical: 3,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: '#e5e7eb',
+        },
+        skillText: {
+            fontSize: 10,
+            color: '#374151',
+            fontFamily: 'Times-Roman',
+        },
     }, s);
     const minimalistStyles = getMinimalistStyles(1);
 
@@ -587,6 +528,15 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
             marginBottom: 24 // Reduced from 32
         },
         itemDate: { fontSize: 9, color: '#666' },
+        skillPill: {
+            backgroundColor: 'rgba(255,255,255,0.2)',
+            paddingHorizontal: 6,
+            paddingVertical: 3,
+            borderRadius: 4,
+        },
+        skillText: {
+            fontSize: 9,
+        },
     }, s);
     const creativeStyles = getCreativeStyles(1);
 
@@ -694,6 +644,16 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
             color: '#9ca3af',
             fontFamily: pdfFontFamily,
         },
+        skillPill: {
+            backgroundColor: '#f3f4f6',
+            paddingHorizontal: 10,
+            paddingVertical: 3,
+            borderRadius: 12,
+        },
+        skillText: {
+            fontSize: 10,
+            color: '#374151',
+        },
     }, s);
     const classicStyles = getClassicStyles(1);
 
@@ -791,6 +751,18 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
             color: '#6b7280',
         },
         itemDesc: { fontSize: 9, color: '#4b5563', marginTop: 2 },
+        skillPill: {
+            backgroundColor: 'rgba(255,255,255,0.15)',
+            paddingHorizontal: 8,
+            paddingVertical: 3,
+            borderRadius: 10,
+            borderWidth: 1,
+            borderColor: 'rgba(255,255,255,0.25)',
+        },
+        skillText: {
+            fontSize: 9,
+            color: '#FFFFFF',
+        },
     }, s);
     const corporateStyles = getCorporateStyles(1);
 
@@ -1066,6 +1038,18 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
         itemName: { color: '#58a6ff', fontWeight: 'bold' },
         itemDate: { color: '#8b949e' },
         itemCity: { color: '#c9d1d9', marginTop: 2 },
+        skillPill: {
+            backgroundColor: '#161b22',
+            paddingHorizontal: 8,
+            paddingVertical: 3,
+            borderRadius: 10,
+            borderWidth: 1,
+            borderColor: '#30363d',
+        },
+        skillText: {
+            fontSize: 9,
+            color: '#8b949e',
+        },
     }, s);
     const githubStyles = getGithubStyles(1);
 
@@ -1151,13 +1135,13 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                         </View>
                     );
                 case 'skills':
-                    return skills && (
+                    return skills && skills.length > 0 && (
                         <View key="skills" style={{ marginBottom: 20 }}>
                             <Text style={githubStyles.sectionTitle}>// {sectionTitles.skills || "Skills"}</Text>
                             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
-                                {skills.split(',').map((skill: string, i: number) => (
-                                    <View key={i} style={{ backgroundColor: '#161b22', padding: '3 8', borderRadius: 10, border: '1 solid #30363d' }}>
-                                        <Text style={{ fontSize: 9, color: '#8b949e' }}>{skill.trim()}</Text>
+                                {skills.filter(s => s && s.trim()).map((skill: string, i: number) => (
+                                    <View key={i} style={githubStyles.skillPill}>
+                                        <Text style={githubStyles.skillText}>{skill.trim()}</Text>
                                     </View>
                                 ))}
                             </View>
@@ -1243,13 +1227,13 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                         </View>
                     );
                 case 'skills':
-                    return skills && (
+                    return skills && skills.length > 0 && (
                         <View key="skills" style={{ marginBottom: 20 }}>
                             <Text style={minimalistStyles.sectionTitle}>{sectionTitles.skills || "Skills"}</Text>
                             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
-                                {skills.split(',').map((skill: string, i: number) => (
-                                    <View key={i} style={{ backgroundColor: '#f3f4f6', padding: '3 10', borderRadius: 12, border: '1 solid #e5e7eb' }}>
-                                        <Text style={{ fontSize: 10, color: '#374151', fontFamily: 'Times-Roman' }}>{skill.trim()}</Text>
+                                {skills.filter(s => s && s.trim()).map((skill: string, i: number) => (
+                                    <View key={i} style={minimalistStyles.skillPill}>
+                                        <Text style={minimalistStyles.skillText}>{skill.trim()}</Text>
                                     </View>
                                 ))}
                             </View>
@@ -1262,7 +1246,10 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             {experience.map((exp: any) => (
                                 <View key={exp.id} style={minimalistStyles.itemGroup}>
                                     <View style={minimalistStyles.row}>
-                                        <Text style={minimalistStyles.company}>{exp.company}, <Text style={minimalistStyles.title}>{exp.role}</Text></Text>
+                                        <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                                            <Text style={minimalistStyles.company}>{exp.company}, </Text>
+                                            <Text style={minimalistStyles.title}>{exp.role}</Text>
+                                        </View>
                                         <Text style={minimalistStyles.date}>{exp.startDate} – {exp.endDate}</Text>
                                     </View>
                                     <PdfFormattedText text={exp.description} style={minimalistStyles.description} />
@@ -1391,13 +1378,13 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                         </View>
                     );
                 case 'skills':
-                    return skills && (
+                    return skills && skills.length > 0 && (
                         <View key="skills" style={modernStyles.sidebarSection}>
                             <Text style={modernStyles.sidebarTitle}>{sectionTitles.skills || "Skills"}</Text>
                             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
-                                {skills.split(',').map((skill: string, i: number) => (
+                                {skills.filter(s => s && s.trim()).map((skill: string, i: number) => (
                                     <View key={i} style={modernStyles.skillPill}>
-                                        <Text style={{ fontSize: 9, color: '#FFFFFF' }}>{skill.trim()}</Text>
+                                        <Text style={modernStyles.skillText}>{skill.trim()}</Text>
                                     </View>
                                 ))}
                             </View>
@@ -1460,7 +1447,6 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
             <Document>
                 <Page size="A4" style={modernStyles.page}>
                     <View style={modernStyles.container} wrap={false}>
-                        {/* Sidebar */}
                         <View style={modernStyles.sidebar}>
                             {/* Contact */}
                             <View style={modernStyles.sidebarSection}>
@@ -1474,6 +1460,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             </View>
                             {sidebarSections.map(id => renderModernSection(id, true))}
                         </View>
+
 
                         {/* Main Content */}
                         <View style={modernStyles.main}>
@@ -1537,13 +1524,13 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                         </View>
                     );
                 case 'skills':
-                    return skills && (
+                    return skills && skills.length > 0 && (
                         <View key="skills" style={creativeStyles.sidebarContent}>
                             <Text style={creativeStyles.sidebarTitle}>{sectionTitles.skills || "Skills"}</Text>
                             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
-                                {skills.split(',').map((skill: string, i: number) => (
-                                    <View key={i} style={{ backgroundColor: 'rgba(255,255,255,0.2)', padding: '3 6', borderRadius: 4 }}>
-                                        <Text style={{ fontSize: 9 }}>{skill.trim()}</Text>
+                                {skills.filter(s => s && s.trim()).map((skill: string, i: number) => (
+                                    <View key={i} style={creativeStyles.skillPill}>
+                                        <Text style={creativeStyles.skillText}>{skill.trim()}</Text>
                                     </View>
                                 ))}
                             </View>
@@ -1779,14 +1766,14 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                                 </View>
                             )}
 
-                            {skills && (
+                            {skills && skills.length > 0 && (
                                 <View style={{ marginBottom: 15 }}>
                                     <Text style={corporateStyles.sidebarHeading}>{sectionTitles.skills || "Skills"}</Text>
                                     <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.3)', marginBottom: 9 }} />
                                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
-                                        {skills.split(',').map((skill, i) => (
-                                            <View key={i} style={{ backgroundColor: 'rgba(255,255,255,0.15)', padding: '3 8', borderRadius: 10, border: '1 solid rgba(255,255,255,0.25)' }}>
-                                                <Text style={{ fontSize: 9, color: '#FFFFFF' }}>{skill.trim()}</Text>
+                                        {skills.filter(s => s && s.trim()).map((skill, i) => (
+                                            <View key={i} style={corporateStyles.skillPill}>
+                                                <Text style={corporateStyles.skillText}>{skill.trim()}</Text>
                                             </View>
                                         ))}
                                     </View>
@@ -2018,11 +2005,11 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                         </View>
                     );
                 case 'skills':
-                    return skills && (
+                    return skills && skills.length > 0 && (
                         <View key="skills" style={{ marginBottom: 20 }}>
                             <Text style={titleStyle}>{sectionTitles.skills || "Skills"}</Text>
                             <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                                {skills.split(',').map((skill, i) => (
+                                {skills.filter(s => s && s.trim()).map((skill: any, i: any) => (
                                     <View key={i} style={sectionStyles.skillPill}>
                                         <Text style={sectionStyles.skillText}>{skill.trim()}</Text>
                                     </View>
@@ -2176,13 +2163,13 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                     </View>
                 );
             case 'skills':
-                return skills && (
+                return skills && skills.length > 0 && (
                     <View key="skills" style={classicStyles.itemGroup}>
                         <Text style={classicStyles.sectionTitle}>{sectionTitles.skills || "Skills"}</Text>
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
-                            {skills.split(',').map((skill: string, i: number) => (
-                                <View key={i} style={{ backgroundColor: '#f3f4f6', padding: '3 10', borderRadius: 12 }}>
-                                    <Text style={{ fontSize: 10, color: '#374151' }}>{skill.trim()}</Text>
+                            {skills.filter(s => s && s.trim()).map((skill: string, i: number) => (
+                                <View key={i} style={classicStyles.skillPill}>
+                                    <Text style={classicStyles.skillText}>{skill.trim()}</Text>
                                 </View>
                             ))}
                         </View>

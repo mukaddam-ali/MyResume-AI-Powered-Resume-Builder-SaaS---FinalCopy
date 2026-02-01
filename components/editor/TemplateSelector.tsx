@@ -23,18 +23,22 @@ export function TemplateSelector() {
     const isBrandingEnabled = activeResume?.isBrandingEnabled ?? true;
 
     const templates = [
-        { id: 'classic', name: 'Classic', icon: FileText, premium: false },
-        { id: 'modern', name: 'Modern', icon: Layout, premium: false },
-        { id: 'minimalist', name: 'Minimal', icon: PenTool, premium: false },
-        { id: 'github', name: 'GitHub', icon: Code, premium: true },
-        { id: 'creative', name: 'Creative', icon: Palette, premium: true },
-        { id: 'corporate', name: 'Corporate Blue', icon: Sparkles, premium: true },
-        { id: 'executive', name: 'Executive', icon: Crown, premium: true },
+        { id: 'classic', name: 'Classic', icon: FileText, premium: false, comingSoon: false },
+        { id: 'modern', name: 'Modern', icon: Layout, premium: false, comingSoon: false },
+        { id: 'minimalist', name: 'Minimal', icon: PenTool, premium: false, comingSoon: false },
+        // GitHub template removed
+        { id: 'creative', name: 'Creative', icon: Palette, premium: true, comingSoon: false },
+        { id: 'corporate', name: 'Corporate Blue', icon: Sparkles, premium: true, comingSoon: true },
+        { id: 'executive', name: 'Executive', icon: Crown, premium: true, comingSoon: true },
+        { id: 'designer', name: 'Designer', icon: Palette, premium: true, comingSoon: true },
     ] as const;
 
 
     const handleTemplateChange = (value: string) => {
         const template = templates.find(t => t.id === value);
+
+        if (template?.comingSoon) return; // Prevent selection of coming soon templates
+
         if (template?.premium && userTier === 'free') {
             alert("This is a Premium Template. Upgrade to Pro to use it.");
             return;
@@ -44,7 +48,7 @@ export function TemplateSelector() {
 
 
     return (
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
             <Select
                 value={selectedTemplate}
                 onValueChange={handleTemplateChange}
@@ -65,12 +69,21 @@ export function TemplateSelector() {
                 </SelectTrigger>
                 <SelectContent>
                     {templates.map(t => (
-                        <SelectItem key={t.id} value={t.id} disabled={t.premium && userTier === 'free'} className="justify-between">
+                        <SelectItem
+                            key={t.id}
+                            value={t.id}
+                            disabled={(t.premium && userTier === 'free') || t.comingSoon}
+                            className="justify-between"
+                        >
                             <span className="flex items-center gap-2">
                                 <t.icon className="w-4 h-4" />
                                 {t.name}
                             </span>
-                            {t.premium && <Crown className="w-3 h-3 text-yellow-500 ml-2 inline" />}
+                            {t.comingSoon ? (
+                                <span className="text-[10px] font-medium bg-muted text-muted-foreground px-1.5 py-0.5 rounded ml-2">Coming Soon</span>
+                            ) : (
+                                t.premium && <Crown className="w-3 h-3 text-yellow-500 ml-2 inline" />
+                            )}
                         </SelectItem>
                     ))}
                 </SelectContent>

@@ -5,6 +5,7 @@ import { ResumeData, useResumeStore } from '@/store/useResumeStore';
 import { cn } from '@/lib/utils';
 import { Mail, Phone, MapPin, Linkedin, Link as LinkIcon, Github, Sparkles } from 'lucide-react';
 import { FormattedText } from '@/components/preview/FormattedText';
+import { RESUME_STYLES } from '@/lib/styles/resume-constants';
 
 interface LiveResumeProps {
     data: ResumeData;
@@ -12,31 +13,29 @@ interface LiveResumeProps {
 }
 
 // Define which fonts are premium
-const PREMIUM_FONTS = ['lora', 'playfair', 'oswald', 'merriweather', 'jetbrains'];
+const PREMIUM_FONTS = ['nunito', 'merriweather', 'librebaskerville'];
 
-export const LiveResume = ({ data, scale = 1 }: LiveResumeProps) => {
+export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
     const { userTier } = useResumeStore();
-    const { personalInfo, education, experience, projects, skills, selectedTemplate, themeColor: customThemeColor, contentScale = 1, isBrandingEnabled = true, fontFamily: fontId = 'inter', sectionScales, sectionTitles = {} } = data;
+    const { personalInfo, education, experience, projects, skills, selectedTemplate, themeColor: customThemeColor, contentScale = 1, isBrandingEnabled = true, fontFamily: fontId = 'roboto', sectionScales, sectionTitles = {} } = data;
 
     // Map font IDs to CSS font family values
     const FONT_FAMILY_MAP: Record<string, string> = {
-        'inter': 'Inter, sans-serif',
+        // Sans-Serif (Free)
         'roboto': 'Roboto, sans-serif',
-        'open-sans': '"Open Sans", sans-serif',
+        'opensans': '"Open Sans", sans-serif',
         'lato': 'Lato, sans-serif',
-        'montserrat': 'Montserrat, sans-serif',
-        'poppins': 'Poppins, sans-serif',
-        'source-sans': '"Source Sans 3", sans-serif',
-        'lora': 'Lora, serif',
-        'playfair': 'Playfair Display, serif',
-        'oswald': 'Oswald, sans-serif',
+        'sourcesans': '"Source Sans 3", sans-serif',
+
+        // Premium
+        'nunito': 'Nunito, sans-serif',
         'merriweather': 'Merriweather, serif',
-        'jetbrains': 'JetBrains Mono, monospace',
+        'librebaskerville': '"Libre Baskerville", serif',
     };
 
-    // Enforce free tier: fall back to 'inter' if user is free and has a premium font
-    const effectiveFontId = (userTier === 'free' && PREMIUM_FONTS.includes(fontId)) ? 'inter' : fontId;
-    const fontFamily = FONT_FAMILY_MAP[effectiveFontId] || 'Inter, sans-serif';
+    // Enforce free tier: fall back to 'roboto' if user is free and has a premium font
+    const effectiveFontId = (userTier === 'free' && PREMIUM_FONTS.includes(fontId)) ? 'roboto' : fontId;
+    const fontFamily = FONT_FAMILY_MAP[effectiveFontId] || 'Roboto, sans-serif';
 
 
     // Default to a dark navy if no color set
@@ -48,13 +47,30 @@ export const LiveResume = ({ data, scale = 1 }: LiveResumeProps) => {
         switch (sectionId) {
             case 'education':
                 if (education.length === 0) return null;
-                if (selectedTemplate === 'modern' || selectedTemplate === 'creative') {
-                    // Sidebar style education
+                if (selectedTemplate === 'modern') {
                     if (education.length === 0) return null;
                     return (
-                        <div key="education" className={cn("mb-6", selectedTemplate === 'creative' ? "text-white" : "")}>
-                            <h3 className={cn("uppercase tracking-widest text-xs font-bold border-b pb-2 mb-4 opacity-80",
-                                selectedTemplate === 'modern' ? "text-white border-white/30" : "border-white/20")}>
+                        <div key="education" className="mb-6">
+                            <h3 className="uppercase tracking-widest text-xs font-bold border-b pb-2 mb-4 opacity-80 text-white border-white/30">
+                                {sectionTitles.education || "Education"}
+                            </h3>
+                            <div className="space-y-4">
+                                {education.map(edu => (
+                                    <div key={edu.id}>
+                                        <div className="font-bold">{edu.school}</div>
+                                        <div className="text-xs opacity-80">{edu.degree}</div>
+                                        <div className="text-[10px] opacity-60 mt-1">{edu.startDate} – {edu.endDate}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                }
+                if (selectedTemplate === 'creative') {
+                    if (education.length === 0) return null;
+                    return (
+                        <div key="education" className="mb-6 text-white">
+                            <h3 className="uppercase tracking-widest text-xs font-bold border-b pb-2 mb-4 opacity-80 border-white/20">
                                 {sectionTitles.education || "Education"}
                             </h3>
                             <div className="space-y-4">
@@ -84,20 +100,9 @@ export const LiveResume = ({ data, scale = 1 }: LiveResumeProps) => {
                         </div>
                     );
                 }
-                // Classic / GitHub / Default
+                // Classic / Default
                 if (education.length === 0) return null;
-                return selectedTemplate === 'github' ? (
-                    <div key="education" className="mb-8">
-                        <h2 className="text-lg font-bold text-[#c9d1d9] mb-4 border-b border-[#30363d] pb-2 inline-block">// {sectionTitles.education || "Education"}</h2>
-                        {education.map(edu => (
-                            <div key={edu.id} className="mb-4">
-                                <div className="text-[#79c0ff] font-bold">{edu.school}</div>
-                                <div className="text-xs text-[#c9d1d9]">{edu.degree}</div>
-                                <div className="text-[#8b949e] text-[10px]">{edu.startDate} - {edu.endDate}</div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
+                return (
                     <div key="education" className="mb-6">
                         <h3 className="text-lg font-bold uppercase border-b border-gray-200 pb-1 mb-3" style={{ color: themeColor }}>{sectionTitles.education || "Education"}</h3>
                         <div className="flex flex-wrap gap-x-4 gap-y-2">
@@ -114,19 +119,31 @@ export const LiveResume = ({ data, scale = 1 }: LiveResumeProps) => {
 
             case 'skills':
                 if (!skills) return null;
-                if (selectedTemplate === 'modern' || selectedTemplate === 'creative') {
-                    // Sidebar style skills
-                    if (!skills) return null;
+                if (selectedTemplate === 'modern') {
                     return (
                         <div key="skills" className="mb-6">
-                            <h3 className={cn("uppercase tracking-widest text-xs font-bold border-b pb-2 mb-4 opacity-80",
-                                selectedTemplate === 'modern' ? "text-white border-white/30" : "border-white/20")}>
+                            <h3 className="uppercase tracking-widest text-xs font-bold border-b pb-2 mb-4 opacity-80 text-white border-white/30">
                                 {sectionTitles.skills || "Skills"}
                             </h3>
                             <div className="flex flex-wrap gap-2">
                                 {skills.split(',').map((skill, i) => (
-                                    <span key={i} className={cn("px-2 py-1 rounded text-[10px]",
-                                        selectedTemplate === 'modern' ? "bg-white/10" : "bg-white/20 font-bold")}>
+                                    <span key={i} className="px-2 py-1 rounded text-[10px] bg-white/10">
+                                        {skill.trim()}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                }
+                if (selectedTemplate === 'creative') {
+                    return (
+                        <div key="skills" className="mb-6 text-white">
+                            <h3 className="uppercase tracking-widest text-xs font-bold border-b pb-2 mb-4 opacity-80 border-white/20">
+                                {sectionTitles.skills || "Skills"}
+                            </h3>
+                            <div className="flex flex-wrap gap-2">
+                                {skills.split(',').map((skill, i) => (
+                                    <span key={i} className="px-2 py-1 rounded text-[10px] bg-white/20 font-bold">
                                         {skill.trim()}
                                     </span>
                                 ))}
@@ -149,16 +166,8 @@ export const LiveResume = ({ data, scale = 1 }: LiveResumeProps) => {
                         </div>
                     );
                 }
-                // Classic / GitHub
-                if (!skills) return null;
-                return selectedTemplate === 'github' ? (
-                    <div key="skills" className="mb-8">
-                        <h2 className="text-lg font-bold text-[#c9d1d9] mb-4 border-b border-[#30363d] pb-2 inline-block">// {sectionTitles.skills || "Skills"}</h2>
-                        <div className="text-[#8b949e] text-xs leading-loose font-mono">
-                            ['{skills.replace(/, /g, "', '")}']
-                        </div>
-                    </div>
-                ) : (
+                // Classic / Default
+                return (
                     <div key="skills" className="mb-6">
                         <h3 className="text-lg font-bold uppercase border-b border-gray-200 pb-1 mb-3" style={{ color: themeColor }}>{sectionTitles.skills || "Skills"}</h3>
                         <div className="flex flex-wrap gap-2 text-xs">
@@ -229,26 +238,6 @@ export const LiveResume = ({ data, scale = 1 }: LiveResumeProps) => {
                                         </div>
                                         <div className="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wide">{exp.role}</div>
                                         <FormattedText text={exp.description} className="text-gray-600 text-sm block" />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    );
-                }
-                if (selectedTemplate === 'github') {
-                    if (experience.length === 0) return null;
-                    return (
-                        <div key="experience" className="mb-8">
-                            <h2 className="text-xl font-bold text-[#c9d1d9] mb-4 border-b border-[#30363d] pb-2 inline-block">// {sectionTitles.experience || "Professional Experience"}</h2>
-                            <div className="space-y-4">
-                                {experience.map(exp => (
-                                    <div key={exp.id} className="border border-[#30363d] bg-[#161b22] p-4 rounded-md">
-                                        <div className="flex justify-between items-baseline mb-1">
-                                            <h3 className="font-bold text-[#79c0ff]">{exp.role}</h3>
-                                            <span className="text-xs text-[#8b949e]">{exp.startDate} - {exp.endDate}</span>
-                                        </div>
-                                        <div className="text-xs text-[#a5d6ff] mb-2">@ {exp.company}</div>
-                                        <FormattedText text={`/* ${exp.description} */`} className="text-[#8b949e] text-xs leading-relaxed opacity-90 block" />
                                     </div>
                                 ))}
                             </div>
@@ -363,34 +352,6 @@ export const LiveResume = ({ data, scale = 1 }: LiveResumeProps) => {
                         </div>
                     );
                 }
-                if (selectedTemplate === 'github') {
-                    if (projects.length === 0) return null;
-                    return (
-                        <div key="projects" className="mb-8">
-                            <h2 className="text-xl font-bold text-[#c9d1d9] mb-4 border-b border-[#30363d] pb-2 inline-block">// {sectionTitles.projects || "Projects"}</h2>
-                            <div className="space-y-4">
-                                {projects.map(proj => (
-                                    <div key={proj.id} className="border border-[#30363d] bg-[#161b22] p-4 rounded-md">
-                                        <div className="flex justify-between items-baseline mb-1">
-                                            <h3 className="font-bold text-[#79c0ff]">{proj.name}</h3>
-                                        </div>
-                                        {proj.technologies && (
-                                            <div className="mb-1">
-                                                <span className="text-xs text-[#8b949e] px-2 py-0.5 rounded bg-[#30363d] border border-[#30363d] inline-block">
-                                                    // {proj.technologies}
-                                                </span>
-                                            </div>
-                                        )}
-                                        <div className="text-gray-600 text-xs leading-relaxed mb-2">
-                                            <FormattedText text={proj.description} className="text-[#8b949e]" />
-                                        </div>
-                                        {proj.link && <a href={proj.link} className="text-[#58a6ff] text-xs hover:underline">{proj.linkText || proj.link}</a>}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    );
-                }
                 // Classic
                 if (projects.length === 0) return null;
                 return (
@@ -490,25 +451,7 @@ export const LiveResume = ({ data, scale = 1 }: LiveResumeProps) => {
                     );
                 }
 
-                if (selectedTemplate === 'github') {
-                    return (
-                        <div key={customSection.id} className="mb-8">
-                            <h2 className="text-xl font-bold text-[#c9d1d9] mb-4 border-b border-[#30363d] pb-2 inline-block">// {customSection.title}</h2>
-                            <div className="space-y-4">
-                                {customSection.items.map(item => (
-                                    <div key={item.id} className="border border-[#30363d] bg-[#161b22] p-4 rounded-md">
-                                        <div className="flex justify-between items-baseline mb-1">
-                                            <h3 className="font-bold text-[#79c0ff]">{item.name}</h3>
-                                            <span className="text-xs text-[#8b949e]">{item.date}</span>
-                                        </div>
-                                        <div className="text-xs text-[#a5d6ff] mb-2">{item.city}</div>
-                                        <FormattedText text={`/* ${item.description} */`} className="text-[#8b949e] text-xs leading-relaxed opacity-90 block" />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    );
-                }
+
 
                 // Classic
                 return (
@@ -548,7 +491,7 @@ export const LiveResume = ({ data, scale = 1 }: LiveResumeProps) => {
     const getMainSections = () => sectionOrder.filter(id => !sidebarIds.includes(id) && id !== 'personal');
 
     const ScaledWrapper = ({ children, className = "", style = {} }: { children: React.ReactNode, className?: string, style?: React.CSSProperties }) => (
-        <div data-template={selectedTemplate} className={cn("w-[794px] h-[1123px] bg-white shadow-2xl mx-auto origin-top-left overflow-hidden flex flex-col border-x-[3px] border-slate-300/80 dark:border-slate-600/80 relative", selectedTemplate === 'github' && "dark:border-slate-700")} style={{ transform: `scale(${scale})` }}>
+        <div data-template={selectedTemplate} className={cn("w-[794px] h-[1123px] bg-white shadow-2xl mx-auto origin-top-left overflow-auto flex flex-col border-x-[3px] border-slate-300/80 dark:border-slate-600/80 relative")} style={{ transform: `scale(${scale})` }}>
 
             {/* Branding - Fixed at Bottom */}
             {isBrandingEnabled && (
@@ -569,54 +512,60 @@ export const LiveResume = ({ data, scale = 1 }: LiveResumeProps) => {
     );
 
 
+    // Helper for shared styles
+    const toPx = (pt: number) => `${pt * 1.333}px`;
+    const S = RESUME_STYLES; // Alias for brevity
+
     // 1. Modern Template
     if (selectedTemplate === 'modern') {
         const sidebarSections = getSidebarSections();
         const mainSections = getMainSections();
 
         return (
-            <ScaledWrapper className="flex text-sm text-gray-800 leading-relaxed font-sans" style={{ fontFamily }}>
+            <ScaledWrapper className="flex font-sans" style={{ fontFamily, fontSize: toPx(S.fonts.sizes.body), lineHeight: S.fonts.lineHeight }}>
                 {/* Sidebar */}
-                <div className="w-[32%] px-8 py-8 text-white flex flex-col gap-8 min-h-full" style={{ backgroundColor: themeColor }}>
+                <div className="flex flex-col gap-8 min-h-full" style={{
+                    width: '32%',
+                    backgroundColor: themeColor,
+                    padding: `${toPx(S.page.padding)} ${toPx(30)}`, // Adjusted padding for visual balance
+                    color: 'white'
+                }}>
                     {/* Contact (Fixed) */}
                     <div style={{ zoom: sectionScales?.personal || 1 }}>
                         {(personalInfo.email || personalInfo.phone || personalInfo.location || personalInfo.linkedin || personalInfo.website || personalInfo.github) && (
                             <div className="space-y-4">
-                                <h3 className="uppercase tracking-widest text-xs font-bold border-b border-white/30 pb-2 mb-4 opacity-80">Contact</h3>
+                                <h3 style={{
+                                    fontSize: toPx(S.fonts.sizes.small),
+                                    fontWeight: 'bold',
+                                    borderBottom: '1px solid rgba(255,255,255,0.3)',
+                                    paddingBottom: toPx(S.spacing.tight),
+                                    marginBottom: toPx(S.spacing.item),
+                                    textTransform: 'uppercase',
+                                    opacity: 0.9,
+                                    letterSpacing: '1px'
+                                }}>Contact</h3>
                                 {personalInfo.email && (
-                                    <div className="flex items-center gap-3 text-xs">
+                                    <div className="flex items-center gap-3" style={{ fontSize: toPx(S.fonts.sizes.small) }}>
                                         <Mail className="w-3 h-3 opacity-70" />
                                         <span className="break-all">{personalInfo.email}</span>
                                     </div>
                                 )}
                                 {personalInfo.phone && (
-                                    <div className="flex items-center gap-3 text-xs">
+                                    <div className="flex items-center gap-3" style={{ fontSize: toPx(S.fonts.sizes.small) }}>
                                         <Phone className="w-3 h-3 opacity-70" />
                                         <span>{personalInfo.phone}</span>
                                     </div>
                                 )}
                                 {personalInfo.location && (
-                                    <div className="flex items-center gap-3 text-xs">
+                                    <div className="flex items-center gap-3" style={{ fontSize: toPx(S.fonts.sizes.small) }}>
                                         <MapPin className="w-3 h-3 opacity-70" />
                                         <span>{personalInfo.location}</span>
                                     </div>
                                 )}
                                 {personalInfo.linkedin && (
-                                    <div className="flex items-center gap-3 text-xs">
+                                    <div className="flex items-center gap-3" style={{ fontSize: toPx(S.fonts.sizes.small) }}>
                                         <Linkedin className="w-3 h-3 opacity-70" />
                                         <span className="break-all">{personalInfo.linkedin.replace(/^https?:\/\/(www\.)?/, '')}</span>
-                                    </div>
-                                )}
-                                {personalInfo.website && (
-                                    <div className="flex items-center gap-3 text-xs">
-                                        <LinkIcon className="w-3 h-3 opacity-70" />
-                                        <span className="break-all">{personalInfo.website.replace(/^https?:\/\/(www\.)?/, '')}</span>
-                                    </div>
-                                )}
-                                {personalInfo.github && (
-                                    <div className="flex items-center gap-3 text-xs">
-                                        <Github className="w-3 h-3 opacity-70" />
-                                        <span className="break-all">{personalInfo.github.replace(/^https?:\/\/(www\.)?/, '')}</span>
                                     </div>
                                 )}
                             </div>
@@ -627,11 +576,33 @@ export const LiveResume = ({ data, scale = 1 }: LiveResumeProps) => {
                 </div>
 
                 {/* Main Content */}
-                <div className="w-[68%] px-9 py-8 pt-12 flex flex-col gap-8">
+                <div className="flex flex-col gap-8" style={{
+                    width: '68%',
+                    padding: `${toPx(S.page.padding)} ${toPx(36)}`,
+                    color: S.colors.text
+                }}>
                     <div style={{ zoom: sectionScales?.personal || 1 }}>
-                        <h1 className="text-4xl font-extrabold uppercase tracking-tight" style={{ color: themeColor }}>{personalInfo.fullName}</h1>
-                        {personalInfo.jobTitle && <p className="text-lg text-gray-500 mt-2 font-light">{personalInfo.jobTitle}</p>}
-                        <FormattedText text={personalInfo.summary} className="mt-6 text-gray-600 leading-relaxed text-sm block" />
+                        <h1 style={{
+                            fontSize: toPx(S.fonts.sizes.h1),
+                            fontWeight: '800',
+                            textTransform: 'uppercase',
+                            color: themeColor,
+                            letterSpacing: '-0.5px',
+                            lineHeight: 1.2
+                        }}>{personalInfo.fullName}</h1>
+                        {personalInfo.jobTitle && <p style={{
+                            fontSize: toPx(S.fonts.sizes.h3),
+                            color: S.colors.textLight,
+                            marginTop: toPx(S.spacing.tight),
+                            fontWeight: 300
+                        }}>{personalInfo.jobTitle}</p>}
+                        <div style={{
+                            marginTop: toPx(S.spacing.section),
+                            fontSize: toPx(S.fonts.sizes.body),
+                            lineHeight: S.fonts.lineHeight
+                        }}>
+                            <FormattedText text={personalInfo.summary} className="block text-gray-600" />
+                        </div>
                     </div>
 
                     {mainSections.map(renderSection)}
@@ -681,35 +652,7 @@ export const LiveResume = ({ data, scale = 1 }: LiveResumeProps) => {
         )
     }
 
-    // 3. GitHub Template
-    if (selectedTemplate === "github") {
-        return (
-            <ScaledWrapper className="bg-[#0d1117] text-[#c9d1d9] font-mono text-sm px-10 py-10" style={{ fontFamily }}>
-                <div className="h-full">
-                    <div className="border-b border-[#30363d] pb-6 mb-8" style={{ zoom: sectionScales?.personal || 1 }}>
-                        <h1 className="text-3xl font-bold text-[#58a6ff] mb-2">
-                            function <span className="text-[#c9d1d9]">{personalInfo.fullName.replace(/\s+/g, '_')}</span>()
-                        </h1>
-                        <div className="text-[#8b949e] space-y-1 text-xs">
-                            <p>const profile = {"{"}</p>
-                            <div className="pl-4">
-                                {personalInfo.jobTitle && <p>role: "<span className="text-[#a5d6ff]">{personalInfo.jobTitle}</span>",</p>}
-                                {personalInfo.email && <p>email: "<span className="text-[#a5d6ff]">{personalInfo.email}</span>",</p>}
-                                {personalInfo.phone && <p>phone: "<span className="text-[#a5d6ff]">{personalInfo.phone}</span>",</p>}
-                                {personalInfo.location && <p>location: "<span className="text-[#a5d6ff]">{personalInfo.location}</span>",</p>}
-                                {personalInfo.github && <p>github: "<span className="text-[#a5d6ff]">{personalInfo.github}</span>",</p>}
-                            </div>
-                            <p>{"}"}</p>
-                        </div>
-                    </div>
 
-                    <div className="space-y-8">
-                        {sectionOrder.map(renderSection)}
-                    </div>
-                </div>
-            </ScaledWrapper>
-        );
-    }
 
     // 4. Creative Template
     if (selectedTemplate === "creative") {

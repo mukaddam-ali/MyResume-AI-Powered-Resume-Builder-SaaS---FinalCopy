@@ -5,28 +5,15 @@ import { Text } from '@react-pdf/renderer';
 interface PdfFormattedTextProps {
     text?: string;
     style?: any;
+    supportsItalic?: boolean;
 }
 
-export const PdfFormattedText = ({ text = '', style, children }: PdfFormattedTextProps & { children?: React.ReactNode }) => {
-    if (!text && !children) return null;
-
-    // Simple parser for **bold** and *italic*
-    // Split by regex and render segments
-    const parts = text ? text.split(/(\*\*.*?\*\*|\*.*?\*)/g) : [];
-
+export const PdfFormattedText = ({ text = '', style, children, supportsItalic = true }: PdfFormattedTextProps & { children?: React.ReactNode }) => {
+    // TEMPORARY DEBUG: Simple pass-through to rule out parser crashes
+    const safeText = typeof text === 'string' ? text : '';
     return (
         <Text style={style}>
-            {parts.map((part, index) => {
-                if (part.startsWith('**') && part.endsWith('**')) {
-                    return <Text key={index} style={{ fontWeight: 'bold' }}>{part.slice(2, -2)}</Text>;
-                }
-                if (part.startsWith('*') && part.endsWith('*')) {
-                    // Ensure the font family supports italic if needed, standard fonts do.
-                    return <Text key={index} style={{ fontStyle: 'italic' }}>{part.slice(1, -1)}</Text>;
-                }
-                // Determine if we need to escape anything? React-pdf handles text content safely usually.
-                return <Text key={index}>{part}</Text>;
-            })}
+            {safeText}
             {children}
         </Text>
     );

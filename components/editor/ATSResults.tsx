@@ -59,36 +59,38 @@ export function ATSResults({ data, loading }: ATSResultsProps) {
     if (data.isFreeAnalysis) {
         return (
             <Card className="mt-6 border-2">
-                <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center justify-between text-lg">
+                <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center justify-between text-base">
                         <span className="flex items-center gap-2">
-                            <Target className="h-5 w-5 text-primary" />
+                            <Target className="h-4 w-4 text-primary" />
                             ATS Scan Results
                         </span>
                         <div className="text-2xl font-bold text-primary">{data.overallScore}%</div>
                     </CardTitle>
                     <CardDescription>Basic score breakdown</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                    {data.sections?.map((section, i) => (
-                        <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border">
-                            <div className="flex items-center gap-3">
-                                {section.completed ? (
-                                    <CheckCircle className="h-5 w-5 text-green-600" />
-                                ) : (
-                                    <XCircle className="h-5 w-5 text-red-500" />
-                                )}
-                                <span className="font-medium">{section.label}</span>
+                <CardContent className="space-y-2">
+                    <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2">
+                        {data.sections?.map((section, i) => (
+                            <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-muted/30 border">
+                                <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
+                                    {section.completed ? (
+                                        <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                                    ) : (
+                                        <XCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
+                                    )}
+                                    <span className="font-medium truncate">{section.label}</span>
+                                </div>
+                                <div className="flex items-center gap-3 flex-shrink-0">
+                                    <Progress value={section.score} className="w-24 h-2" />
+                                    <span className={`text-sm font-bold tabular-nums w-12 text-right ${section.score >= 80 ? 'text-green-600' : section.score >= 60 ? 'text-yellow-600' : 'text-red-600'
+                                        }`}>
+                                        {section.score}%
+                                    </span>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <Progress value={section.score} className="w-24 h-2" />
-                                <span className={`text-sm font-bold tabular-nums w-12 text-right ${section.score >= 80 ? 'text-green-600' : section.score >= 60 ? 'text-yellow-600' : 'text-red-600'
-                                    }`}>
-                                    {section.score}%
-                                </span>
-                            </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </CardContent>
             </Card>
         );
@@ -181,7 +183,7 @@ export function ATSResults({ data, loading }: ATSResultsProps) {
                 </div>
             </CardHeader>
 
-            <CardContent className="p-0">
+            <CardContent className="p-0 max-h-[400px] overflow-y-auto">
                 <Tabs defaultValue="feedback" className="w-full">
                     <TabsList className="w-full justify-start rounded-none border-b bg-background px-4 h-12">
                         <TabsTrigger value="feedback" className="data-[state=active]:bg-primary/5">Feedback</TabsTrigger>

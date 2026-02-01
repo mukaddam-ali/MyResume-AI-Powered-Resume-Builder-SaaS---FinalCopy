@@ -2,11 +2,21 @@
 
 import { useResumeStore } from "@/store/useResumeStore";
 import { Button } from "@/components/ui/button";
-import { Loader2, Lock } from "lucide-react";
+import { Loader2, Lock, ZoomIn, ZoomOut } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { LiveResume } from "./LiveResume";
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { DownloadResumeButton } from "./DownloadResumeButton";
+
+// Load UniversalPDFPreview - automatically detects browser and uses optimal renderer
+const UniversalPDFPreview = dynamic(() => import("./UniversalPDFPreview"), {
+    ssr: false,
+    loading: () => (
+        <div className="flex h-full items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+        </div>
+    ),
+});
 
 // Wrapper to handle SearchParams without Suspense boundary issues
 const PaymentHandler = ({ setHasPaid }: { setHasPaid: (val: boolean) => void }) => {
@@ -22,29 +32,16 @@ const PaymentHandler = ({ setHasPaid }: { setHasPaid: (val: boolean) => void }) 
 }
 
 export function PreviewPanel() {
-    const { resumes, activeResumeId, setContentScale } = useResumeStore();
+    const { resumes, activeResumeId } = useResumeStore();
     const activeResume = activeResumeId ? resumes[activeResumeId] : null;
 
     const [client, setClient] = useState(false);
     const [hasPaid, setHasPaid] = useState(true);
     const [loading, setLoading] = useState(false);
-    const [scale, setScale] = useState(0.8);
+    const [zoom, setZoom] = useState(100);
 
     useEffect(() => {
         setClient(true);
-        const handleResize = () => {
-            const container = document.getElementById('preview-container');
-            if (container) {
-                const containerWidth = container.clientWidth;
-                // 210mm is approx 794px.
-                const targetScale = (containerWidth - 64) / 794; // 64px padding
-                // Allow scale to go up to 5.0 for 4k/zoomed out screens
-                setScale(Math.min(Math.max(targetScale, 0.3), 5.0));
-            }
-        };
-        handleResize();
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
     }, []);
 
     const handleUnlock = async () => {
@@ -83,7 +80,7 @@ export function PreviewPanel() {
     }
 
     return (
-        <div className="h-full flex flex-col relative border-t dark:border-transparent">
+        <div className="h-full flex flex-col relative border-t dark:border-transparent bg-slate-50 dark:bg-slate-950 z-0">
             {/* Search Params Listener */}
             <React.Suspense fallback={null}>
                 <PaymentHandler setHasPaid={setHasPaid} />
@@ -91,26 +88,12 @@ export function PreviewPanel() {
 
             {/* Header */}
             <div className="py-4 px-8 border-b dark:border-slate-800 shrink-0 z-10 bg-white/50 dark:bg-transparent backdrop-blur-sm">
-                <div className="w-full max-w-[794px] mx-auto flex justify-between items-center">
+                <div className="w-full flex justify-between items-center px-8">
                     <div className="flex items-center gap-4">
-                        <h2 className="font-semibold text-slate-700 dark:text-slate-200">Live Preview</h2>
-                        {activeResume && (
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700">
-                                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Size</span>
-                                <input
-                                    type="range"
-                                    min="0.5"
-                                    max="1.5"
-                                    step="0.1"
-                                    value={activeResume.contentScale || 1}
-                                    onChange={(e) => setContentScale(parseFloat(e.target.value))}
-                                    className="w-20 h-1.5 bg-gray-300 rounded-lg appearance-none cursor-pointer dark:bg-gray-600 accent-blue-600"
-                                />
-                                <span className="text-xs font-mono w-8 text-right text-slate-600 dark:text-slate-300">
-                                    {Math.round((activeResume.contentScale || 1) * 100)}%
-                                </span>
-                            </div>
-                        )}
+                        <h2 className="font-semibold text-slate-700 dark:text-slate-200">Real PDF Preview</h2>
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700">
+                            <span className="text-xs text-slate-500">Auto-updates on change</span>
+                        </div>
                     </div>
                     {!hasPaid ? (
                         <Button
@@ -134,24 +117,12 @@ export function PreviewPanel() {
                 </div>
             </div>
 
-            <div id="preview-container" className="flex-1 overflow-y-auto overflow-x-hidden p-8 flex justify-center items-start scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-slate-700 relative group">
-                {/* Watermark Overlay */}
-                {!hasPaid && (
-                    <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center opacity-[0.05] select-none overflow-hidden mix-blend-multiply dark:mix-blend-screen">
-                        <div className="rotate-[-45deg] text-[120px] font-black uppercase whitespace-nowrap text-slate-900 dark:text-slate-400">
-                            LONE STAR RESUME
-                        </div>
-                    </div>
-                )}
-
-                {/* HTML Resume Component */}
-                <div id="resume-preview" style={{
-                    width: `${794 * scale}px`,
-                    height: `${1123 * scale}px`,
-                    flexShrink: 0
-                }}>
-                    <LiveResume data={activeResume} scale={scale} />
-                </div>
+            <div id="preview-container" className="flex-1 overflow-hidden relative bg-gray-200 dark:bg-slate-900">
+                {/* Universal PDF Preview - Auto-detects browser for optimal rendering */}
+                <UniversalPDFPreview
+                    data={activeResume}
+                    className="h-full w-full"
+                />
             </div>
         </div >
     );

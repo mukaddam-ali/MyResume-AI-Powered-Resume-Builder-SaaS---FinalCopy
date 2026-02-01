@@ -28,7 +28,7 @@ export function SectionScaleControl({ sectionId }: SectionScaleControlProps) {
     };
 
     return (
-        <div className="flex items-center gap-4 mb-4 p-3 bg-muted/30 rounded-md border text-xs">
+        <div className="flex items-center gap-2 sm:gap-4 mb-4 p-2 sm:p-3 bg-muted/30 rounded-md border text-xs">
             <Label className="whitespace-nowrap font-medium text-xs">Font Scaling:</Label>
             <Slider
                 value={[scale]}
@@ -36,7 +36,7 @@ export function SectionScaleControl({ sectionId }: SectionScaleControlProps) {
                 max={1.5}
                 step={0.05}
                 onValueChange={handleScaleChange}
-                className="w-[120px]"
+                className="w-[100px] sm:w-[120px]"
             />
             <span className="w-8 text-right font-mono text-muted-foreground">{Math.round(scale * 100)}%</span>
             <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto" onClick={handleReset} title="Reset Scale">

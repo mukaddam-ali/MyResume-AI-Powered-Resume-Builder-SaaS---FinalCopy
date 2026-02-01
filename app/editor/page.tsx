@@ -38,16 +38,16 @@ export default function EditorPage() {
     };
 
     return (
-        <div className="flex flex-col lg:flex-row flex-1 min-h-screen">
+        <div className="flex flex-col lg:flex-row flex-1 min-h-screen gap-6 bg-muted/30 px-4 sm:px-8 lg:px-12">
             <AutoSaveHandler />
 
             {/* Left Panel - Editor */}
-            <div className={`w-full lg:w-1/2 bg-background ${mobileView === 'preview' ? 'hidden lg:block' : ''}`}>
+            <div className={`w-full lg:flex-1 bg-background max-w-full min-w-0 ${mobileView === 'preview' ? 'hidden lg:block' : ''}`}>
                 <EditorPanel />
             </div>
 
-            {/* Right Panel - Preview */}
-            <div className={`w-full lg:w-1/2 lg:sticky lg:top-0 lg:h-screen overflow-hidden ${mobileView === 'editor' ? 'hidden lg:block' : ''}`}>
+            {/* Right Panel - Preview (Sticky) */}
+            <div className={`w-full lg:w-[50%] xl:w-[45%] lg:h-screen sticky top-0 self-start lg:overflow-hidden min-w-0 ${mobileView === 'editor' ? 'hidden lg:block' : ''}`}>
                 <PreviewPanel />
             </div>
 

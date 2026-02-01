@@ -8,24 +8,22 @@ import { Type, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export const FONT_OPTIONS = [
-    { id: 'inter', name: 'Inter (Default)', family: 'Inter, sans-serif', premium: false },
-    { id: 'roboto', name: 'Roboto', family: 'Roboto, sans-serif', premium: false },
-    { id: 'open-sans', name: 'Open Sans', family: '"Open Sans", sans-serif', premium: false },
+    // Sans-Serif - Free
+    { id: 'roboto', name: 'Roboto (Default)', family: 'Roboto, sans-serif', premium: false },
+    { id: 'opensans', name: 'Open Sans', family: 'Open Sans, sans-serif', premium: false },
     { id: 'lato', name: 'Lato', family: 'Lato, sans-serif', premium: false },
-    { id: 'montserrat', name: 'Montserrat', family: 'Montserrat, sans-serif', premium: false },
-    { id: 'poppins', name: 'Poppins', family: 'Poppins, sans-serif', premium: true },
-    { id: 'source-sans', name: 'Source Sans', family: '"Source Sans 3", sans-serif', premium: false },
-    { id: 'lora', name: 'Lora (Serif)', family: 'Lora, serif', premium: true },
-    { id: 'playfair', name: 'Playfair Display', family: 'Playfair Display, serif', premium: true },
-    { id: 'oswald', name: 'Oswald', family: 'Oswald, sans-serif', premium: true },
-    { id: 'merriweather', name: 'Merriweather', family: 'Merriweather, serif', premium: true },
-    { id: 'jetbrains', name: 'JetBrains Mono', family: 'JetBrains Mono, monospace', premium: true },
+    { id: 'sourcesans', name: 'Source Sans 3', family: 'Source Sans 3, sans-serif', premium: false },
+
+    // Premium
+    { id: 'nunito', name: 'Nunito', family: 'Nunito, sans-serif', premium: true },
+    { id: 'merriweather', name: 'Merriweather (Serif)', family: 'Merriweather, serif', premium: true },
+    { id: 'librebaskerville', name: 'Libre Baskerville (Serif)', family: 'Libre Baskerville, serif', premium: true },
 ];
 
 export function FontSelector() {
     const { resumes, activeResumeId, setFontFamily, userTier } = useResumeStore();
     const activeResume = activeResumeId ? resumes[activeResumeId] : null;
-    const currentFont = activeResume?.fontFamily || 'inter';
+    const currentFont = activeResume?.fontFamily || 'roboto';
 
     const handleFontChange = (value: string) => {
         const font = FONT_OPTIONS.find(f => f.id === value);

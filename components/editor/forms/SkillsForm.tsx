@@ -77,6 +77,8 @@ function SortableSkillBadge({ skill, onRemove }: { skill: string, onRemove: (s: 
     );
 }
 
+import { SectionScaleControl } from "../SectionScaleControl";
+
 export function SkillsForm() {
     const { resumes, activeResumeId, setSkills } = useResumeStore();
     const activeResume = activeResumeId ? resumes[activeResumeId] : null;
@@ -160,6 +162,7 @@ export function SkillsForm() {
     return (
         <div className="space-y-4">
             <h3 className="text-lg font-medium">Skills</h3>
+            <SectionScaleControl sectionId="skills" />
 
             {/* Skill Input with Dropdown */}
             <div className="relative" ref={dropdownRef}>

@@ -59,7 +59,7 @@ export default function Home() {
           className="w-full flex flex-col items-center text-center gap-8"
         >
           <motion.div variants={itemVariants} className="inline-flex items-center rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">
-            <Sparkles className="mr-2 h-4 w-4 text-blue-500" />
+            <Sparkles className="mr-2 h-4 w-4 text-primary" />
             <span>v2.0 Now Live with Active Design</span>
           </motion.div>
 

@@ -51,7 +51,7 @@ export interface PersonalInfo {
     };
 }
 
-export type TemplateType = 'classic' | 'modern' | 'minimalist' | 'github' | 'creative' | 'corporate' | 'executive' | 'designer';
+export type TemplateType = 'classic' | 'modern' | 'minimalist' | 'creative' | 'corporate' | 'executive' | 'designer' | 'github';
 
 export interface CustomSectionItem {
     id: string;
@@ -75,7 +75,7 @@ export interface ResumeData {
     education: Education[];
     experience: Experience[];
     projects: Project[];
-    skills: string;
+    skills: string[];
     customSections: CustomSection[];
     sectionOrder: string[]; // Can include custom section IDs
     sectionTitles: Record<string, string>;
@@ -159,7 +159,7 @@ interface ResumeState {
     removeProject: (id: string) => void;
     updateProject: (id: string, proj: Partial<Project>) => void;
 
-    setSkills: (skills: string) => void;
+    setSkills: (skills: string | string[]) => void;
     setTemplate: (template: TemplateType) => void;
     setThemeColor: (color: string) => void;
     setAnalysisResult: (result: AnalysisResult | null) => void;
@@ -432,10 +432,14 @@ export const useResumeStore = create<ResumeState>()(
             setSkills: (skills) => set((state) => {
                 const resumeId = state.activeResumeId;
                 if (!resumeId) return {};
+                // Normalize skills to array if it's a string
+                const normalizedSkills = typeof skills === 'string'
+                    ? skills.split(',').map(s => s.trim()).filter(Boolean)
+                    : skills;
                 return {
                     resumes: {
                         ...state.resumes,
-                        [resumeId]: { ...state.resumes[resumeId], skills, lastModified: Date.now() }
+                        [resumeId]: { ...state.resumes[resumeId], skills: normalizedSkills, lastModified: Date.now() }
                     }
                 };
             }),
@@ -710,7 +714,7 @@ export const useResumeStore = create<ResumeState>()(
                     education: [],
                     experience: [],
                     projects: [],
-                    skills: "",
+                    skills: [],
                     customSections: [], // Initialize
                     sectionOrder: ['personal', 'education', 'experience', 'projects', 'skills'],
                     sectionTitles: {},
@@ -718,7 +722,7 @@ export const useResumeStore = create<ResumeState>()(
                     themeColor: '#3b82f6',
                     contentScale: 1,
                     isBrandingEnabled: true,
-                    fontFamily: 'inter',
+                    fontFamily: 'roboto',
                     sectionScales: {},
                 };
                 return {
@@ -822,7 +826,7 @@ export const useResumeStore = create<ResumeState>()(
                     education: [],
                     experience: [],
                     projects: [],
-                    skills: "",
+                    skills: [],
                     customSections: [], // Explicitly empty
                     sectionOrder: ['personal', 'education', 'experience', 'projects', 'skills'],
                     sectionTitles: {},
@@ -830,7 +834,7 @@ export const useResumeStore = create<ResumeState>()(
                     themeColor: source.themeColor, // Keep theme
                     contentScale: 1,
                     isBrandingEnabled: true,
-                    fontFamily: source.fontFamily || 'inter',
+                    fontFamily: source.fontFamily || 'roboto',
                     sectionScales: {},
                 };
 
@@ -1066,7 +1070,7 @@ export const useResumeStore = create<ResumeState>()(
                                     technologies: "Next.js, TypeScript, Tailwind CSS, Supabase, PostgreSQL, Gemini AI",
                                     link: "https://lonestar-resume.com"
                                 }],
-                                skills: "JavaScript, TypeScript, React, Next.js, Node.js, Express, PostgreSQL, MongoDB, AWS (Lambda, S3, DynamoDB), Docker, Git, CI/CD, REST APIs, GraphQL, Tailwind CSS",
+                                skills: ["JavaScript", "TypeScript", "React", "Next.js", "Node.js", "Express", "PostgreSQL", "MongoDB", "AWS (Lambda, S3, DynamoDB)", "Docker", "Git", "CI/CD", "REST APIs", "GraphQL", "Tailwind CSS"],
                                 customSections: [],
                                 sectionOrder: ['personal', 'education', 'experience', 'projects', 'skills'],
                                 sectionTitles: {},
@@ -1074,7 +1078,7 @@ export const useResumeStore = create<ResumeState>()(
                                 themeColor: get().resumes[id]?.themeColor || '#112e51',
                                 contentScale: 1,
                                 isBrandingEnabled: false,
-                                fontFamily: 'inter'
+                                fontFamily: 'roboto'
                             }
                         },
                         activeResumeId: id

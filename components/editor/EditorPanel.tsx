@@ -23,7 +23,7 @@ import { SkillsForm } from "./forms/SkillsForm";
 import { ColorPicker } from "./ColorPicker";
 import { ResumeScore } from "./ResumeScore";
 import { TemplateSelector } from "./TemplateSelector";
-import { FontSelector } from "./FontSelector";
+
 
 import { useResumeStore } from "@/store/useResumeStore";
 import { useAuth } from "@/lib/auth-context";
@@ -42,7 +42,7 @@ import {
     arrayMove,
     SortableContext,
     sortableKeyboardCoordinates,
-    horizontalListSortingStrategy,
+    rectSortingStrategy,
     useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -235,8 +235,8 @@ export function EditorPanel() {
     if (!isMounted) return null;
 
     return (
-        <div className="h-full flex flex-col bg-background border-r">
-            <div className="py-4 px-4 sm:px-6 lg:px-8 border-b flex justify-between items-center gap-4">
+        <div className="flex flex-col bg-background border-r min-h-full">
+            <div className="py-4 px-8 border-b flex justify-between items-center gap-4">
                 {activeResume ? (
                     <div className="flex-1 mr-4">
                         <Input
@@ -285,12 +285,11 @@ export function EditorPanel() {
                     )}
                 </div>
             </div>
-            <ScrollArea className="flex-1 min-h-0">
-                <div className="py-4 px-4 sm:px-6 lg:px-8">
+            <div className="flex-1">
+                <div className="py-6 px-3 overflow-x-hidden max-w-full">
                     <ResumeScore />
-                    <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="mb-6">
                         <ColorPicker />
-                        <FontSelector />
                     </div>
                     <TemplateSelector />
 
@@ -300,16 +299,16 @@ export function EditorPanel() {
                             collisionDetection={closestCenter}
                             onDragEnd={handleDragEnd}
                         >
-                            <TabsList className="flex overflow-x-auto h-auto gap-2 mb-4 bg-muted/50 p-2 w-full snap-x snap-mandatory scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+                            <TabsList className="flex flex-wrap h-auto gap-2 mb-4 bg-muted/50 p-2 w-full justify-start">
                                 <SortableContext
                                     items={sectionOrder}
-                                    strategy={horizontalListSortingStrategy}
+                                    strategy={rectSortingStrategy}
                                 >
                                     {sectionOrder.map((sectionId) => {
                                         // Allow deleting everything except Personal Info
                                         const canDelete = sectionId !== 'personal';
                                         return (
-                                            <div key={sectionId} className="snap-center flex-shrink-0 min-w-[120px]">
+                                            <div key={sectionId} className="min-w-[120px]">
                                                 <SortableTabTrigger
                                                     id={sectionId}
                                                     value={sectionId}
@@ -378,7 +377,7 @@ export function EditorPanel() {
                         ))}
                     </Tabs>
                 </div>
-            </ScrollArea>
+            </div>
         </div>
     );
 }

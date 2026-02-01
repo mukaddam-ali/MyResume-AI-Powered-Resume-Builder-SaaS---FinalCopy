@@ -43,7 +43,7 @@ export function ResumeScore() {
         if (personalInfo?.email?.trim()) score += 10;
         if (isVisible('experience') && experience && experience.length > 0) score += 30;
         if (isVisible('education') && education && education.length > 0) score += 20;
-        if (isVisible('skills') && skills && skills.trim().length > 0) score += 20;
+        if (isVisible('skills') && skills && Array.isArray(skills) && skills.length > 0) score += 20;
         if (personalInfo?.summary?.trim()) score += 10;
 
         return Math.min(score, 100);
@@ -89,8 +89,8 @@ export function ResumeScore() {
             },
             {
                 label: 'Skills',
-                score: isVisible('skills') && skills && skills.trim().length > 0 ? 100 : 0,
-                completed: isVisible('skills') && !!(skills && skills.trim().length > 0)
+                score: isVisible('skills') && skills && Array.isArray(skills) && skills.length > 0 ? 100 : 0,
+                completed: isVisible('skills') && !!(skills && Array.isArray(skills) && skills.length > 0)
             }
         ];
 
@@ -138,7 +138,13 @@ export function ResumeScore() {
                 setAnalysisCache(cacheKey, data);
                 setAnalysisResult(data);
             } catch (error) {
-                console.error(error);
+                console.error("ATS Scan Error:", error);
+                // Fallback to free analysis on error (e.g., quota exceeded)
+                const freeAnalysis = generateFreeAnalysis();
+                if (freeAnalysis) {
+                    setAnalysisResult(freeAnalysis);
+                    alert("AI Service Unavailable. Showing Basic Scan instead.");
+                }
             } finally {
                 setLoading(false);
             }
@@ -174,11 +180,11 @@ export function ResumeScore() {
                     {/* Universal ATS Analysis Button */}
                     <button
                         onClick={handleAnalyze}
-                        disabled={loading}
-                        className="w-full py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md font-medium text-sm transition-all shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        disabled={true} // Temporarily disabled for all users
+                        className="w-full py-2.5 bg-primary/50 text-primary-foreground rounded-md font-medium text-sm transition-all shadow-md cursor-not-allowed flex items-center justify-center gap-2 opacity-70"
                     >
                         <Sparkles className="h-4 w-4" />
-                        {loading ? 'Scanning...' : (isPremium ? 'Run Deep ATS Scan' : 'Run ATS Scan')}
+                        Coming Soon
                     </button>
 
                     {/* Premium feature upsell for free users */}

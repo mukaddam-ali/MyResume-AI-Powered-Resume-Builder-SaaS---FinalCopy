@@ -3,8 +3,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Loader2 } from "lucide-react";
-import { pdf } from "@react-pdf/renderer";
-import { ResumeDocument } from "./ResumeDocument";
 import { ResumeData } from "@/store/useResumeStore";
 
 interface DownloadResumeButtonProps {
@@ -26,39 +24,31 @@ export const DownloadResumeButton = ({
 
     const handleDownload = async () => {
         try {
-            // Validate height (Strict Single Page Check)
-            const previewContainer = document.getElementById('resume-preview');
-            // The LiveResume component is the first child.
-            // We measure the scrollHeight of the content.
-            // A4 height at 96 DPI is approx 1123px. 
-            // We allow a small buffer (e.g. 1130px) for sub-pixel rendering.
-            if (previewContainer && previewContainer.firstElementChild) {
-                const contentHeight = (previewContainer.firstElementChild as HTMLElement).scrollHeight;
-                // Note: LiveResume typically applies a transform scale. 
-                // offsetHeight/scrollHeight usually report the layout height (unscaled) if transform is on the element itself.
-                // If the check fails, we assume overflow.
-                if (contentHeight > 1135) {
-                    alert("Resume exceeds one page. Please reduce content to fit on a single A4 page.");
-                    return;
-                }
-            }
-
             setIsGenerating(true);
 
-            // Generate PDF blob directly
-            const blob = await pdf(<ResumeDocument data={data} userTier="pro" />).toBlob();
+            // Dynamic import to avoid SSR issues
+            const { pdf } = await import('@react-pdf/renderer');
+            const { ResumeDocument } = await import('./ResumeDocument');
+            const { normalizeResumeData } = await import('@/lib/normalizeResume');
 
-            // Create object URL and download link
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
+            // Normalize data
+            const normalizedData = normalizeResumeData(data);
+
+            // Generate Blob client-side
+            const blob = await pdf(<ResumeDocument data={normalizedData} userTier="pro" />).toBlob();
+
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
 
             // Cleanup
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
         } catch (error) {
             console.error("Error generating PDF:", error);
             alert("Failed to generate PDF. Please try again.");
