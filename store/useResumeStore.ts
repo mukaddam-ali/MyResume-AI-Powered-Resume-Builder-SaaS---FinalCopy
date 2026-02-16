@@ -29,6 +29,14 @@ export interface Project {
     linkText?: string; // Custom text to display for the link (e.g., "View Project", "GitHub")
 }
 
+export interface SocialMedia {
+    id: string;
+    platform: string;
+    url: string;
+    username: string;
+    enabled: boolean;
+}
+
 export interface PersonalInfo {
     fullName: string;
     jobTitle: string;
@@ -49,6 +57,7 @@ export interface PersonalInfo {
         borderColor?: string;
         borderRadius?: number; // %
     };
+    socialMedia?: SocialMedia[];
 }
 
 export type TemplateType = 'classic' | 'modern' | 'minimalist' | 'creative' | 'corporate' | 'executive' | 'designer' | 'github';
@@ -1130,7 +1139,7 @@ export const useResumeStore = create<ResumeState>()(
                                 technologies: "Next.js, TypeScript, Tailwind CSS, Supabase, PostgreSQL, Gemini AI",
                                 link: "https://lonestar-resume.com"
                             }],
-                            skills: "JavaScript, TypeScript, React, Next.js, Node.js, Express, PostgreSQL, MongoDB, AWS (Lambda, S3, DynamoDB), Docker, Git, CI/CD, REST APIs, GraphQL, Tailwind CSS",
+                            skills: ["JavaScript", "TypeScript", "React", "Next.js", "Node.js", "Express", "PostgreSQL", "MongoDB", "AWS (Lambda, S3, DynamoDB)", "Docker", "Git", "CI/CD", "REST APIs", "GraphQL", "Tailwind CSS"],
                             customSections: (state.resumes[activeId].customSections || []),
                             sectionOrder: ['personal', 'education', 'experience', 'projects', 'skills'],
                             sectionTitles: {},

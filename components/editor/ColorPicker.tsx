@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Check, Lock, ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import UpgradeButton from '@/components/payment/UpgradeButton';
 
 
 const PRESET_COLORS = [
@@ -31,7 +32,7 @@ export function ColorPicker() {
     if (isHidden) return null;
 
     return (
-        <div className="mb-6 bg-white dark:bg-black rounded-lg shadow-sm border p-4 flex flex-col justify-between h-full">
+        <div className="bg-white dark:bg-black rounded-lg shadow-sm border p-4 flex flex-col justify-between h-full">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <div className="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-md text-purple-600 dark:text-purple-400">
@@ -90,7 +91,9 @@ export function ColorPicker() {
                                     <p className="text-xs text-muted-foreground">
                                         Upgrade to Pro to check unlimited custom hex colors.
                                     </p>
-                                    <Button size="sm" variant="secondary" className="w-full h-7 text-xs">Unlock Colors</Button>
+                                    <UpgradeButton size="sm" variant="default" fullWidth>
+                                        Unlock Colors
+                                    </UpgradeButton>
                                 </div>
                             ) : (
                                 <div className="flex gap-2">

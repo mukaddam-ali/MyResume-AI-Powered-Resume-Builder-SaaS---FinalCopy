@@ -23,6 +23,10 @@ interface ClientPDFPreviewProps {
     className?: string;
 }
 
+import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue';
+
+// ... (imports)
+
 export default function ClientPDFPreview({ data, className }: ClientPDFPreviewProps) {
     const [isMounted, setIsMounted] = React.useState(false);
     const [fontsReady, setFontsReady] = React.useState(false);
@@ -47,6 +51,10 @@ export default function ClientPDFPreview({ data, className }: ClientPDFPreviewPr
     // Normalize data client-side (same logic as server)
     const normalizedData = React.useMemo(() => normalizeResumeData(data), [data]);
 
+    // Debounce the data to prevent excessive remounts/PDF generation
+    // 600ms delay to ensure user stopped typing
+    const debouncedData = useDebouncedValue(normalizedData, 600);
+
     // Don't render anything during SSR or before fonts are ready
     if (!isMounted || !fontsReady || typeof window === 'undefined') {
         return (
@@ -61,7 +69,9 @@ export default function ClientPDFPreview({ data, className }: ClientPDFPreviewPr
     return (
         <div className={className}>
             <PDFContent
-                data={normalizedData}
+                // Remount completely when data changes to avoid standard "updateInstance" bugs in react-pdf
+                key={debouncedData.lastModified}
+                data={debouncedData}
                 className="w-full h-full border-0"
             />
         </div>

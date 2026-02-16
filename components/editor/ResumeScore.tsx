@@ -4,8 +4,9 @@ import React, { useMemo } from 'react';
 import { useResumeStore } from '@/store/useResumeStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/lib/auth-context';
-import { Lock, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { Lock, Sparkles, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import { ATSResults } from './ATSResults';
+import UpgradeButton from '@/components/payment/UpgradeButton';
 
 // Simple hash function for caching
 function simpleHash(str: string): string {
@@ -101,13 +102,13 @@ export function ResumeScore() {
         };
     };
 
+    const [error, setError] = React.useState<string | null>(null);
+
     const handleAnalyze = async () => {
         if (!activeResume) return;
 
-        // NOTE: We do NOT clear the previous result here (setAnalysisResult(null))
-        // This ensures the old result stays visible while the new one loads if we wanted (or just until complete)
-        // Currently we show a loading spinner which replaces content, but persistence is key for edits.
         setLoading(true);
+        setError(null);
         setIsExpanded(true);
 
         if (isPremium) {
@@ -132,18 +133,43 @@ export function ResumeScore() {
                     })
                 });
                 const data = await response.json();
-                if (data.error) throw new Error(data.error);
+
+                // Enhanced error handling with debug information
+                if (data.error) {
+                    console.error("API Error Details:", data);
+
+                    // Construct detailed error message
+                    let errorMsg = data.error;
+                    if (data.solution) {
+                        errorMsg += ` - ${data.solution}`;
+                    }
+                    if (data.details) {
+                        console.warn("Error Details:", data.details);
+                    }
+
+                    throw new Error(errorMsg);
+                }
 
                 // Cache the result
                 setAnalysisCache(cacheKey, data);
                 setAnalysisResult(data);
-            } catch (error) {
+            } catch (error: any) {
                 console.error("ATS Scan Error:", error);
-                // Fallback to free analysis on error (e.g., quota exceeded)
+                const errorMessage = error.message || "AI Service Unavailable";
+
+                // Set specific user-friendly messages for common errors
+                if (errorMessage.includes("Invalid API Key")) {
+                    setError("API Configuration Issue. Try restarting the dev server and clearing browser cache (Ctrl+Shift+R).");
+                } else if (errorMessage.includes("Quota exceeded") || errorMessage.includes("429")) {
+                    setError("AI Usage Limit Reached. Please wait a moment and try again.");
+                } else {
+                    setError("AI Service Unavailable. Showing Basic Scan instead.");
+                }
+
+                // Fallback to free analysis on error
                 const freeAnalysis = generateFreeAnalysis();
                 if (freeAnalysis) {
                     setAnalysisResult(freeAnalysis);
-                    alert("AI Service Unavailable. Showing Basic Scan instead.");
                 }
             } finally {
                 setLoading(false);
@@ -180,22 +206,35 @@ export function ResumeScore() {
                     {/* Universal ATS Analysis Button */}
                     <button
                         onClick={handleAnalyze}
-                        disabled={true} // Temporarily disabled for all users
-                        className="w-full py-2.5 bg-primary/50 text-primary-foreground rounded-md font-medium text-sm transition-all shadow-md cursor-not-allowed flex items-center justify-center gap-2 opacity-70"
+                        disabled={loading}
+                        className="w-full py-2.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-md font-medium text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-wait"
                     >
-                        <Sparkles className="h-4 w-4" />
-                        Coming Soon
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                        {loading ? "Analyzing..." : "Run ATS Scan"}
                     </button>
 
                     {/* Premium feature upsell for free users */}
                     {!isPremium && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 p-2 rounded border">
-                            <Lock className="h-3 w-3 text-purple-600" />
-                            <span>Detailed AI feedback is available in <strong>Premium</strong></span>
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 p-2 rounded border">
+                                <Lock className="h-3 w-3 text-purple-600" />
+                                <span>Detailed AI feedback is available in <strong>Premium</strong></span>
+                            </div>
+                            <UpgradeButton size="sm" fullWidth />
                         </div>
                     )}
                 </CardContent>
             </Card>
+
+            {/* Error Display */}
+            {error && (
+                <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-sm p-3 rounded-md border border-red-200 dark:border-red-800">
+                    <p className="font-medium flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                        {error}
+                    </p>
+                </div>
+            )}
 
             {/* Results display */}
             {(analysisData || loading) && (

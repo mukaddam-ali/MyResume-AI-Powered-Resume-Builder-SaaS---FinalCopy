@@ -52,7 +52,14 @@ export function normalizeResumeData(data: any): any {
                 borderWidth: 0,
                 borderColor: '#ffffff',
                 borderRadius: 0
-            }
+            },
+            socialMedia: Array.isArray(data?.personalInfo?.socialMedia) ? data.personalInfo.socialMedia.map((s: any) => ({
+                id: s?.id || crypto.randomUUID(),
+                platform: s?.platform || 'website',
+                url: s?.url || '',
+                username: s?.username || '',
+                enabled: s?.enabled !== false
+            })) : []
         },
         sectionScales: data?.sectionScales || {},
         sectionTitles: data?.sectionTitles || {},

@@ -216,7 +216,7 @@ export default function ScriptPDFViewer({ data, className }: ScriptPDFViewerProp
                 </div>
             )}
 
-            <div ref={containerRef} className="flex-1 overflow-y-auto p-8 flex flex-col items-center scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-slate-700">
+            <div ref={containerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-8 flex flex-col items-center scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-slate-700">
                 {/* Canvases injected here */}
             </div>
         </div>

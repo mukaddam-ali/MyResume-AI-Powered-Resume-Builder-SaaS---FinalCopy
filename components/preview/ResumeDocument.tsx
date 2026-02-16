@@ -1,9 +1,11 @@
 /* eslint-disable jsx-a11y/alt-text */
 "use client";
 import React from 'react';
-import { Page, Text, View, Document, StyleSheet, Link, Font, Image } from '@react-pdf/renderer';
+import { Page, Text, View, Document, StyleSheet, Link, Font, Image, Svg, Path } from '@react-pdf/renderer';
 import { ResumeData } from '@/store/useResumeStore';
 import { PdfFormattedText } from '@/components/preview/PdfFormattedText';
+import { SOCIAL_ICONS } from './social-icons';
+import { adjustColor, getContrastingColor } from '@/lib/colors';
 
 // Note: Custom fonts disabled due to fontkit compatibility issues with Google Fonts variable fonts
 // PDF will use built-in Helvetica font instead. Live preview still uses custom Google Fonts.
@@ -17,24 +19,28 @@ import { PdfFormattedText } from '@/components/preview/PdfFormattedText';
 // Font family mapping - maps user selection to registered PDF fonts
 // IMPORTANT: Corrupted fonts (~1.6KB) are mapped to working fallbacks to prevent crashes
 const PDF_FONT_MAP: Record<string, string> = {
-    // Force ALL fonts to Roboto
+    // Professional Fonts
+    'inter': 'Inter',
+    'playfair': 'Playfair Display',
+    'space-grotesk': 'Space Grotesk',
+    'crimson-pro': 'Crimson Pro',
+    'dm-sans': 'DM Sans',
+    'libre-baskerville': 'Libre Baskerville',
+    'manrope': 'Manrope',
+    'lora': 'Lora',
+    'montserrat': 'Montserrat',
+    'raleway': 'Raleway',
+    'merriweather': 'Merriweather',
+    'oswald': 'Oswald',
+    'pt-serif': 'PT Serif',
+
+    // Classic / Fallback
     'roboto': 'Roboto',
-    'open-sans': 'Roboto',
-    'opensans': 'Roboto',
-    'lato': 'Roboto',
-    'nunito': 'Roboto',
-    'merriweather': 'Roboto',
-    'lora': 'Roboto',
-    'playfair': 'Roboto',
-    'librebaskerville': 'Roboto',
-    'inter': 'Roboto',
-    'montserrat': 'Roboto',
-    'poppins': 'Roboto',
-    'source-sans': 'Roboto',
-    'sourcesans': 'Roboto',
-    'oswald': 'Roboto',
-    'jetbrains': 'Roboto',
-    'courier': 'Roboto',
+    'open-sans': 'Roboto', // Fallback
+    'opensans': 'Roboto', // Fallback
+    'lato': 'Roboto', // Fallback
+    'sourcesans': 'Inter', // Sans Fallback
+    'source-sans': 'Inter', // Sans Fallback
 };
 
 
@@ -109,6 +115,31 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
             return newObj;
         };
         return StyleSheet.create(mapStyles(styles));
+    };
+
+    // Helper to render social media icons
+    const renderSocialMedia = (styles: any) => {
+        if (!personalInfo.socialMedia || personalInfo.socialMedia.length === 0) return null;
+
+        return (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+                {personalInfo.socialMedia.filter(s => s.enabled).map((social) => {
+                    const iconPath = SOCIAL_ICONS[social.platform];
+                    if (!iconPath) return null;
+
+                    return (
+                        <View key={social.id} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8 }}>
+                            <Svg viewBox="0 0 24 24" style={{ width: 10, height: 10, marginRight: 2 }}>
+                                <Path d={iconPath} fill={styles.contact?.color || '#555'} />
+                            </Svg>
+                            <Text style={{ fontSize: 9, color: styles.contact?.color || '#555' }}>
+                                {social.username || social.url}
+                            </Text>
+                        </View>
+                    );
+                })}
+            </View>
+        );
     };
 
     const getStyles = (s = 1) => createScaledStyles({
@@ -324,6 +355,17 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
         mainItemDate: { fontSize: 9, color: '#666' },
         mainItemCity: { fontSize: 9, color: '#6b7280', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4 },
         mainItemDesc: { fontSize: 9, lineHeight: 1.4 },
+
+        // Education Items (Scaled)
+        eduSchool: { fontWeight: 'bold', fontSize: 10 },
+        eduDegree: { fontSize: 9 },
+        eduDate: { fontSize: 9, color: '#666' },
+
+        // Experience Items (Scaled)
+        expCompany: { fontWeight: 'bold', fontSize: 11 },
+        expDate: { fontSize: 10, color: '#666' },
+        expRole: { fontSize: 10, color: '#6b7280', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4 },
+
         headerBlock: { marginBottom: 24 },
         skillText: {
             fontSize: 9,
@@ -419,8 +461,15 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
     }, s);
     const minimalistStyles = getMinimalistStyles(1);
 
-    // Creative Template Styles
-    // Creative Template Styles
+    // Calculate dynamic sidebar line color based on contrast
+    const brightness = getContrastingColor(accentColor);
+    // If background is dark (brightness=white text), lines should be lighter (adjustColor +40)
+    // If background is light (brightness=black text), lines should be darker (adjustColor -40)
+    // We adjust specifically to ensure visibility "like grey on black" 
+    const sidebarLineColor = brightness === 'white'
+        ? adjustColor(accentColor, 70) // Much lighter version of dark bg (e.g. Grey on Black)
+        : adjustColor(accentColor, -40); // Much darker version of light bg
+
     const getCreativeStyles = (s = 1) => createScaledStyles({
         page: {
             flexDirection: 'column',
@@ -464,7 +513,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
             fontSize: 8.5, // Reduced from 9
             fontWeight: 'bold',
             borderBottomWidth: 1,
-            borderBottomColor: 'rgba(255,255,255,0.2)',
+            borderBottomColor: sidebarLineColor, // Dynamic color
             paddingBottom: 6,
             marginBottom: 12,
             marginTop: 24,
@@ -537,6 +586,11 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
         skillText: {
             fontSize: 9,
         },
+        // Education Items (Scaled)
+        eduSchool: { fontWeight: 'bold', fontSize: 10 },
+        eduDegree: { fontSize: 9 },
+        eduDate: { fontSize: 9, opacity: 0.8 },
+
     }, s);
     const creativeStyles = getCreativeStyles(1);
 
@@ -1090,8 +1144,8 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             {experience.map((exp: any) => (
                                 <View key={exp.id} style={githubStyles.repoBox}>
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                        <Text style={{ color: '#58a6ff', fontWeight: 'bold' }}>{exp.role}</Text>
-                                        <Text style={{ color: '#8b949e' }}>{exp.startDate} - {exp.endDate}</Text>
+                                        <Text style={githubStyles.itemName}>{exp.role}</Text>
+                                        <Text style={githubStyles.itemDate}>{exp.startDate} - {exp.endDate}</Text>
                                     </View>
                                     <Text style={{ color: '#c9d1d9', marginTop: 2 }}>@ {exp.company}</Text>
                                     <PdfFormattedText text={`/* ${exp.description} */`} style={githubStyles.description} />
@@ -1174,7 +1228,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                                 "role": "{personalInfo.jobTitle}",{"\n"}
                                 "email": "{personalInfo.email}",{"\n"}
                                 "location": "{personalInfo.location}",{"\n"}
-                                "github": "{personalInfo.github}"
+                                {personalInfo.socialMedia?.filter(s => s.enabled).map(s => `"${s.platform.toLowerCase()}": "${s.username || s.url}"`).join(',\n') || `"github": "${personalInfo.github}"`}
                             </Text>
                         </View>
 
@@ -1296,6 +1350,10 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             <Text style={minimalistStyles.contact}>
                                 {[personalInfo.website, personalInfo.linkedin, personalInfo.github].filter(Boolean).map(s => s?.replace(/^https?:\/\/(www\.)?/, '')).join(' • ')}
                             </Text>
+                            {/* Social Media */}
+                            <View style={{ alignItems: 'center', marginTop: 4 }}>
+                                {renderSocialMedia({ contact: { color: accentColor } })}
+                            </View>
                         </View>
 
                         <View style={{ flexDirection: 'row' }}>
@@ -1370,9 +1428,9 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             <Text style={modernStyles.sidebarTitle}>{sectionTitles.education || "Education"}</Text>
                             {education.map((edu: any) => (
                                 <View key={edu.id} style={{ marginBottom: 8 }}>
-                                    <Text style={{ fontWeight: 'bold', fontSize: 10 }}>{edu.school}</Text>
-                                    <Text style={{ fontSize: 9 }}>{edu.degree}</Text>
-                                    <Text style={{ fontSize: 9, color: '#666' }}>{edu.startDate} - {edu.endDate}</Text>
+                                    <Text style={modernStyles.eduSchool}>{edu.school}</Text>
+                                    <Text style={modernStyles.eduDegree}>{edu.degree}</Text>
+                                    <Text style={modernStyles.eduDate}>{edu.startDate} - {edu.endDate}</Text>
                                 </View>
                             ))}
                         </View>
@@ -1398,16 +1456,10 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                                 <View key={exp.id} style={modernStyles.contentWithBullet}>
                                     <View style={modernStyles.bullet} />
                                     <View style={modernStyles.row}>
-                                        <Text style={{ fontWeight: 'bold', fontSize: 11 }}>{exp.company}</Text>
-                                        <Text style={{ fontSize: 10, color: '#666' }}>{exp.startDate} - {exp.endDate}</Text>
+                                        <Text style={modernStyles.expCompany}>{exp.company}</Text>
+                                        <Text style={modernStyles.expDate}>{exp.startDate} - {exp.endDate}</Text>
                                     </View>
-                                    <Text style={{
-                                        fontSize: 10,
-                                        color: '#6b7280', // gray-500
-                                        fontWeight: 'bold',
-                                        textTransform: 'uppercase',
-                                        marginBottom: 4
-                                    }}>{exp.role}</Text>
+                                    <Text style={modernStyles.expRole}>{exp.role}</Text>
                                     <PdfFormattedText text={exp.description} style={{ fontSize: 10, lineHeight: 1.4 }} />
                                 </View>
                             ))}
@@ -1457,6 +1509,8 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                                 {personalInfo.linkedin && <Text style={personalStyles.sidebarText}>{personalInfo.linkedin.replace(/^https?:\/\/(www\.)?/, '')}</Text>}
                                 {personalInfo.website && <Text style={personalStyles.sidebarText}>{personalInfo.website.replace(/^https?:\/\/(www\.)?/, '')}</Text>}
                                 {personalInfo.github && <Text style={personalStyles.sidebarText}>{personalInfo.github.replace(/^https?:\/\/(www\.)?/, '')}</Text>}
+                                {/* Social Media */}
+                                {renderSocialMedia({ contact: { color: '#FFFFFF' } })}
                             </View>
                             {sidebarSections.map(id => renderModernSection(id, true))}
                         </View>
@@ -1516,9 +1570,9 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             <Text style={creativeStyles.sidebarTitle}>{sectionTitles.education || "Education"}</Text>
                             {education.map((edu: any) => (
                                 <View key={edu.id} style={{ marginBottom: 10 }}>
-                                    <Text style={{ fontWeight: 'bold', fontSize: 10 }}>{edu.school}</Text>
-                                    <Text style={{ fontSize: 9 }}>{edu.degree}</Text>
-                                    <Text style={{ fontSize: 9, opacity: 0.8 }}>{edu.startDate} - {edu.endDate}</Text>
+                                    <Text style={creativeStyles.eduSchool}>{edu.school}</Text>
+                                    <Text style={creativeStyles.eduDegree}>{edu.degree}</Text>
+                                    <Text style={creativeStyles.eduDate}>{edu.startDate} - {edu.endDate}</Text>
                                 </View>
                             ))}
                         </View>
@@ -1601,6 +1655,8 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                                         {personalInfo.website && <Text style={personalStyles.sidebarText}>{personalInfo.website}</Text>}
                                         {personalInfo.linkedin && <Text style={personalStyles.sidebarText}>{personalInfo.linkedin.replace(/^https?:\/\/(www\.)?/, '')}</Text>}
                                         {personalInfo.github && <Text style={personalStyles.sidebarText}>{personalInfo.github.replace(/^https?:\/\/(www\.)?/, '')}</Text>}
+                                        {/* Social Media */}
+                                        {renderSocialMedia({ contact: { color: '#FFFFFF' } })}
                                     </View>
                                 </View>
                             )}
@@ -1762,6 +1818,10 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                                         {personalInfo.website && <Text style={[corporateStyles.sidebarText, { marginBottom: 6 }]}>{personalInfo.website.replace(/^https?:\/\/(www\.)?/, '')}</Text>}
                                         {personalInfo.linkedin && <Text style={[corporateStyles.sidebarText, { marginBottom: 6 }]}>{personalInfo.linkedin.replace(/^https?:\/\/(www\.)?/, '')}</Text>}
                                         {personalInfo.github && <Text style={corporateStyles.sidebarText}>{personalInfo.github.replace(/^https?:\/\/(www\.)?/, '')}</Text>}
+                                        {/* Social Media */}
+                                        <View style={{ marginTop: 6 }}>
+                                            {renderSocialMedia({ contact: { color: '#FFFFFF' } })}
+                                        </View>
                                     </View>
                                 </View>
                             )}
@@ -1952,6 +2012,10 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                                             {personalInfo.linkedin && <Text style={{ fontSize: 9 * (sectionScales?.personal || 1) }}>LI: {personalInfo.linkedin.replace(/^https?:\/\/(www\.)?/, '')}</Text>}
                                             {personalInfo.github && <Text style={{ fontSize: 9 * (sectionScales?.personal || 1) }}>GH: {personalInfo.github.replace(/^https?:\/\/(www\.)?/, '')}</Text>}
                                         </View>
+                                        {/* Social Media */}
+                                        <View style={{ alignItems: 'center', marginTop: 4 }}>
+                                            {renderSocialMedia({ contact: { color: '#FFFFFF' } })}
+                                        </View>
                                     </View>
                                 )}
                             </View>
@@ -2094,6 +2158,10 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                                         .filter(Boolean).map((item, i) => (
                                             <Text key={i} style={{ fontSize: 9, color: 'rgba(255,255,255,0.8)' }}>{item}</Text>
                                         ))}
+                                </View>
+                                {/* Social Media */}
+                                <View style={{ alignItems: 'center', marginTop: 4 }}>
+                                    {renderSocialMedia({ contact: { color: '#FFFFFF' } })}
                                 </View>
                             </View>
 
@@ -2238,6 +2306,10 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                                 personalInfo.github
                             ].filter(Boolean).join(' | ')}
                         </Text>
+                        {/* Social Media */}
+                        <View style={{ alignItems: 'center', marginTop: 4 }}>
+                            {renderSocialMedia({ contact: { color: accentColor } })}
+                        </View>
                     </View>
 
                     {personalInfo.summary && (

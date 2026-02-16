@@ -7,7 +7,7 @@ import { UserMenu } from "@/components/auth/UserMenu";
 import { Button } from "@/components/ui/button";
 import { useResumeStore } from "@/store/useResumeStore";
 import { Shield, ShieldAlert } from "lucide-react";
-import PaymentModal from "../payment/PaymentModal";
+import UpgradeButton from "@/components/payment/UpgradeButton";
 
 
 export function Navbar() {
@@ -21,7 +21,7 @@ export function Navbar() {
                     </span>
                 </Link>
                 <div className="flex flex-1 items-center justify-end space-x-2">
-                    <PaymentModal />
+                    <UpgradeButton size="sm" />
                     <DebugTierToggle />
                     <nav className="flex items-center space-x-4">
                         <ModeToggle />
@@ -53,7 +53,7 @@ function DebugTierToggle() {
             title="Debug: Toggle User Tier"
         >
             {userTier === 'pro' ? <Shield className="w-3 h-3" /> : <ShieldAlert className="w-3 h-3" />}
-            <span className="hidden xs:inline sm:hidden md:inline">
+            <span className="hidden xs:inline sm:hidden">
                 {userTier === 'pro' ? "PRO" : "FREE"}
             </span>
             <span className="hidden sm:inline md:hidden">

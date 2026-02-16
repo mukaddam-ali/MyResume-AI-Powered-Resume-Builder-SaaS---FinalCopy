@@ -12,14 +12,12 @@ interface PDFContentProps {
 }
 
 export default function PDFContent({ data, className }: PDFContentProps) {
-    const [instance, updateInstance] = usePDF({
+    const [instance] = usePDF({
         document: <ResumeDocument data={data} userTier="pro" />
     });
 
-    // Update instance when data changes
-    React.useEffect(() => {
-        updateInstance(<ResumeDocument data={data} userTier="pro" />);
-    }, [data, updateInstance]);
+    // Removed updateInstance useEffect to prevent "Eo is not a function" error.
+    // Parent component (ClientPDFPreview) now handles remounting on data change.
 
     if (instance.loading) {
         return (

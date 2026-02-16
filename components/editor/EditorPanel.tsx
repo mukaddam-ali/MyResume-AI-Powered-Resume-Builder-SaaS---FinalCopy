@@ -21,6 +21,7 @@ import { ProjectsForm } from "./forms/ProjectsForm";
 import { SkillsForm } from "./forms/SkillsForm";
 
 import { ColorPicker } from "./ColorPicker";
+import { FontSelector } from "./FontSelector";
 import { ResumeScore } from "./ResumeScore";
 import { TemplateSelector } from "./TemplateSelector";
 
@@ -288,8 +289,9 @@ export function EditorPanel() {
             <div className="flex-1">
                 <div className="py-6 px-3 overflow-x-hidden max-w-full">
                     <ResumeScore />
-                    <div className="mb-6">
+                    <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <ColorPicker />
+                        <FontSelector />
                     </div>
                     <TemplateSelector />
 

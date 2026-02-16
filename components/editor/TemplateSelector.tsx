@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useResumeStore } from "@/store/useResumeStore";
 import {
     Select,
@@ -12,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Layout, FileText, Code, PenTool, Palette, Sparkles, Crown, Trash2, Shield } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import UpgradeButton from "@/components/payment/UpgradeButton";
 
 import { cn } from "@/lib/utils";
 
@@ -21,6 +24,8 @@ export function TemplateSelector() {
     const activeResume = activeResumeId ? resumes[activeResumeId] : null;
     const selectedTemplate = activeResume?.selectedTemplate || 'classic';
     const isBrandingEnabled = activeResume?.isBrandingEnabled ?? true;
+    const [showTemplateUpgrade, setShowTemplateUpgrade] = React.useState(false);
+    const [showBrandingUpgrade, setShowBrandingUpgrade] = React.useState(false);
 
     const templates = [
         { id: 'classic', name: 'Classic', icon: FileText, premium: false, comingSoon: false },
@@ -40,7 +45,7 @@ export function TemplateSelector() {
         if (template?.comingSoon) return; // Prevent selection of coming soon templates
 
         if (template?.premium && userTier === 'free') {
-            alert("This is a Premium Template. Upgrade to Pro to use it.");
+            setShowTemplateUpgrade(true);
             return;
         }
         setTemplate(value as any);
@@ -95,7 +100,7 @@ export function TemplateSelector() {
                     checked={!isBrandingEnabled}
                     onCheckedChange={(checked) => {
                         if (userTier === 'free' && checked) {
-                            alert("Removing branding is a Pro feature. Upgrade to unlock!");
+                            setShowBrandingUpgrade(true);
                             return;
                         }
                         setBrandingEnabled(!checked);
@@ -136,6 +141,42 @@ export function TemplateSelector() {
                     Auto-Fill
                 </Button>
             </div>
+
+            {/* Template Upgrade Dialog */}
+            <Dialog open={showTemplateUpgrade} onOpenChange={setShowTemplateUpgrade}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Crown className="h-5 w-5 text-yellow-500" />
+                            Premium Template
+                        </DialogTitle>
+                        <DialogDescription>
+                            This is a premium template. Upgrade to Pro to unlock all premium templates and features.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex flex-col gap-3 pt-4">
+                        <UpgradeButton fullWidth />
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Branding Removal Upgrade Dialog */}
+            <Dialog open={showBrandingUpgrade} onOpenChange={setShowBrandingUpgrade}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Shield className="h-5 w-5 text-yellow-500" />
+                            Remove Branding - Pro Feature
+                        </DialogTitle>
+                        <DialogDescription>
+                            Remove "Powered by MyResume" branding from your resume. Upgrade to Pro to unlock this feature.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex flex-col gap-3 pt-4">
+                        <UpgradeButton fullWidth />
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
