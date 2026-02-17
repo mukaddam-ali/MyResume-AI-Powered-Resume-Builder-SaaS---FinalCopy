@@ -1,3 +1,4 @@
+import { createBrowserClient as createSSRBrowserClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js';
 
 // Check if Supabase is configured
@@ -5,15 +6,38 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const isSupabaseConfigured = supabaseUrl && supabaseKey;
 
-// Client-side Supabase client (for use in client components)
+// FIXED: Client-side Supabase client using cookies (for use in client components)
 export const createBrowserClient = () => {
   if (!isSupabaseConfigured) {
     throw new Error('Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local');
   }
-  return createClient(supabaseUrl, supabaseKey);
+
+  return createSSRBrowserClient(
+    supabaseUrl,
+    supabaseKey,
+    {
+      cookies: {
+        get(name: string) {
+          if (typeof document === 'undefined') return undefined
+          const value = `; ${document.cookie}`
+          const parts = value.split(`; ${name}=`)
+          if (parts.length === 2) return parts.pop()?.split(';').shift()
+        },
+        set(name: string, value: string, options: any) {
+          if (typeof document === 'undefined') return
+          document.cookie = `${name}=${value}; path=/; ${options.maxAge ? `max-age=${options.maxAge};` : ''}`
+        },
+        remove(name: string, options: any) {
+          if (typeof document === 'undefined') return
+          document.cookie = `${name}=; path=/; max-age=0`
+        },
+      },
+    }
+  )
 };
 
 // Standard client for general use (only created if configured)
+// NOTE: This uses localStorage - only use for non-auth queries
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseKey)
   : null;

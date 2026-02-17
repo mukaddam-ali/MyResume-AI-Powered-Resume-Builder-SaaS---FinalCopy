@@ -19,6 +19,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { AuthProvider } from "@/lib/auth-context";
+import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 
 // Configure fonts
 const inter = Inter({
@@ -152,6 +153,7 @@ export default function RootLayout({
               </main>
             </div>
             <Footer />
+            <FeedbackWidget />
           </AuthProvider>
         </ThemeProvider>
       </body>

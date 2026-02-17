@@ -95,9 +95,11 @@ export function SkillsForm() {
 
     if (!activeResume) return null;
 
-    const selectedSkills = activeResume.skills
-        ? activeResume.skills.split(',').map(s => s.trim()).filter(Boolean)
-        : [];
+    const selectedSkills = Array.isArray(activeResume.skills)
+        ? activeResume.skills
+        : typeof activeResume.skills === 'string'
+            ? (activeResume.skills as string).split(',').map(s => s.trim()).filter(Boolean)
+            : [];
 
     // Filter out duplicates for display logic only
     const uniqueSelectedSkills = Array.from(new Set(selectedSkills));
@@ -111,7 +113,7 @@ export function SkillsForm() {
     const addSkill = (skill: string) => {
         const trimmedSkill = skill.trim();
         if (trimmedSkill && !uniqueSelectedSkills.includes(trimmedSkill)) {
-            const newSkills = [...uniqueSelectedSkills, trimmedSkill].join(', ');
+            const newSkills = [...uniqueSelectedSkills, trimmedSkill];
             setSkills(newSkills);
             setSearchText("");
             setShowDropdown(false);
@@ -120,8 +122,7 @@ export function SkillsForm() {
 
     const removeSkill = (skillToRemove: string) => {
         const newSkills = uniqueSelectedSkills
-            .filter(skill => skill !== skillToRemove)
-            .join(', ');
+            .filter(skill => skill !== skillToRemove);
         setSkills(newSkills);
     };
 
@@ -134,7 +135,7 @@ export function SkillsForm() {
 
             if (oldIndex !== -1 && newIndex !== -1) {
                 const newOrder = arrayMove(uniqueSelectedSkills, oldIndex, newIndex);
-                setSkills(newOrder.join(', '));
+                setSkills(newOrder);
             }
         }
     };

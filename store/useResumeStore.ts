@@ -60,7 +60,7 @@ export interface PersonalInfo {
     socialMedia?: SocialMedia[];
 }
 
-export type TemplateType = 'classic' | 'modern' | 'minimalist' | 'creative' | 'corporate' | 'executive' | 'designer' | 'github';
+export type TemplateType = 'classic' | 'modern' | 'minimalist' | 'creative';
 
 export interface CustomSectionItem {
     id: string;

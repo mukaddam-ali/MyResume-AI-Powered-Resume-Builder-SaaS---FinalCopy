@@ -126,7 +126,7 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                                 {sectionTitles.skills || "Skills"}
                             </h3>
                             <div className="flex flex-wrap gap-2">
-                                {skills.split(',').map((skill, i) => (
+                                {skills.map((skill, i) => (
                                     <span key={i} className="px-2 py-1 rounded text-[10px] bg-white/10">
                                         {skill.trim()}
                                     </span>
@@ -142,7 +142,7 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                                 {sectionTitles.skills || "Skills"}
                             </h3>
                             <div className="flex flex-wrap gap-2">
-                                {skills.split(',').map((skill, i) => (
+                                {skills.map((skill, i) => (
                                     <span key={i} className="px-2 py-1 rounded text-[10px] bg-white/20 font-bold">
                                         {skill.trim()}
                                     </span>
@@ -157,7 +157,7 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                         <div key="skills" className="mb-8">
                             <h3 className="font-bold uppercase tracking-widest text-xs mb-4">{sectionTitles.skills || "Skills"}</h3>
                             <div className="flex flex-wrap gap-2 text-xs">
-                                {skills.split(',').map((skill, i) => (
+                                {skills.map((skill, i) => (
                                     <span key={i} className="px-2.5 py-1 rounded-full bg-gray-100 border border-gray-200">
                                         {skill.trim()}
                                     </span>
@@ -171,7 +171,7 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                     <div key="skills" className="mb-6">
                         <h3 className="text-lg font-bold uppercase border-b border-gray-200 pb-1 mb-3" style={{ color: themeColor }}>{sectionTitles.skills || "Skills"}</h3>
                         <div className="flex flex-wrap gap-2 text-xs">
-                            {skills.split(',').map((skill, i) => (
+                            {skills.map((skill, i) => (
                                 <span key={i} className="px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800">
                                     {skill.trim()}
                                 </span>
@@ -495,8 +495,8 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
 
             {/* Branding - Fixed at Bottom */}
             {isBrandingEnabled && (
-                <div className="absolute bottom-5 left-0 right-0 text-center text-[8px] text-gray-400 font-sans pointer-events-none z-50" style={{ fontFamily: 'Inter, sans-serif' }}>
-                    Powered by LoneStar
+                <div className="absolute bottom-4 left-0 right-0 text-center text-[10px] text-gray-500 font-sans pointer-events-none z-50 print:block" style={{ fontFamily: 'Inter, sans-serif' }}>
+                    Powered by MyResume
                 </div>
             )}
 
@@ -705,379 +705,16 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
 
 
 
-    // 6. Corporate Blue Template
-    if (selectedTemplate === 'corporate') {
-        const accentColor = themeColor || '#1e4d7b';
-        return (
-            <ScaledWrapper className="flex h-full" style={{ fontFamily }}>
-                {/* Left Sidebar - Navy Blue */}
-                <div className="w-[35%] text-white px-4.5 py-8 flex flex-col" style={{ backgroundColor: accentColor }}>
-                    {/* Photo placeholder - circular */}
-                    {/* Photo placeholder - circular */}
-                    <div className="mx-auto mb-6 flex items-center justify-center">
-                        {personalInfo.photo ? (
-                            <img
-                                src={personalInfo.photo}
-                                alt={personalInfo.fullName}
-                                className="object-cover rounded-full"
-                                style={{
-                                    width: '128px',
-                                    height: '128px',
-                                    borderWidth: `${personalInfo.photoFilters?.borderWidth || 0}px`,
-                                    borderColor: personalInfo.photoFilters?.borderColor || 'transparent',
-                                    transform: `scale(${personalInfo.photoFilters?.scale || 1})`,
-                                    filter: `brightness(${personalInfo.photoFilters?.brightness || 1}) contrast(${personalInfo.photoFilters?.contrast || 1}) grayscale(${personalInfo.photoFilters?.grayscale || 0})`
-                                }}
-                            />
-                        ) : (
-                            <div className="w-32 h-32 rounded-full bg-white/20 flex items-center justify-center">
-                                <span className="text-5xl font-bold text-white/60">{personalInfo.fullName?.charAt(0) || '?'}</span>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Contact Section */}
-                    {(personalInfo.email || personalInfo.phone || personalInfo.location || personalInfo.website) && (
-                        <div className="mb-6" style={{ zoom: sectionScales?.personal || 1 }}>
-                            <h3 className="text-xs uppercase tracking-wider font-bold mb-3 pb-1 border-b border-white/30">Contact</h3>
-                            <div className="space-y-2 text-xs">
-                                {personalInfo.email && (
-                                    <div className="flex items-center gap-2">
-                                        <Mail className="w-3 h-3" />
-                                        <span>{personalInfo.email}</span>
-                                    </div>
-                                )}
-                                {personalInfo.phone && (
-                                    <div className="flex items-center gap-2">
-                                        <Phone className="w-3 h-3" />
-                                        <span>{personalInfo.phone}</span>
-                                    </div>
-                                )}
-                                {personalInfo.location && (
-                                    <div className="flex items-center gap-2">
-                                        <MapPin className="w-3 h-3" />
-                                        <span>{personalInfo.location}</span>
-                                    </div>
-                                )}
-                                {personalInfo.website && (
-                                    <div className="flex items-center gap-2">
-                                        <LinkIcon className="w-3 h-3" />
-                                        <span>{personalInfo.website.replace(/^https?:\/\/(www\.)?/, '')}</span>
-                                    </div>
-                                )}
-                                {personalInfo.linkedin && (
-                                    <div className="flex items-center gap-2">
-                                        <Linkedin className="w-3 h-3" />
-                                        <span className="truncate">{personalInfo.linkedin.replace(/^https?:\/\/(www\.)?/, '')}</span>
-                                    </div>
-                                )}
-                                {personalInfo.github && (
-                                    <div className="flex items-center gap-2">
-                                        <Github className="w-3 h-3" />
-                                        <span className="truncate">{personalInfo.github.replace(/^https?:\/\/(www\.)?/, '')}</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Skills Section */}
-                    {skills && (
-                        <div className="mb-6">
-                            <h3 className="text-xs uppercase tracking-wider font-bold mb-3 pb-1 border-b border-white/30">Skills</h3>
-                            <div className="flex flex-wrap gap-2 text-xs">
-                                {skills.split(',').map((skill: string, i: number) => (
-                                    <span key={i} className="px-2.5 py-1 rounded-full bg-white/10 border border-white/20">
-                                        {skill.trim()}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                    )}
 
 
-                </div>
 
-                {/* Right Content - White */}
-                <div className="w-[65%] bg-gray-50 p-6">
-                    {/* Header */}
-                    <div className="mb-6" style={{ zoom: sectionScales?.personal || 1 }}>
-                        <h1 className="text-2xl font-bold tracking-wide" style={{ color: accentColor }}>{personalInfo.fullName}</h1>
-                        <p className="text-sm text-gray-600 mt-1">{personalInfo.jobTitle}</p>
-                    </div>
-
-                    {/* Summary */}
-                    {personalInfo.summary && (
-                        <div className="mb-6" style={{ zoom: sectionScales?.personal || 1 }}>
-                            <h3 className="text-sm font-bold uppercase tracking-wider mb-2 pb-1 border-b-2 border-gray-300" style={{ color: accentColor }}>Summary</h3>
-                            <FormattedText text={personalInfo.summary} className="text-xs text-gray-700 leading-relaxed" />
-                        </div>
-                    )}
-
-                    {/* Education */}
-                    {education.length > 0 && (
-                        <div className="mb-6">
-                            <h3 className="text-sm font-bold uppercase tracking-wider mb-2 pb-1 border-b-2 border-gray-300" style={{ color: accentColor }}>Education</h3>
-                            <div className="space-y-3">
-                                {education.map((edu) => (
-                                    <div key={edu.id} className="text-xs">
-                                        <div className="flex justify-between">
-                                            <span className="font-semibold text-gray-900">{edu.degree}</span>
-                                            <span className="text-gray-500">{edu.startDate} - {edu.endDate}</span>
-                                        </div>
-                                        <p className="text-gray-600">{edu.school}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Experience */}
-                    {experience.length > 0 && (
-                        <div className="mb-6">
-                            <h3 className="text-sm font-bold uppercase tracking-wider mb-2 pb-1 border-b-2 border-gray-300" style={{ color: accentColor }}>Professional Experience</h3>
-                            <div className="space-y-4">
-                                {experience.map((exp) => (
-                                    <div key={exp.id} className="text-xs">
-                                        <div className="flex justify-between">
-                                            <span className="font-semibold text-gray-900">{exp.role}</span>
-                                            <span className="text-gray-500">{exp.startDate} - {exp.endDate}</span>
-                                        </div>
-                                        <p className="text-gray-600">{exp.company}</p>
-                                        {exp.description && <FormattedText text={exp.description} className="text-gray-500 mt-1" />}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Projects */}
-                    {projects.length > 0 && (
-                        <div className="mb-6">
-                            <h3 className="text-sm font-bold uppercase tracking-wider mb-2 pb-1 border-b-2 border-gray-300" style={{ color: accentColor }}>Projects</h3>
-                            <div className="space-y-3">
-                                {projects.map((proj) => (
-                                    <div key={proj.id} className="text-xs">
-                                        <span className="font-semibold text-gray-900">{proj.name}</span>
-                                        {proj.technologies && (
-                                            <div className="mt-1 mb-1">
-                                                <span className="text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded inline-block">
-                                                    {proj.technologies}
-                                                </span>
-                                            </div>
-                                        )}
-                                        <div className="text-gray-500 mt-1">
-                                            {proj.description && <FormattedText text={proj.description} />}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Branding Footer */}
-                    {isBrandingEnabled && (
-                        <div className="mt-auto pt-4 border-t border-gray-200 text-center">
-                            <span className="text-[9px] text-gray-400 flex items-center justify-center gap-1">
-                                <Sparkles className="w-2.5 h-2.5" /> Powered by LoneStar
-                            </span>
-                        </div>
-                    )}
-                </div>
-            </ScaledWrapper>
-        );
-    }
-
-    // 7. Executive Template (Gold & Gray)
-    if (selectedTemplate === 'executive') {
-        const goldColor = '#c9a050';
-        const darkGray = themeColor || '#333333';
-        return (
-            <ScaledWrapper className="flex flex-col h-full" style={{ fontFamily }}>
-                {/* Header Bar */}
-                <div className="flex items-center gap-6 px-6 py-6" style={{ backgroundColor: darkGray }}>
-                    {/* Photo placeholder */}
-                    {/* Photo placeholder */}
-                    <div
-                        className="w-20 h-20 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0 overflow-hidden"
-                        style={{
-                            border: `${personalInfo.photoFilters?.borderWidth || 0}px solid ${personalInfo.photoFilters?.borderColor || goldColor}`
-                        }}
-                    >
-                        {personalInfo.photo ? (
-                            <img
-                                src={personalInfo.photo}
-                                alt={personalInfo.fullName}
-                                className="w-full h-full object-cover"
-                                style={{
-                                    filter: `brightness(${personalInfo.photoFilters?.brightness || 1}) contrast(${personalInfo.photoFilters?.contrast || 1}) grayscale(${personalInfo.photoFilters?.grayscale || 0})`,
-                                    transform: `scale(${personalInfo.photoFilters?.scale || 1})`
-                                }}
-                            />
-                        ) : (
-                            <span className="text-3xl font-bold text-white/60">{personalInfo.fullName?.charAt(0) || '?'}</span>
-                        )}
-                    </div>
-                    <div className="text-white" style={{ zoom: sectionScales?.personal || 1 }}>
-                        <h1 className="text-2xl font-bold tracking-wide">{personalInfo.fullName}</h1>
-                        <p className="text-sm opacity-80 mt-1">{personalInfo.jobTitle}</p>
-                    </div>
-                </div>
-
-                {/* Main Content Area */}
-                <div className="flex flex-1 min-h-0">
-                    {/* Left - Main Content */}
-                    <div className="w-[65%] p-4.5 bg-white">
-                        {/* Profile/Summary */}
-                        {personalInfo.summary && (
-                            <div className="mb-5" style={{ zoom: sectionScales?.personal || 1 }}>
-                                <h3 className="text-sm font-bold uppercase tracking-wider mb-2 pb-1" style={{ color: goldColor, borderBottom: `2px solid ${goldColor}` }}>Profile</h3>
-                                <FormattedText text={personalInfo.summary} className="text-xs text-gray-700 leading-relaxed" />
-                            </div>
-                        )}
-
-                        {/* Experience */}
-                        {experience.length > 0 && (
-                            <div className="mb-5">
-                                <h3 className="text-sm font-bold uppercase tracking-wider mb-2 pb-1" style={{ color: goldColor, borderBottom: `2px solid ${goldColor}` }}>Professional Experience</h3>
-                                <div className="space-y-3">
-                                    {experience.map((exp) => (
-                                        <div key={exp.id} className="text-xs">
-                                            <div className="flex justify-between items-start">
-                                                <div>
-                                                    <span className="font-semibold text-gray-900">{exp.company}</span>
-                                                    <span className="text-gray-500 mx-2">|</span>
-                                                    <span className="text-gray-600">{exp.role}</span>
-                                                </div>
-                                                <span className="text-gray-500 text-[10px]">{exp.startDate} - {exp.endDate}</span>
-                                            </div>
-                                            {exp.description && <FormattedText text={exp.description} className="text-gray-600 mt-1" />}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Education */}
-                        {education.length > 0 && (
-                            <div className="mb-5">
-                                <h3 className="text-sm font-bold uppercase tracking-wider mb-2 pb-1" style={{ color: goldColor, borderBottom: `2px solid ${goldColor}` }}>Education</h3>
-                                <div className="space-y-2">
-                                    {education.map((edu) => (
-                                        <div key={edu.id} className="text-xs">
-                                            <div className="flex justify-between">
-                                                <span className="font-semibold text-gray-900">{edu.school}</span>
-                                                <span className="text-gray-500 text-[10px]">{edu.startDate} - {edu.endDate}</span>
-                                            </div>
-                                            <p className="text-gray-600">{edu.degree}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Projects */}
-                        {projects.length > 0 && (
-                            <div className="mb-5">
-                                <h3 className="text-sm font-bold uppercase tracking-wider mb-2 pb-1" style={{ color: goldColor, borderBottom: `2px solid ${goldColor}` }}>Projects</h3>
-                                <div className="space-y-2">
-                                    {projects.map((proj) => (
-                                        <div key={proj.id} className="text-xs">
-                                            <span className="font-semibold text-gray-900">{proj.name}</span>
-                                            {proj.technologies && (
-                                                <div className="mt-1 mb-1">
-                                                    <span className="text-[10px] border border-gray-200 px-1.5 py-0.5 rounded text-gray-500 inline-block" style={{ color: goldColor, borderColor: goldColor }}>
-                                                        {proj.technologies}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            <div className="text-gray-600 mt-1">
-                                                {proj.description && <FormattedText text={proj.description} />}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Right Sidebar */}
-                    <div className="w-[35%] p-4.5 text-white" style={{ backgroundColor: darkGray }}>
-                        {/* Contact */}
-                        {(personalInfo.email || personalInfo.phone || personalInfo.location) && (
-                            <div className="mb-5">
-                                <h3 className="text-xs font-bold uppercase tracking-wider mb-3 pb-1" style={{ color: goldColor, borderBottom: `1px solid ${goldColor}` }}>Contact</h3>
-                                <div className="space-y-2 text-xs">
-                                    {personalInfo.phone && (
-                                        <div className="flex items-center gap-2">
-                                            <Phone className="w-3 h-3" style={{ color: goldColor }} />
-                                            <span>{personalInfo.phone}</span>
-                                        </div>
-                                    )}
-                                    {personalInfo.email && (
-                                        <div className="flex items-center gap-2">
-                                            <Mail className="w-3 h-3" style={{ color: goldColor }} />
-                                            <span className="truncate">{personalInfo.email}</span>
-                                        </div>
-                                    )}
-                                    {personalInfo.location && (
-                                        <div className="flex items-center gap-2">
-                                            <MapPin className="w-3 h-3" style={{ color: goldColor }} />
-                                            <span>{personalInfo.location}</span>
-                                        </div>
-                                    )}
-                                    {personalInfo.website && (
-                                        <div className="flex items-center gap-2">
-                                            <LinkIcon className="w-3 h-3" style={{ color: goldColor }} />
-                                            <span className="truncate">{personalInfo.website.replace(/^https?:\/\/(www\.)?/, '')}</span>
-                                        </div>
-                                    )}
-                                    {personalInfo.linkedin && (
-                                        <div className="flex items-center gap-2">
-                                            <Linkedin className="w-3 h-3" style={{ color: goldColor }} />
-                                            <span className="truncate">{personalInfo.linkedin.replace(/^https?:\/\/(www\.)?/, '')}</span>
-                                        </div>
-                                    )}
-                                    {personalInfo.github && (
-                                        <div className="flex items-center gap-2">
-                                            <Github className="w-3 h-3" style={{ color: goldColor }} />
-                                            <span className="truncate">{personalInfo.github.replace(/^https?:\/\/(www\.)?/, '')}</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Skills */}
-                        {skills && (
-                            <div className="mb-5">
-                                <h3 className="text-xs font-bold uppercase tracking-wider mb-3 pb-1" style={{ color: goldColor, borderBottom: `1px solid ${goldColor}` }}>Skills</h3>
-                                <div className="flex flex-wrap gap-2 text-xs">
-                                    {skills.split(',').map((skill: string, i: number) => (
-                                        <span key={i} className="px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800">
-                                            {skill.trim()}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Links */}
-
-                    </div>
-                </div>
-
-
-            </ScaledWrapper>
-        );
-    }
 
 
 
     // 9. Classic Template (Default)
     return (
         <ScaledWrapper className="px-10 py-10 text-gray-800 font-sans" style={{ fontFamily }}>
-            <div className="h-full">
+            <div className="min-h-full flex flex-col relative">
                 <div className="text-center border-b-2 border-gray-300 pb-6 mb-6" style={{ zoom: sectionScales?.personal || 1 }}>
                     <h1 className="text-3xl font-bold uppercase tracking-wide mb-2" style={{ color: themeColor }}>{personalInfo.fullName}</h1>
                     {personalInfo.jobTitle && <p className="text-lg text-gray-600 mb-2 uppercase tracking-wide">{personalInfo.jobTitle}</p>}
@@ -1096,9 +733,13 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                 )}
 
                 {/* Render all sections cleanly in simple order */}
+                {/* Render all sections cleanly in simple order */}
                 {sectionOrder.map(renderSection)}
 
-
+                <div className="mt-auto pt-8 text-center font-sans print:block">
+                    <span className="text-red-500 font-bold text-lg">DEBUG: FORCE BRANDING</span>
+                    {isBrandingEnabled && <span className="text-[10px] text-gray-500 opacity-70 block">Powered by MyResume</span>}
+                </div>
             </div>
         </ScaledWrapper>
     );

@@ -218,6 +218,8 @@ export function EditorPanel() {
     );
 
     const [isMounted, setIsMounted] = useState(false);
+    const [isAddingSection, setIsAddingSection] = useState(false);
+    const [newSectionName, setNewSectionName] = useState('');
 
     useEffect(() => {
         setIsMounted(true);
@@ -237,7 +239,7 @@ export function EditorPanel() {
 
     return (
         <div className="flex flex-col bg-background border-r min-h-full">
-            <div className="py-4 px-8 border-b flex justify-between items-center gap-4">
+            <div className="py-4 px-3 border-b flex justify-between items-center gap-4">
                 {activeResume ? (
                     <div className="flex-1 mr-4">
                         <Input
@@ -301,7 +303,7 @@ export function EditorPanel() {
                             collisionDetection={closestCenter}
                             onDragEnd={handleDragEnd}
                         >
-                            <TabsList className="flex flex-wrap h-auto gap-2 mb-4 bg-muted/50 p-2 w-full justify-start">
+                            <TabsList className="flex flex-wrap h-auto gap-2 mb-4 bg-background p-2 w-full justify-start">
                                 <SortableContext
                                     items={sectionOrder}
                                     strategy={rectSortingStrategy}
@@ -322,48 +324,82 @@ export function EditorPanel() {
                                         );
                                     })}
                                 </SortableContext>
+
+                                {/* Inline Add Section Input */}
+                                {isAddingSection && (
+                                    <div className="min-w-[120px]">
+                                        <div className="relative group w-full h-full flex items-center justify-center p-1">
+                                            <Input
+                                                value={newSectionName}
+                                                onChange={(e) => setNewSectionName(e.target.value)}
+                                                placeholder="Section name..."
+                                                autoFocus
+                                                onBlur={() => {
+                                                    if (newSectionName.trim()) {
+                                                        addCustomSection(newSectionName.trim());
+                                                    }
+                                                    setIsAddingSection(false);
+                                                    setNewSectionName('');
+                                                }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && newSectionName.trim()) {
+                                                        addCustomSection(newSectionName.trim());
+                                                        setIsAddingSection(false);
+                                                        setNewSectionName('');
+                                                    } else if (e.key === 'Escape') {
+                                                        setIsAddingSection(false);
+                                                        setNewSectionName('');
+                                                    }
+                                                }}
+                                                className="h-8 text-center px-2 text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Add Section Button */}
+                                {!isAddingSection && (
+                                    <div className="min-w-[120px]">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="w-full h-8 gap-1 border-dashed text-xs"
+                                                >
+                                                    <Plus className="h-3 w-3" /> Add
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="center" className="w-[200px]">
+                                                <DropdownMenuLabel>Add to Resume</DropdownMenuLabel>
+                                                <DropdownMenuSeparator />
+
+                                                {/* Standard Sections */}
+                                                {missingSections.map(sectionId => (
+                                                    <DropdownMenuItem
+                                                        key={sectionId}
+                                                        onClick={() => addSection(sectionId)}
+                                                    >
+                                                        <span className="capitalize">{getSectionLabel(sectionId, [], activeResume?.sectionTitles)}</span>
+                                                    </DropdownMenuItem>
+                                                ))}
+
+                                                {missingSections.length > 0 && <DropdownMenuSeparator />}
+
+                                                {/* Custom Section */}
+                                                <DropdownMenuItem
+                                                    onClick={() => {
+                                                        setIsAddingSection(true);
+                                                    }}
+                                                >
+                                                    <span>Custom Section...</span>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                )}
                             </TabsList>
                         </DndContext>
-
-                        <div className="mb-4">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="w-full gap-2 border-dashed"
-                                    >
-                                        <Plus className="h-4 w-4" /> Add Section
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="center" className="w-[200px]">
-                                    <DropdownMenuLabel>Add to Resume</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-
-                                    {/* Standard Sections */}
-                                    {missingSections.map(sectionId => (
-                                        <DropdownMenuItem
-                                            key={sectionId}
-                                            onClick={() => addSection(sectionId)}
-                                        >
-                                            <span className="capitalize">{getSectionLabel(sectionId, [], activeResume?.sectionTitles)}</span>
-                                        </DropdownMenuItem>
-                                    ))}
-
-                                    {missingSections.length > 0 && <DropdownMenuSeparator />}
-
-                                    {/* Custom Section */}
-                                    <DropdownMenuItem
-                                        onClick={() => {
-                                            const title = prompt("Enter section name (e.g. Awards, Volunteering):");
-                                            if (title) addCustomSection(title);
-                                        }}
-                                    >
-                                        <span>Custom Section...</span>
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
 
                         {/* Content sections */}
                         <TabsContent value="personal"><PersonalInfoForm /></TabsContent>

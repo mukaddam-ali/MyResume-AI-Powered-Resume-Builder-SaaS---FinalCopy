@@ -38,7 +38,7 @@ export default function EditorPage() {
     };
 
     return (
-        <div className="flex flex-col lg:flex-row flex-1 min-h-screen gap-6 bg-muted/30 px-4 sm:px-8 lg:px-12">
+        <div className="flex flex-col lg:flex-row flex-1 min-h-screen gap-6 bg-background px-4 sm:px-8 lg:px-12">
             <AutoSaveHandler />
 
             {/* Left Panel - Editor */}

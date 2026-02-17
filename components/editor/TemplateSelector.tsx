@@ -31,11 +31,7 @@ export function TemplateSelector() {
         { id: 'classic', name: 'Classic', icon: FileText, premium: false, comingSoon: false },
         { id: 'modern', name: 'Modern', icon: Layout, premium: false, comingSoon: false },
         { id: 'minimalist', name: 'Minimal', icon: PenTool, premium: false, comingSoon: false },
-        // GitHub template removed
         { id: 'creative', name: 'Creative', icon: Palette, premium: true, comingSoon: false },
-        { id: 'corporate', name: 'Corporate Blue', icon: Sparkles, premium: true, comingSoon: true },
-        { id: 'executive', name: 'Executive', icon: Crown, premium: true, comingSoon: true },
-        { id: 'designer', name: 'Designer', icon: Palette, premium: true, comingSoon: true },
     ] as const;
 
 

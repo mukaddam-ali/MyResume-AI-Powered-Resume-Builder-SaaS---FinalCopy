@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const stripeKey = process.env.STRIPE_SECRET_KEY;
+const stripe = stripeKey ? new Stripe(stripeKey, {
     typescript: true,
-});
+}) : null;
 
 export async function POST() {
+    if (!stripe) {
+        return NextResponse.json(
+            { error: "Stripe not configured" },
+            { status: 500 }
+        );
+    }
+
     try {
         const paymentIntent = await stripe.paymentIntents.create({
             amount: 2000, // $20.00

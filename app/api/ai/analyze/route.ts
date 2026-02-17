@@ -1,29 +1,35 @@
-import { createGroq } from "@ai-sdk/groq";
-import { generateObject } from "ai";
-import { z } from "zod";
 import { NextResponse } from "next/server";
 
-// Define schema (Preserved from original to ensure frontend compatibility)
-const analysisSchema = z.object({
-    score: z.number().min(0).max(100),
-    category_scores: z.object({
-        impact: z.number().min(0).max(100),
-        brevity: z.number().min(0).max(100),
-        style: z.number().min(0).max(100),
-        structure: z.number().min(0).max(100),
-    }),
-    keywords: z.object({
-        found: z.array(z.string()),
-        missing: z.array(z.string()),
-    }),
-    feedback: z.array(z.string()),
-    red_flags: z.array(z.string()),
-    summary: z.string(),
-});
-
-const groq = createGroq({
-    apiKey: process.env.GROQ_API_KEY,
-});
+// Define schema as raw JSON for Groq API
+const analysisJsonSchema = {
+    type: "object",
+    properties: {
+        score: { type: "number" },
+        category_scores: {
+            type: "object",
+            properties: {
+                impact: { type: "number" },
+                brevity: { type: "number" },
+                style: { type: "number" },
+                structure: { type: "number" },
+            },
+            required: ["impact", "brevity", "style", "structure"],
+        },
+        keywords: {
+            type: "object",
+            properties: {
+                found: { type: "array", items: { type: "string" } },
+                missing: { type: "array", items: { type: "string" } },
+            },
+            required: ["found", "missing"],
+        },
+        feedback: { type: "array", items: { type: "string" } },
+        red_flags: { type: "array", items: { type: "string" } },
+        summary: { type: "string" },
+    },
+    required: ["score", "category_scores", "keywords", "feedback", "red_flags", "summary"],
+    additionalProperties: false,
+};
 
 /**
  * Optimize resume data to reduce token usage
@@ -48,32 +54,21 @@ function optimizeResumeData(data: any) {
 
 export async function POST(req: Request) {
     try {
-        // Validate API key exists first
         const apiKey = process.env.GROQ_API_KEY;
 
         if (!apiKey) {
-            console.error("❌ GROQ_API_KEY is not set in environment variables");
-            console.error("Environment check:", {
-                hasGroqKey: !!apiKey,
-                nodeEnv: process.env.NODE_ENV,
-                timestamp: new Date().toISOString()
-            });
-
+            console.error("❌ GROQ_API_KEY is not set");
             return NextResponse.json(
                 {
                     error: "Invalid API Key",
-                    details: "GROQ_API_KEY environment variable is not loaded. This may be due to browser cache or server state issues.",
-                    solution: "Try: 1) Restart your dev server 2) Clear browser cache 3) Hard refresh (Ctrl+Shift+R)",
-                    debug: {
-                        hasApiKey: false,
-                        nodeEnv: process.env.NODE_ENV
-                    }
+                    details: "GROQ_API_KEY environment variable is not loaded.",
+                    solution: "Check .env.local configuration."
                 },
                 { status: 500 }
             );
         }
 
-        console.log("✅ GROQ_API_KEY is configured");
+        console.log("✅ Using Groq API via Fetch");
 
         const { resumeData, jobDescription } = await req.json();
 
@@ -91,18 +86,55 @@ export async function POST(req: Request) {
 
         ${jobDescription ? `JOB DESCRIPTION (Analyze against this):\n${jobDescription.slice(0, 1500)}` : ''}
 
-        Provide a detailed, searching analysis following the schema.
+        Call the 'analyze_resume' tool with a detailed analysis.
         `;
 
-        // Groq Call (Fast & Free)
-        const result = await generateObject({
-            model: groq("llama-3.3-70b-versatile"), // High performance model
-            schema: analysisSchema,
-            prompt,
-            temperature: 0.3,
-        });
+        try {
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: "llama-3.3-70b-versatile",
+                    messages: [{ role: 'user', content: prompt }],
+                    tools: [
+                        {
+                            type: "function",
+                            function: {
+                                name: "analyze_resume",
+                                description: "Submit the analysis of the resume",
+                                parameters: analysisJsonSchema
+                            }
+                        }
+                    ],
+                    tool_choice: "required",
+                    temperature: 0.3
+                })
+            });
 
-        return NextResponse.json(result.object);
+            if (!response.ok) {
+                const errBody = await response.text();
+                throw new Error(`Groq API Error: ${response.status} - ${errBody}`);
+            }
+
+            const data = await response.json();
+            const toolCall = data.choices[0]?.message?.tool_calls?.[0];
+
+            if (!toolCall) {
+                throw new Error("No analysis generated by AI. Model did not call the tool.");
+            }
+
+            // Parse the arguments (JSON string)
+            const analysisResult = JSON.parse(toolCall.function.arguments);
+
+            return NextResponse.json(analysisResult);
+
+        } catch (apiError: any) {
+            console.error("Groq API Call Failed:", apiError);
+            throw apiError; // Re-throw to be caught by outer catch
+        }
 
     } catch (error: any) {
         console.error("ATS Analysis failed:", error);
@@ -110,7 +142,7 @@ export async function POST(req: Request) {
         return NextResponse.json(
             {
                 error: error.message || "Analysis failed",
-                details: "AI Service error. Check API configuration.",
+                details: "AI Service error. Check API configuration or logs.",
             },
             { status: 500 }
         );
