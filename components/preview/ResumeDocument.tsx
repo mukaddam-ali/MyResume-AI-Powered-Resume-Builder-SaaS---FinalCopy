@@ -207,12 +207,13 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
         },
         branding: {
             position: 'absolute',
-            bottom: 20,
+            bottom: 10,
             left: 0,
             right: 0,
             textAlign: 'center',
-            fontSize: 8,
-            color: '#9ca3af',
+            fontSize: 7.5,
+            color: '#d1d5db',
+            letterSpacing: 0.5,
             fontFamily: pdfFontFamily,
         }
     }, s);
@@ -849,7 +850,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             </View>
                         </View>
                     </View>
-                    {showBranding && <Text style={styles.branding} fixed>Powered by MyResume</Text>}
+                    {showBranding && <Text style={styles.branding} fixed>Powered By MyResume</Text>}
                 </Page>
             </Document >
         )
@@ -1004,7 +1005,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             {mainSections.map(id => renderModernSection(id, false))}
                         </View>
                     </View>
-                    {showBranding && <Text style={styles.branding} fixed>Powered by MyResume</Text>}
+                    {showBranding && <Text style={styles.branding} fixed>Powered By MyResume</Text>}
                 </Page>
             </Document>
         );
@@ -1154,7 +1155,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             {mainSections.map(renderCreativeSection)}
                         </View>
                     </View>
-                    {showBranding && <Text style={styles.branding} fixed>Powered by MyResume</Text>}
+                    {showBranding && <Text style={styles.branding} fixed>Powered By MyResume</Text>}
                 </Page>
             </Document>
         )
@@ -1381,7 +1382,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
 
                     {sectionOrder.map(renderVelvetSection)}
 
-                    {showBranding && <Text style={styles.branding} fixed>Powered by MyResume</Text>}
+                    {showBranding && <Text style={styles.branding} fixed>Powered By MyResume</Text>}
                 </Page>
             </Document>
         );
@@ -1421,7 +1422,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                 </View>
 
                 {showBranding && (
-                    <Text style={classicStyles.branding} fixed>Powered by MyResume</Text>
+                    <Text style={styles.branding} fixed>Powered By MyResume</Text>
                 )}
             </Page>
         </Document>
