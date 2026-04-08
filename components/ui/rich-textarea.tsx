@@ -16,6 +16,7 @@ interface RichTextareaProps {
 
 export const RichTextarea = ({ value = '', onValueChange, className, placeholder }: RichTextareaProps) => {
     const editor = useEditor({
+        immediatelyRender: false,
         extensions: [
             StarterKit,
             Underline,
