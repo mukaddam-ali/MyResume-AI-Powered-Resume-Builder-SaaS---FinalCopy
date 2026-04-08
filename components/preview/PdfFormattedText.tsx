@@ -15,8 +15,9 @@ export const PdfFormattedText = ({ text = '', style, children, supportsItalic = 
     const isHtml = /<[a-z][\s\S]*>/i.test(text);
     const htmlContent = isHtml ? text : text.replace(/\n/g, '<br />');
 
-    // Remove legacy markdown bolding from plain text if present
-    const cleanedContent = htmlContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    // Force empty paragraphs to render correctly by adding a break tag
+    let cleanedContent = htmlContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    cleanedContent = cleanedContent.replace(/<p><\/p>/g, '<p><br/></p>').replace(/<p>\s*<\/p>/g, '<p><br/></p>');
 
     // In case react-pdf-html gets a plain string, wrapping it in a div is safest
     const finalHtml = `<div>${cleanedContent}</div>`;
