@@ -131,16 +131,7 @@ export const RichTextarea = ({ value = '', onValueChange, className, placeholder
                 >
                     <ListOrdered className="h-4 w-4" />
                 </Toggle>
-                <div className="w-px h-4 bg-border mx-1" />
-                <Toggle
-                    size="sm"
-                    pressed={editor.isActive('code')}
-                    onPressedChange={() => editor.chain().focus().toggleCode().run()}
-                    aria-label="Toggle code"
-                    className="h-8 w-8 p-0"
-                >
-                    <Code className="h-4 w-4" />
-                </Toggle>
+
                 <Toggle
                     size="sm"
                     pressed={editor.isActive('blockquote')}
