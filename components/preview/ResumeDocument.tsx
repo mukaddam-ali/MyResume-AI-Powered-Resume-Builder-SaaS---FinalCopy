@@ -75,7 +75,8 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
     const fontId = fontFamily;
 
     const effectiveFontId = fontId || 'roboto';
-    const showBranding = userTier === 'free';
+    // Show branding watermark for free users. Pro users who enabled remove-branding see no watermark.
+    const showBranding = userTier !== 'pro';
 
     // Client-Side Rendering: Enable Custom Fonts
     // map user selection to registered font family
@@ -206,18 +207,42 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
             marginBottom: 2,
         },
         branding: {
+            // NOTE: In react-pdf, 'fixed' Text/View elements are rendered on every page.
+            // We do NOT use position:'absolute' here because it requires a relative parent.
+            // Instead the Text uses fixed prop + margin to sit at the bottom of each page.
             position: 'absolute',
-            bottom: 10,
+            bottom: 8,
             left: 0,
             right: 0,
             textAlign: 'center',
             fontSize: 7.5,
-            color: '#d1d5db',
-            letterSpacing: 0.5,
+            color: '#b0b7c3',
+            letterSpacing: 0.8,
             fontFamily: pdfFontFamily,
         }
     }, s);
     const styles = getStyles(1);
+
+    // Watermark element — renders on EVERY page via fixed prop
+    // react-pdf fixed elements float outside normal layout flow
+    const Watermark = showBranding ? (
+        <Text
+            style={{
+                position: 'absolute',
+                bottom: 8,
+                left: 0,
+                right: 0,
+                textAlign: 'center',
+                fontSize: 7.5,
+                color: '#b0b7c3',
+                letterSpacing: 0.8,
+                fontFamily: pdfFontFamily,
+            }}
+            fixed
+        >
+            Powered By MyResume
+        </Text>
+    ) : null;
 
     // Modern Template Styles
     const getModernStyles = (s = 1) => createScaledStyles({
@@ -850,7 +875,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             </View>
                         </View>
                     </View>
-                    {showBranding && <Text style={styles.branding} fixed>Powered By MyResume</Text>}
+                    {Watermark}
                 </Page>
             </Document >
         )
@@ -1421,9 +1446,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                     {sectionOrder.map(renderClassicSection)}
                 </View>
 
-                {showBranding && (
-                    <Text style={styles.branding} fixed>Powered By MyResume</Text>
-                )}
+                {Watermark}
             </Page>
         </Document>
     );
