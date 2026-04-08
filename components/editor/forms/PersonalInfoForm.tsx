@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { RichTextarea } from "@/components/ui/rich-textarea";
 
 import { SectionScaleControl } from "../SectionScaleControl";
 import { Plus, Trash2 } from "lucide-react";
@@ -190,7 +191,12 @@ export function PersonalInfoForm() {
                 </div>
                 <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="summary">Professional Summary</Label>
-                    <Textarea id="summary" name="summary" value={personalInfo.summary} onChange={handleChange} placeholder="Brief summary for your resume..." className="min-h-[100px]" />
+                    <RichTextarea 
+                        value={personalInfo.summary} 
+                        onValueChange={(val: string) => useResumeStore.getState().setPersonalInfo({ summary: val })} 
+                        placeholder="Brief summary for your resume..." 
+                        className="min-h-[100px]" 
+                    />
                 </div>
 
 

@@ -1,78 +1,162 @@
-
-import React, { useRef } from 'react';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Bold, Italic } from 'lucide-react';
+import React from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import TextAlign from '@tiptap/extension-text-align';
+import { Bold, Italic, Underline as UnderlineIcon, Code, List, ListOrdered, Quote, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import { Toggle } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils';
 
-interface RichTextareaProps extends React.ComponentProps<typeof Textarea> {
+interface RichTextareaProps {
     value?: string;
     onValueChange?: (value: string) => void;
+    className?: string;
+    placeholder?: string;
 }
 
-export const RichTextarea = ({ className, value = '', onValueChange, ...props }: RichTextareaProps) => {
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
+export const RichTextarea = ({ value = '', onValueChange, className, placeholder }: RichTextareaProps) => {
+    const editor = useEditor({
+        extensions: [
+            StarterKit,
+            Underline,
+            TextAlign.configure({
+                types: ['heading', 'paragraph'],
+                alignments: ['left', 'center', 'right'],
+            }),
+        ],
+        content: value,
+        onUpdate: ({ editor }) => {
+            // Give out HTML so it's consistent
+            if (onValueChange) {
+                onValueChange(editor.getHTML());
+            }
+        },
+        editorProps: {
+            attributes: {
+                class: 'prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-[100px] p-3 text-sm',
+            },
+        },
+    });
 
-    const insertFormat = (formatChar: string) => {
-        const textarea = textareaRef.current;
-        if (!textarea) return;
-
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const text = textarea.value;
-
-        const before = text.substring(0, start);
-        const selected = text.substring(start, end);
-        const after = text.substring(end);
-
-        const newText = `${before}${formatChar}${selected}${formatChar}${after}`;
-
-        // Call onChange
-        if (onValueChange) {
-            onValueChange(newText);
-        } else if (props.onChange) {
-            // Fallback if typical onChange event is expected (though simplified here)
-            // constructing a synthetic event is complex, simplified direct value update is preferred
+    // Sync external value changes (e.g., loading different resumes)
+    React.useEffect(() => {
+        if (editor && value && value !== editor.getHTML()) {
+            // Only update if it's actually different to prevent cursor jumping
+            if (editor.getHTML() !== value) {
+                editor.commands.setContent(value);
+            }
         }
+    }, [value, editor]);
 
-        // Restore selection (approximate)
-        setTimeout(() => {
-            textarea.focus();
-            textarea.setSelectionRange(start + formatChar.length, end + formatChar.length);
-        }, 0);
-    };
+    if (!editor) {
+        return null; // or a loading skeleton
+    }
 
     return (
-        <div className={cn("relative", className)}>
-            <div className="absolute right-2 top-2 z-10 flex gap-1 bg-background/80 backdrop-blur-sm p-1 rounded-md border shadow-sm opacity-0 hover:opacity-100 transition-opacity focus-within:opacity-100 peer-focus:opacity-100">
-                <Button
-                    type="button"
-                    variant="ghost"
+        <div className={cn("border rounded-md overflow-hidden bg-background focus-within:ring-1 focus-within:ring-ring", className)}>
+            {/* Toolbar at the top */}
+            <div className="flex flex-wrap items-center gap-1 border-b bg-muted/40 p-1">
+                <Toggle
                     size="sm"
-                    className="h-6 w-6 p-0 hover:bg-muted"
-                    onClick={() => insertFormat('**')}
-                    title="Bold (**text**)"
+                    pressed={editor.isActive('bold')}
+                    onPressedChange={() => editor.chain().focus().toggleBold().run()}
+                    aria-label="Toggle bold"
+                    className="h-8 w-8 p-0"
                 >
-                    <Bold className="h-3 w-3" />
-                </Button>
-                <Button
-                    type="button"
-                    variant="ghost"
+                    <Bold className="h-4 w-4" />
+                </Toggle>
+                <Toggle
                     size="sm"
-                    className="h-6 w-6 p-0 hover:bg-muted"
-                    onClick={() => insertFormat('*')}
-                    title="Italic (*text*)"
+                    pressed={editor.isActive('italic')}
+                    onPressedChange={() => editor.chain().focus().toggleItalic().run()}
+                    aria-label="Toggle italic"
+                    className="h-8 w-8 p-0"
                 >
-                    <Italic className="h-3 w-3" />
-                </Button>
+                    <Italic className="h-4 w-4" />
+                </Toggle>
+                <Toggle
+                    size="sm"
+                    pressed={editor.isActive('underline')}
+                    onPressedChange={() => editor.chain().focus().toggleUnderline().run()}
+                    aria-label="Toggle underline"
+                    className="h-8 w-8 p-0"
+                >
+                    <UnderlineIcon className="h-4 w-4" />
+                </Toggle>
+                <div className="w-px h-4 bg-border mx-1" />
+                <Toggle
+                    size="sm"
+                    pressed={editor.isActive({ textAlign: 'left' })}
+                    onPressedChange={() => editor.chain().focus().setTextAlign('left').run()}
+                    aria-label="Align left"
+                    className="h-8 w-8 p-0"
+                >
+                    <AlignLeft className="h-4 w-4" />
+                </Toggle>
+                <Toggle
+                    size="sm"
+                    pressed={editor.isActive({ textAlign: 'center' })}
+                    onPressedChange={() => editor.chain().focus().setTextAlign('center').run()}
+                    aria-label="Align center"
+                    className="h-8 w-8 p-0"
+                >
+                    <AlignCenter className="h-4 w-4" />
+                </Toggle>
+                <Toggle
+                    size="sm"
+                    pressed={editor.isActive({ textAlign: 'right' })}
+                    onPressedChange={() => editor.chain().focus().setTextAlign('right').run()}
+                    aria-label="Align right"
+                    className="h-8 w-8 p-0"
+                >
+                    <AlignRight className="h-4 w-4" />
+                </Toggle>
+                <div className="w-px h-4 bg-border mx-1" />
+                <Toggle
+                    size="sm"
+                    pressed={editor.isActive('bulletList')}
+                    onPressedChange={() => editor.chain().focus().toggleBulletList().run()}
+                    aria-label="Toggle bullet list"
+                    className="h-8 w-8 p-0"
+                >
+                    <List className="h-4 w-4" />
+                </Toggle>
+                <Toggle
+                    size="sm"
+                    pressed={editor.isActive('orderedList')}
+                    onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}
+                    aria-label="Toggle ordered list"
+                    className="h-8 w-8 p-0"
+                >
+                    <ListOrdered className="h-4 w-4" />
+                </Toggle>
+                <div className="w-px h-4 bg-border mx-1" />
+                <Toggle
+                    size="sm"
+                    pressed={editor.isActive('code')}
+                    onPressedChange={() => editor.chain().focus().toggleCode().run()}
+                    aria-label="Toggle code"
+                    className="h-8 w-8 p-0"
+                >
+                    <Code className="h-4 w-4" />
+                </Toggle>
+                <Toggle
+                    size="sm"
+                    pressed={editor.isActive('blockquote')}
+                    onPressedChange={() => editor.chain().focus().toggleBlockquote().run()}
+                    aria-label="Toggle quote"
+                    className="h-8 w-8 p-0"
+                >
+                    <Quote className="h-4 w-4" />
+                </Toggle>
             </div>
-            <Textarea
-                ref={textareaRef}
-                value={value}
-                onChange={(e) => onValueChange && onValueChange(e.target.value)}
-                className={cn("peer min-h-[80px]", className)}
-                {...props}
-            />
+            {/* Editor Area */}
+            <EditorContent editor={editor} className="cursor-text" />
+            {!editor.getText() && placeholder && (
+                <div className="absolute top-12 left-3 text-muted-foreground text-sm pointer-events-none">
+                    {placeholder}
+                </div>
+            )}
         </div>
     );
 };
