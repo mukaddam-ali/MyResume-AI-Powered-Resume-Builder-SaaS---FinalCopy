@@ -68,15 +68,17 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
         fontFamily,
         sectionOrder,
         sectionScales,
-        sectionTitles
+        sectionTitles,
+        isBrandingEnabled,
     } = data;
 
     const customThemeColor = themeColor;
     const fontId = fontFamily;
 
     const effectiveFontId = fontId || 'roboto';
-    // Show branding watermark for free users. Pro users who enabled remove-branding see no watermark.
-    const showBranding = userTier !== 'pro';
+    // Show watermark by default for everyone.
+    // ONLY hidden when: user is Pro AND has explicitly disabled branding (isBrandingEnabled === false).
+    const showBranding = !(userTier === 'pro' && isBrandingEnabled === false);
 
     // Client-Side Rendering: Enable Custom Fonts
     // map user selection to registered font family
@@ -223,25 +225,32 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
     }, s);
     const styles = getStyles(1);
 
-    // Watermark element — renders on EVERY page via fixed prop
-    // react-pdf fixed elements float outside normal layout flow
+    // Watermark — renders on EVERY page via the fixed prop.
+    // Uses a View wrapper for reliable absolute positioning in react-pdf.
     const Watermark = showBranding ? (
-        <Text
+        <View
+            fixed
             style={{
                 position: 'absolute',
-                bottom: 8,
+                bottom: 0,
                 left: 0,
                 right: 0,
-                textAlign: 'center',
-                fontSize: 7.5,
-                color: '#b0b7c3',
-                letterSpacing: 0.8,
-                fontFamily: pdfFontFamily,
+                height: 20,
+                alignItems: 'center',
+                justifyContent: 'center',
             }}
-            fixed
         >
-            Powered By MyResume
-        </Text>
+            <Text
+                style={{
+                    fontSize: 8,
+                    color: '#9ca3af',
+                    letterSpacing: 0.5,
+                    fontFamily: pdfFontFamily,
+                }}
+            >
+                Powered By MyResume
+            </Text>
+        </View>
     ) : null;
 
     // Modern Template Styles
