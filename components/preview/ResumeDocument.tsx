@@ -69,16 +69,12 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
         sectionOrder,
         sectionScales,
         sectionTitles,
-        isBrandingEnabled,
     } = data;
 
     const customThemeColor = themeColor;
     const fontId = fontFamily;
 
     const effectiveFontId = fontId || 'roboto';
-    // Show watermark by default for everyone.
-    // ONLY hidden when: user is Pro AND has explicitly disabled branding (isBrandingEnabled === false).
-    const showBranding = !(userTier === 'pro' && isBrandingEnabled === false);
 
     // Client-Side Rendering: Enable Custom Fonts
     // map user selection to registered font family
@@ -208,50 +204,9 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
             fontSize: 10,
             marginBottom: 2,
         },
-        branding: {
-            // NOTE: In react-pdf, 'fixed' Text/View elements are rendered on every page.
-            // We do NOT use position:'absolute' here because it requires a relative parent.
-            // Instead the Text uses fixed prop + margin to sit at the bottom of each page.
-            position: 'absolute',
-            bottom: 8,
-            left: 0,
-            right: 0,
-            textAlign: 'center',
-            fontSize: 7.5,
-            color: '#b0b7c3',
-            letterSpacing: 0.8,
-            fontFamily: pdfFontFamily,
-        }
     }, s);
     const styles = getStyles(1);
 
-    // Watermark — renders on EVERY page via the fixed prop.
-    // Uses a View wrapper for reliable absolute positioning in react-pdf.
-    const Watermark = showBranding ? (
-        <View
-            fixed
-            style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: 20,
-                alignItems: 'center',
-                justifyContent: 'center',
-            }}
-        >
-            <Text
-                style={{
-                    fontSize: 8,
-                    color: '#9ca3af',
-                    letterSpacing: 0.5,
-                    fontFamily: pdfFontFamily,
-                }}
-            >
-                Powered By MyResume
-            </Text>
-        </View>
-    ) : null;
 
     // Modern Template Styles
     const getModernStyles = (s = 1) => createScaledStyles({
@@ -884,7 +839,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             </View>
                         </View>
                     </View>
-                    {Watermark}
+
                 </Page>
             </Document >
         )
@@ -1039,7 +994,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             {mainSections.map(id => renderModernSection(id, false))}
                         </View>
                     </View>
-                    {showBranding && <Text style={styles.branding} fixed>Powered By MyResume</Text>}
+
                 </Page>
             </Document>
         );
@@ -1189,7 +1144,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             {mainSections.map(renderCreativeSection)}
                         </View>
                     </View>
-                    {showBranding && <Text style={styles.branding} fixed>Powered By MyResume</Text>}
+
                 </Page>
             </Document>
         )
@@ -1416,7 +1371,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
 
                     {sectionOrder.map(renderVelvetSection)}
 
-                    {showBranding && <Text style={styles.branding} fixed>Powered By MyResume</Text>}
+
                 </Page>
             </Document>
         );
@@ -1455,7 +1410,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                     {sectionOrder.map(renderClassicSection)}
                 </View>
 
-                {Watermark}
+
             </Page>
         </Document>
     );

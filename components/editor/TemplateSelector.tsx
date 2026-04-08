@@ -10,26 +10,20 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Layout, FileText, PenTool, Palette, Sparkles, Crown, Trash2, Shield } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { Layout, FileText, PenTool, Palette, Sparkles, Crown, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import UpgradeButton from "@/components/payment/UpgradeButton";
-
 import { cn } from "@/lib/utils";
 
 
 export function TemplateSelector() {
     const activeResumeId = useResumeStore(state => state.activeResumeId);
     const selectedTemplate = useResumeStore(state => state.activeResumeId ? state.resumes[state.activeResumeId]?.selectedTemplate : undefined) || 'classic';
-    const isBrandingEnabled = useResumeStore(state => state.activeResumeId ? state.resumes[state.activeResumeId]?.isBrandingEnabled : undefined) ?? true;
     const setTemplate = useResumeStore(state => state.setTemplate);
     const loadExampleData = useResumeStore(state => state.loadExampleData);
     const resetResume = useResumeStore(state => state.resetResume);
     const userTier = useResumeStore(state => state.userTier);
-    const setBrandingEnabled = useResumeStore(state => state.setBrandingEnabled);
     const [showTemplateUpgrade, setShowTemplateUpgrade] = React.useState(false);
-    const [showBrandingUpgrade, setShowBrandingUpgrade] = React.useState(false);
 
     const templates = [
         { id: 'classic', name: 'Classic', icon: FileText, premium: false, comingSoon: false },
@@ -96,25 +90,6 @@ export function TemplateSelector() {
                 </SelectContent>
             </Select>
 
-            {/* Branding Toggle (Pro Feature) */}
-            <div className="ml-4 flex items-center gap-2">
-                <Switch
-                    checked={!isBrandingEnabled}
-                    onCheckedChange={(checked) => {
-                        if (userTier === 'free' && checked) {
-                            setShowBrandingUpgrade(true);
-                            return;
-                        }
-                        setBrandingEnabled(!checked);
-                    }}
-                    disabled={userTier === 'free'}
-                    className={userTier === 'free' ? 'opacity-50 cursor-not-allowed' : ''}
-                />
-                <Label className="text-sm text-muted-foreground flex items-center gap-1">
-                    Remove Branding
-                    {userTier === 'free' && <Crown className="w-3 h-3 text-yellow-500" />}
-                </Label>
-            </div>
 
             <div className="ml-auto flex gap-2">
                 <Button
@@ -162,23 +137,7 @@ export function TemplateSelector() {
                 </DialogContent>
             </Dialog>
 
-            {/* Branding Removal Upgrade Dialog */}
-            <Dialog open={showBrandingUpgrade} onOpenChange={setShowBrandingUpgrade}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Shield className="h-5 w-5 text-yellow-500" />
-                            Remove Branding - Pro Feature
-                        </DialogTitle>
-                        <DialogDescription>
-                            Remove "Powered by MyResume" branding from your resume. Upgrade to Pro to unlock this feature.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="flex flex-col gap-3 pt-4">
-                        <UpgradeButton fullWidth />
-                    </div>
-                </DialogContent>
-            </Dialog>
+
         </div>
     );
 }

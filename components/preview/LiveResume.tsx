@@ -18,10 +18,7 @@ const PREMIUM_FONTS = ['nunito', 'merriweather', 'librebaskerville'];
 
 export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
     const { isPremium } = useAuth();
-    // Watermark is shown for non-premium users.
-    // Reads from the actual auth state (not the debug toggle) so it tracks the real subscription.
-    const showBranding = !isPremium;
-    const { personalInfo, education, experience, projects, skills, selectedTemplate, themeColor: customThemeColor, contentScale = 1, isBrandingEnabled = true, fontFamily: fontId = 'roboto', sectionScales, sectionTitles = {} } = data;
+    const { personalInfo, education, experience, projects, skills, selectedTemplate, themeColor: customThemeColor, contentScale = 1, fontFamily: fontId = 'roboto', sectionScales, sectionTitles = {} } = data;
 
     // Map font IDs to CSS font family values
     const FONT_FAMILY_MAP: Record<string, string> = {
@@ -506,12 +503,6 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                 {children}
             </div>
 
-            {/* Branding - Absolutely positioned to stamp at the bottom of the A4 page regardless of content length */}
-            {showBranding && (
-                <div className="absolute bottom-2 left-0 right-0 text-center text-[10px] text-gray-400 font-sans pointer-events-none z-50 bg-white/50 backdrop-blur-[1px] py-1" style={{ fontFamily: 'Inter, sans-serif' }}>
-                    Powered by MyResume
-                </div>
-            )}
         </div>
     );
 
