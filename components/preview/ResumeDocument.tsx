@@ -1307,7 +1307,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                     <View key="skills" style={{ marginBottom: 10 }}>
                         <View style={vStyles.sectionHeader}><View style={vStyles.sectionRule} /><Text style={vStyles.sectionTitle}>{sectionTitles.skills || 'Skills'}</Text></View>
                         <View style={vStyles.divider} />
-                        <Text style={{ fontSize: 8.5, color: '#4b5563', lineHeight: 1.6 }}>{skills.filter(s => s && s.trim()).map(s => s.trim()).join('  Â·  ')}</Text>
+                        <Text style={{ fontSize: 8.5, color: '#4b5563', lineHeight: 1.6 }}>{skills.filter(s => s && s.trim()).map(s => s.trim()).join('  \u00B7  ')}</Text>
                     </View>
                 );
                 case 'experience': return experience.length > 0 && (
