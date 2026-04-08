@@ -12,12 +12,11 @@ interface SectionScaleControlProps {
 }
 
 export function SectionScaleControl({ sectionId }: SectionScaleControlProps) {
-    const { resumes, activeResumeId, setSectionScale } = useResumeStore();
-    const activeResume = activeResumeId ? resumes[activeResumeId] : null;
+    const activeResumeId = useResumeStore((state) => state.activeResumeId);
+    const scale = useResumeStore((state) => state.activeResumeId ? state.resumes[state.activeResumeId]?.sectionScales?.[sectionId] : undefined) ?? 1;
+    const setSectionScale = useResumeStore((state) => state.setSectionScale);
 
-    if (!activeResume) return null;
-
-    const scale = activeResume.sectionScales?.[sectionId] ?? 1;
+    if (!activeResumeId) return null;
 
     const handleScaleChange = (value: number[]) => {
         setSectionScale(sectionId, value[0]);

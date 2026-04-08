@@ -2,10 +2,15 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/lib/supabase';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 export async function GET() {
+    // Return empty list gracefully if Supabase is not configured
+    if (!supabaseUrl || !supabaseKey) {
+        return NextResponse.json({ templates: [] });
+    }
+
     try {
         const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
@@ -18,11 +23,8 @@ export async function GET() {
         const data = rawData as any[] | null;
 
         if (error) {
-            console.error('Error fetching templates:', error);
-            return NextResponse.json(
-                { templates: [], error: error.message },
-                { status: 500 }
-            );
+            console.warn('Error fetching templates (Supabase may be unavailable):', error);
+            return NextResponse.json({ templates: [] });
         }
 
         // Transform to match expected format
@@ -40,10 +42,7 @@ export async function GET() {
 
         return NextResponse.json({ templates });
     } catch (error) {
-        console.error('Error in templates route:', error);
-        return NextResponse.json(
-            { templates: [], error: 'Internal server error' },
-            { status: 500 }
-        );
+        console.warn('Error in templates route (Supabase may be unreachable):', error);
+        return NextResponse.json({ templates: [] });
     }
 }

@@ -40,6 +40,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# large debug/generated files
+eslint_errors.json
+diff_output.txt
+build_log*.txt
+verify-*.mjs
+z_ai_prompt.md
+
 .vercel
 
 # Local Netlify folder

@@ -32,11 +32,13 @@ interface PDFLivePreviewProps {
  * capable of rendering PDF via JS (pdf.js) avoids browser plugin issues.
  */
 export function PDFLivePreview({ zoom = 100 }: PDFLivePreviewProps) {
-    const { resumes, activeResumeId } = useResumeStore();
-    const activeResume = activeResumeId ? resumes[activeResumeId] : null;
+    const activeResumeId = useResumeStore((state) => state.activeResumeId);
+    const activeResume = useResumeStore((state) => state.activeResumeId ? state.resumes[state.activeResumeId] : null);
+    const userTier = useResumeStore((state) => state.userTier);
 
     // Debounce resume data to avoid re-rendering PDF on every keystroke
     const debouncedResume = useDebouncedValue(activeResume, 500);
+    const normalizedResume = useMemo(() => normalizeResumeData(debouncedResume), [debouncedResume]);
 
     const [isClient, setIsClient] = useState(false);
 
@@ -88,7 +90,7 @@ export function PDFLivePreview({ zoom = 100 }: PDFLivePreviewProps) {
                                 border: 'none',
                             }}
                         >
-                            <ResumeDocument data={normalizeResumeData(debouncedResume)} userTier="pro" />
+                            <ResumeDocument data={normalizedResume} userTier={userTier} />
                         </PDFViewer>
                     )}
                 </PDFErrorBoundary>

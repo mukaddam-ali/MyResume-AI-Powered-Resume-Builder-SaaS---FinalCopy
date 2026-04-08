@@ -198,19 +198,27 @@ function SortableTabTrigger({ id, value, label, onDelete, onRename }: { id: stri
 
 export function EditorPanel() {
     const { user } = useAuth();
-    const { syncStatus, lastSyncError, resumes, activeResumeId, reorderSections, addCustomSection, removeSection, addSection, updateResumeName, renameSection } = useResumeStore();
-    const activeResume = activeResumeId ? resumes[activeResumeId] : null;
+    const activeResumeId = useResumeStore(state => state.activeResumeId);
+    const syncStatus = useResumeStore(state => state.syncStatus);
+    const lastSyncError = useResumeStore(state => state.lastSyncError);
 
-    // Ensure we have a valid order, fallback to default if legacy resume
-    const sectionOrder = useMemo(() => {
-        return activeResume?.sectionOrder || ['personal', 'education', 'experience', 'projects', 'skills'];
-    }, [activeResume?.sectionOrder]);
+    // Granular resume specific slices
+    const activeResumeName = useResumeStore(state => state.activeResumeId ? state.resumes[state.activeResumeId]?.name : '');
+    const sectionOrder = useResumeStore(state => state.activeResumeId ? state.resumes[state.activeResumeId]?.sectionOrder : undefined) || ['personal', 'education', 'experience', 'projects', 'skills'];
+    const customSections = useResumeStore(state => state.activeResumeId ? state.resumes[state.activeResumeId]?.customSections : undefined) || [];
+    const sectionTitles = useResumeStore(state => state.activeResumeId ? state.resumes[state.activeResumeId]?.sectionTitles : undefined) || {};
+
+    // Actions
+    const reorderSections = useResumeStore(state => state.reorderSections);
+    const addCustomSection = useResumeStore(state => state.addCustomSection);
+    const removeSection = useResumeStore(state => state.removeSection);
+    const addSection = useResumeStore(state => state.addSection);
+    const updateResumeName = useResumeStore(state => state.updateResumeName);
+    const renameSection = useResumeStore(state => state.renameSection);
 
     // Calculate missing standard sections
     const standardSections = ['education', 'experience', 'projects', 'skills'];
     const missingSections = standardSections.filter(id => !(sectionOrder || []).includes(id));
-
-    const customSections = activeResume?.customSections || [];
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -240,11 +248,11 @@ export function EditorPanel() {
     return (
         <div className="flex flex-col bg-background border-r min-h-full">
             <div className="py-4 px-3 border-b flex justify-between items-center gap-4">
-                {activeResume ? (
+                {activeResumeId ? (
                     <div className="flex-1 mr-4">
                         <Input
-                            value={activeResume.name}
-                            onChange={(e) => updateResumeName(activeResume.id, e.target.value)}
+                            value={activeResumeName}
+                            onChange={(e) => updateResumeName(activeResumeId, e.target.value)}
                             className="bg-transparent border-transparent hover:border-input focus:border-input px-2 h-auto py-1 text-xl font-bold w-auto min-w-[150px] max-w-[300px]"
                             aria-label="Rename Resume"
                         />
@@ -316,7 +324,7 @@ export function EditorPanel() {
                                                 <SortableTabTrigger
                                                     id={sectionId}
                                                     value={sectionId}
-                                                    label={getSectionLabel(sectionId, customSections, activeResume?.sectionTitles)}
+                                                    label={getSectionLabel(sectionId, customSections, sectionTitles)}
                                                     onDelete={canDelete ? () => removeSection(sectionId) : undefined}
                                                     onRename={(newTitle) => renameSection(sectionId, newTitle)}
                                                 />
@@ -380,7 +388,7 @@ export function EditorPanel() {
                                                         key={sectionId}
                                                         onClick={() => addSection(sectionId)}
                                                     >
-                                                        <span className="capitalize">{getSectionLabel(sectionId, [], activeResume?.sectionTitles)}</span>
+                                                        <span className="capitalize">{getSectionLabel(sectionId, [], sectionTitles)}</span>
                                                     </DropdownMenuItem>
                                                 ))}
 

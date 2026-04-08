@@ -34,8 +34,12 @@ import { SortableItem } from "../SortableItem";
 import { SectionScaleControl } from "../SectionScaleControl";
 
 export function ProjectsForm() {
-    const { resumes, activeResumeId, addProject, removeProject, updateProject, reorderItems } = useResumeStore();
-    const activeResume = activeResumeId ? resumes[activeResumeId] : null;
+    const activeResumeId = useResumeStore((state) => state.activeResumeId);
+    const projects = useResumeStore((state) => state.activeResumeId ? state.resumes[state.activeResumeId]?.projects : undefined) || [];
+    const addProject = useResumeStore((state) => state.addProject);
+    const removeProject = useResumeStore((state) => state.removeProject);
+    const updateProject = useResumeStore((state) => state.updateProject);
+    const reorderItems = useResumeStore((state) => state.reorderItems);
     const [isGenerating, setIsGenerating] = useState<string | null>(null);
 
     const sensors = useSensors(
@@ -45,9 +49,7 @@ export function ProjectsForm() {
         })
     );
 
-    if (!activeResume) return null;
-
-    const { projects } = activeResume;
+    if (!activeResumeId) return null;
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;

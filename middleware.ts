@@ -31,14 +31,18 @@ export async function middleware(request: NextRequest) {
     // supabase.auth.getUser(). A simple mistake could make it very hard to debug
     // issues with users being randomly logged out.
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
-
-    // Optional: Add protected route logic here if needed
-    // if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
-    //   return NextResponse.redirect(new URL('/login', request.url))
-    // }
+    try {
+        const {
+            data: { user },
+        } = await supabase.auth.getUser()
+        
+        // Optional: Add protected route logic here if needed
+        // if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
+        //   return NextResponse.redirect(new URL('/login', request.url))
+        // }
+    } catch (error) {
+        console.warn('Supabase auth.getUser() failed. Network might be down:', error)
+    }
 
     return supabaseResponse
 }

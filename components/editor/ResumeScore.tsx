@@ -125,11 +125,24 @@ export function ResumeScore() {
                     return;
                 }
 
+                // Prepare filtered data (only visible sections)
+                const visibleSections = activeResume.sectionOrder || [];
+                const filteredResume = {
+                    ...activeResume,
+                    // Only include standard sections if they are in the order list
+                    experience: visibleSections.includes('experience') ? activeResume.experience : [],
+                    education: visibleSections.includes('education') ? activeResume.education : [],
+                    projects: visibleSections.includes('projects') ? activeResume.projects : [],
+                    skills: visibleSections.includes('skills') ? activeResume.skills : [],
+                    // Only include custom sections that are in the order list
+                    customSections: (activeResume.customSections || []).filter(s => visibleSections.includes(s.id))
+                };
+
                 const response = await fetch('/api/ai/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        resumeData: activeResume
+                        resumeData: filteredResume
                     })
                 });
                 const data = await response.json();

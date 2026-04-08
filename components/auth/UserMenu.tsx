@@ -59,7 +59,7 @@ export function UserMenu() {
             <DropdownMenuTrigger asChild>
                 <Button
                     variant="ghost"
-                    className="relative h-9 w-9 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    className="relative h-9 w-9 !rounded-full aspect-square p-0 bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                     <span className="text-sm font-semibold">{initials}</span>
                 </Button>

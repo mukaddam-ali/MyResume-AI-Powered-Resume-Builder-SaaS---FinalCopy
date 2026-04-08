@@ -32,18 +32,17 @@ interface CustomSectionFormProps {
 import { SectionScaleControl } from "../SectionScaleControl";
 
 export function CustomSectionForm({ sectionId }: CustomSectionFormProps) {
-    const {
-        resumes,
-        activeResumeId,
-        updateCustomSectionTitle,
-        addCustomItem,
-        removeCustomItem,
-        updateCustomItem,
-        reorderItems,
-        reorderCustomItems
-    } = useResumeStore();
-
-    const activeResume = activeResumeId ? resumes[activeResumeId] : null;
+    const activeResumeId = useResumeStore((state) => state.activeResumeId);
+    const section = useResumeStore((state) =>
+        state.activeResumeId
+            ? state.resumes[state.activeResumeId]?.customSections?.find(s => s.id === sectionId)
+            : undefined
+    );
+    const updateCustomSectionTitle = useResumeStore((state) => state.updateCustomSectionTitle);
+    const addCustomItem = useResumeStore((state) => state.addCustomItem);
+    const removeCustomItem = useResumeStore((state) => state.removeCustomItem);
+    const updateCustomItem = useResumeStore((state) => state.updateCustomItem);
+    const reorderCustomItems = useResumeStore((state) => state.reorderCustomItems);
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -52,10 +51,7 @@ export function CustomSectionForm({ sectionId }: CustomSectionFormProps) {
         })
     );
 
-    if (!activeResume) return null;
-
-    const section = activeResume.customSections?.find(s => s.id === sectionId);
-    if (!section) return null;
+    if (!activeResumeId || !section) return null;
 
     const items = section.items || [];
 

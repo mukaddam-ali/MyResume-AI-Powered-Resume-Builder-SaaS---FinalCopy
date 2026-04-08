@@ -2,19 +2,20 @@ import { Font } from '@react-pdf/renderer';
 
 let fontsRegistered = false;
 
+// Use local font paths to avoid Chrome CORS issues with external fetches
+const F = (name: string) => `/fonts/${name}`;
+
 export const registerClientFonts = () => {
     if (fontsRegistered) return;
 
     try {
-        // Register Google Fonts via unpkg/fontsource (Reliable & Zero-Config) - Mirrors server config
-
         // Inter
         Font.register({
             family: 'Inter',
             fonts: [
-                { src: 'https://unpkg.com/@fontsource/inter/files/inter-latin-400-normal.woff', fontWeight: 400 },
-                { src: 'https://unpkg.com/@fontsource/inter/files/inter-latin-700-normal.woff', fontWeight: 700 },
-                { src: 'https://unpkg.com/@fontsource/inter/files/inter-latin-400-italic.woff', fontWeight: 400, fontStyle: 'italic' },
+                { src: F('inter-latin-400-normal.woff'), fontWeight: 400 },
+                { src: F('inter-latin-700-normal.woff'), fontWeight: 700 },
+                { src: F('inter-latin-400-italic.woff'), fontWeight: 400, fontStyle: 'italic' },
             ],
         });
 
@@ -22,9 +23,9 @@ export const registerClientFonts = () => {
         Font.register({
             family: 'Playfair Display',
             fonts: [
-                { src: 'https://unpkg.com/@fontsource/playfair-display/files/playfair-display-latin-400-normal.woff', fontWeight: 400 },
-                { src: 'https://unpkg.com/@fontsource/playfair-display/files/playfair-display-latin-700-normal.woff', fontWeight: 700 },
-                { src: 'https://unpkg.com/@fontsource/playfair-display/files/playfair-display-latin-400-italic.woff', fontWeight: 400, fontStyle: 'italic' },
+                { src: F('playfair-display-latin-400-normal.woff'), fontWeight: 400 },
+                { src: F('playfair-display-latin-700-normal.woff'), fontWeight: 700 },
+                { src: F('playfair-display-latin-400-italic.woff'), fontWeight: 400, fontStyle: 'italic' },
             ],
         });
 
@@ -32,10 +33,10 @@ export const registerClientFonts = () => {
         Font.register({
             family: 'Space Grotesk',
             fonts: [
-                { src: 'https://unpkg.com/@fontsource/space-grotesk/files/space-grotesk-latin-400-normal.woff', fontWeight: 400 },
-                { src: 'https://unpkg.com/@fontsource/space-grotesk/files/space-grotesk-latin-700-normal.woff', fontWeight: 700 },
+                { src: F('space-grotesk-latin-400-normal.woff'), fontWeight: 400 },
+                { src: F('space-grotesk-latin-700-normal.woff'), fontWeight: 700 },
                 // Fallback: Map Italic to Normal to prevent crash (No Italic in @fontsource)
-                { src: 'https://unpkg.com/@fontsource/space-grotesk/files/space-grotesk-latin-400-normal.woff', fontWeight: 400, fontStyle: 'italic' },
+                { src: F('space-grotesk-latin-400-normal.woff'), fontWeight: 400, fontStyle: 'italic' },
             ],
         });
 
@@ -43,9 +44,9 @@ export const registerClientFonts = () => {
         Font.register({
             family: 'Crimson Pro',
             fonts: [
-                { src: 'https://unpkg.com/@fontsource/crimson-pro/files/crimson-pro-latin-400-normal.woff', fontWeight: 400 },
-                { src: 'https://unpkg.com/@fontsource/crimson-pro/files/crimson-pro-latin-700-normal.woff', fontWeight: 700 },
-                { src: 'https://unpkg.com/@fontsource/crimson-pro/files/crimson-pro-latin-400-italic.woff', fontWeight: 400, fontStyle: 'italic' },
+                { src: F('crimson-pro-latin-400-normal.woff'), fontWeight: 400 },
+                { src: F('crimson-pro-latin-700-normal.woff'), fontWeight: 700 },
+                { src: F('crimson-pro-latin-400-italic.woff'), fontWeight: 400, fontStyle: 'italic' },
             ],
         });
 
@@ -53,9 +54,9 @@ export const registerClientFonts = () => {
         Font.register({
             family: 'DM Sans',
             fonts: [
-                { src: 'https://unpkg.com/@fontsource/dm-sans/files/dm-sans-latin-400-normal.woff', fontWeight: 400 },
-                { src: 'https://unpkg.com/@fontsource/dm-sans/files/dm-sans-latin-700-normal.woff', fontWeight: 700 },
-                { src: 'https://unpkg.com/@fontsource/dm-sans/files/dm-sans-latin-400-italic.woff', fontWeight: 400, fontStyle: 'italic' },
+                { src: F('dm-sans-latin-400-normal.woff'), fontWeight: 400 },
+                { src: F('dm-sans-latin-700-normal.woff'), fontWeight: 700 },
+                { src: F('dm-sans-latin-400-italic.woff'), fontWeight: 400, fontStyle: 'italic' },
             ],
         });
 
@@ -63,9 +64,9 @@ export const registerClientFonts = () => {
         Font.register({
             family: 'Libre Baskerville',
             fonts: [
-                { src: 'https://unpkg.com/@fontsource/libre-baskerville/files/libre-baskerville-latin-400-normal.woff', fontWeight: 400 },
-                { src: 'https://unpkg.com/@fontsource/libre-baskerville/files/libre-baskerville-latin-700-normal.woff', fontWeight: 700 },
-                { src: 'https://unpkg.com/@fontsource/libre-baskerville/files/libre-baskerville-latin-400-italic.woff', fontWeight: 400, fontStyle: 'italic' },
+                { src: F('libre-baskerville-latin-400-normal.woff'), fontWeight: 400 },
+                { src: F('libre-baskerville-latin-700-normal.woff'), fontWeight: 700 },
+                { src: F('libre-baskerville-latin-400-italic.woff'), fontWeight: 400, fontStyle: 'italic' },
             ],
         });
 
@@ -73,10 +74,10 @@ export const registerClientFonts = () => {
         Font.register({
             family: 'Manrope',
             fonts: [
-                { src: 'https://unpkg.com/@fontsource/manrope/files/manrope-latin-400-normal.woff', fontWeight: 400 },
-                { src: 'https://unpkg.com/@fontsource/manrope/files/manrope-latin-700-normal.woff', fontWeight: 700 },
+                { src: F('manrope-latin-400-normal.woff'), fontWeight: 400 },
+                { src: F('manrope-latin-700-normal.woff'), fontWeight: 700 },
                 // Fallback: Map Italic to Normal to prevent crash (No Italic in @fontsource)
-                { src: 'https://unpkg.com/@fontsource/manrope/files/manrope-latin-400-normal.woff', fontWeight: 400, fontStyle: 'italic' },
+                { src: F('manrope-latin-400-normal.woff'), fontWeight: 400, fontStyle: 'italic' },
             ],
         });
 
@@ -84,21 +85,19 @@ export const registerClientFonts = () => {
         Font.register({
             family: 'Roboto',
             fonts: [
-                { src: 'https://unpkg.com/@fontsource/roboto/files/roboto-latin-400-normal.woff', fontWeight: 400 },
-                { src: 'https://unpkg.com/@fontsource/roboto/files/roboto-latin-700-normal.woff', fontWeight: 700 },
-                { src: 'https://unpkg.com/@fontsource/roboto/files/roboto-latin-400-italic.woff', fontWeight: 400, fontStyle: 'italic' },
+                { src: F('roboto-latin-400-normal.woff'), fontWeight: 400 },
+                { src: F('roboto-latin-700-normal.woff'), fontWeight: 700 },
+                { src: F('roboto-latin-400-italic.woff'), fontWeight: 400, fontStyle: 'italic' },
             ],
         });
-
-        // --- NEW DISTINCT FONTS ---
 
         // Lora
         Font.register({
             family: 'Lora',
             fonts: [
-                { src: 'https://unpkg.com/@fontsource/lora/files/lora-latin-400-normal.woff', fontWeight: 400 },
-                { src: 'https://unpkg.com/@fontsource/lora/files/lora-latin-700-normal.woff', fontWeight: 700 },
-                { src: 'https://unpkg.com/@fontsource/lora/files/lora-latin-400-italic.woff', fontWeight: 400, fontStyle: 'italic' },
+                { src: F('lora-latin-400-normal.woff'), fontWeight: 400 },
+                { src: F('lora-latin-700-normal.woff'), fontWeight: 700 },
+                { src: F('lora-latin-400-italic.woff'), fontWeight: 400, fontStyle: 'italic' },
             ],
         });
 
@@ -106,9 +105,9 @@ export const registerClientFonts = () => {
         Font.register({
             family: 'Montserrat',
             fonts: [
-                { src: 'https://unpkg.com/@fontsource/montserrat/files/montserrat-latin-400-normal.woff', fontWeight: 400 },
-                { src: 'https://unpkg.com/@fontsource/montserrat/files/montserrat-latin-700-normal.woff', fontWeight: 700 },
-                { src: 'https://unpkg.com/@fontsource/montserrat/files/montserrat-latin-400-italic.woff', fontWeight: 400, fontStyle: 'italic' },
+                { src: F('montserrat-latin-400-normal.woff'), fontWeight: 400 },
+                { src: F('montserrat-latin-700-normal.woff'), fontWeight: 700 },
+                { src: F('montserrat-latin-400-italic.woff'), fontWeight: 400, fontStyle: 'italic' },
             ],
         });
 
@@ -116,9 +115,9 @@ export const registerClientFonts = () => {
         Font.register({
             family: 'Raleway',
             fonts: [
-                { src: 'https://unpkg.com/@fontsource/raleway/files/raleway-latin-400-normal.woff', fontWeight: 400 },
-                { src: 'https://unpkg.com/@fontsource/raleway/files/raleway-latin-700-normal.woff', fontWeight: 700 },
-                { src: 'https://unpkg.com/@fontsource/raleway/files/raleway-latin-400-italic.woff', fontWeight: 400, fontStyle: 'italic' },
+                { src: F('raleway-latin-400-normal.woff'), fontWeight: 400 },
+                { src: F('raleway-latin-700-normal.woff'), fontWeight: 700 },
+                { src: F('raleway-latin-400-italic.woff'), fontWeight: 400, fontStyle: 'italic' },
             ],
         });
 
@@ -126,9 +125,9 @@ export const registerClientFonts = () => {
         Font.register({
             family: 'Merriweather',
             fonts: [
-                { src: 'https://unpkg.com/@fontsource/merriweather/files/merriweather-latin-400-normal.woff', fontWeight: 400 },
-                { src: 'https://unpkg.com/@fontsource/merriweather/files/merriweather-latin-700-normal.woff', fontWeight: 700 },
-                { src: 'https://unpkg.com/@fontsource/merriweather/files/merriweather-latin-400-italic.woff', fontWeight: 400, fontStyle: 'italic' },
+                { src: F('merriweather-latin-400-normal.woff'), fontWeight: 400 },
+                { src: F('merriweather-latin-700-normal.woff'), fontWeight: 700 },
+                { src: F('merriweather-latin-400-italic.woff'), fontWeight: 400, fontStyle: 'italic' },
             ],
         });
 
@@ -136,10 +135,10 @@ export const registerClientFonts = () => {
         Font.register({
             family: 'Oswald',
             fonts: [
-                { src: 'https://unpkg.com/@fontsource/oswald/files/oswald-latin-400-normal.woff', fontWeight: 400 },
-                { src: 'https://unpkg.com/@fontsource/oswald/files/oswald-latin-700-normal.woff', fontWeight: 700 },
+                { src: F('oswald-latin-400-normal.woff'), fontWeight: 400 },
+                { src: F('oswald-latin-700-normal.woff'), fontWeight: 700 },
                 // Fallback: Map Italic to Normal to prevent crash (No Italic in @fontsource)
-                { src: 'https://unpkg.com/@fontsource/oswald/files/oswald-latin-400-normal.woff', fontWeight: 400, fontStyle: 'italic' },
+                { src: F('oswald-latin-400-normal.woff'), fontWeight: 400, fontStyle: 'italic' },
             ],
         });
 
@@ -147,9 +146,9 @@ export const registerClientFonts = () => {
         Font.register({
             family: 'PT Serif',
             fonts: [
-                { src: 'https://unpkg.com/@fontsource/pt-serif/files/pt-serif-latin-400-normal.woff', fontWeight: 400 },
-                { src: 'https://unpkg.com/@fontsource/pt-serif/files/pt-serif-latin-700-normal.woff', fontWeight: 700 },
-                { src: 'https://unpkg.com/@fontsource/pt-serif/files/pt-serif-latin-400-italic.woff', fontWeight: 400, fontStyle: 'italic' },
+                { src: F('pt-serif-latin-400-normal.woff'), fontWeight: 400 },
+                { src: F('pt-serif-latin-700-normal.woff'), fontWeight: 700 },
+                { src: F('pt-serif-latin-400-italic.woff'), fontWeight: 400, fontStyle: 'italic' },
             ],
         });
 

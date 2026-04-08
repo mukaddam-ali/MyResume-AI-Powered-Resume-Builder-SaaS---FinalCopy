@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Mail, Phone, MapPin, Linkedin, Link as LinkIcon, Github, Sparkles } from 'lucide-react';
 import { FormattedText } from '@/components/preview/FormattedText';
 import { RESUME_STYLES } from '@/lib/styles/resume-constants';
+import { useAuth } from '@/lib/auth-context';
 
 interface LiveResumeProps {
     data: ResumeData;
@@ -16,7 +17,10 @@ interface LiveResumeProps {
 const PREMIUM_FONTS = ['nunito', 'merriweather', 'librebaskerville'];
 
 export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
-    const { userTier } = useResumeStore();
+    const { isPremium } = useAuth();
+    // Watermark is shown for non-premium users.
+    // Reads from the actual auth state (not the debug toggle) so it tracks the real subscription.
+    const showBranding = !isPremium;
     const { personalInfo, education, experience, projects, skills, selectedTemplate, themeColor: customThemeColor, contentScale = 1, isBrandingEnabled = true, fontFamily: fontId = 'roboto', sectionScales, sectionTitles = {} } = data;
 
     // Map font IDs to CSS font family values
@@ -34,7 +38,7 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
     };
 
     // Enforce free tier: fall back to 'roboto' if user is free and has a premium font
-    const effectiveFontId = (userTier === 'free' && PREMIUM_FONTS.includes(fontId)) ? 'roboto' : fontId;
+    const effectiveFontId = (!isPremium && PREMIUM_FONTS.includes(fontId)) ? 'roboto' : fontId;
     const fontFamily = FONT_FAMILY_MAP[effectiveFontId] || 'Roboto, sans-serif';
 
 
@@ -491,23 +495,23 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
     const getMainSections = () => sectionOrder.filter(id => !sidebarIds.includes(id) && id !== 'personal');
 
     const ScaledWrapper = ({ children, className = "", style = {} }: { children: React.ReactNode, className?: string, style?: React.CSSProperties }) => (
-        <div data-template={selectedTemplate} className={cn("w-[794px] h-[1123px] bg-white shadow-2xl mx-auto origin-top-left overflow-auto flex flex-col border-x-[3px] border-slate-300/80 dark:border-slate-600/80 relative")} style={{ transform: `scale(${scale})` }}>
-
-            {/* Branding - Fixed at Bottom */}
-            {isBrandingEnabled && (
-                <div className="absolute bottom-4 left-0 right-0 text-center text-[10px] text-gray-500 font-sans pointer-events-none z-50 print:block" style={{ fontFamily: 'Inter, sans-serif' }}>
-                    Powered by MyResume
-                </div>
-            )}
+        <div data-template={selectedTemplate} className={cn("w-[794px] h-[1123px] bg-white shadow-2xl mx-auto origin-top-left overflow-hidden flex flex-col border-x-[3px] border-slate-300/80 dark:border-slate-600/80 relative")} style={{ transform: `scale(${scale})` }}>
 
             <div style={{
                 width: `${100 / (contentScale || 1)}%`,
                 transform: `scale(${contentScale || 1})`,
                 transformOrigin: 'top left',
                 ...style,
-            }} className={cn("flex-1 flex min-h-full relative", className)}>
+            }} className={cn("flex-1 flex relative", className)}>
                 {children}
             </div>
+
+            {/* Branding - Absolutely positioned to stamp at the bottom of the A4 page regardless of content length */}
+            {showBranding && (
+                <div className="absolute bottom-2 left-0 right-0 text-center text-[10px] text-gray-400 font-sans pointer-events-none z-50 bg-white/50 backdrop-blur-[1px] py-1" style={{ fontFamily: 'Inter, sans-serif' }}>
+                    Powered by MyResume
+                </div>
+            )}
         </div>
     );
 
@@ -736,10 +740,6 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                 {/* Render all sections cleanly in simple order */}
                 {sectionOrder.map(renderSection)}
 
-                <div className="mt-auto pt-8 text-center font-sans print:block">
-                    <span className="text-red-500 font-bold text-lg">DEBUG: FORCE BRANDING</span>
-                    {isBrandingEnabled && <span className="text-[10px] text-gray-500 opacity-70 block">Powered by MyResume</span>}
-                </div>
             </div>
         </ScaledWrapper>
     );

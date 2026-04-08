@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { createBrowserClient, isSupabaseReady } from './supabase';
 import { useResumeStore } from '@/store/useResumeStore';
@@ -28,19 +28,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check if Supabase is configured
     const supabaseConfigured = isSupabaseReady();
 
+    // Create Supabase client once to avoid multiple GoTrueClient instances
+    const supabase = useMemo(() => {
+        if (!supabaseConfigured) return null;
+        return createBrowserClient();
+    }, [supabaseConfigured]);
+
     useEffect(() => {
-        if (!supabaseConfigured) {
+        if (!supabaseConfigured || !supabase) {
             // Supabase not configured, just set loading to false
             setLoading(false);
             return;
         }
 
-        const supabase = createBrowserClient();
-
-        // Get initial session
+        // Get initial session — wrapped in try/catch to handle network failures gracefully
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
             setUser(session?.user ?? null);
+            setLoading(false);
+        }).catch((err) => {
+            console.warn('Supabase getSession failed (server may be unreachable):', err);
             setLoading(false);
         });
 
@@ -54,15 +61,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
 
         return () => subscription.unsubscribe();
-    }, [supabaseConfigured]);
+    }, [supabaseConfigured, supabase]);
 
     const signInWithGoogle = async () => {
-        if (!supabaseConfigured) {
+        if (!supabaseConfigured || !supabase) {
             alert('Authentication is not configured yet.\n\nPlease follow the SETUP_GUIDE.md to configure Supabase and Google OAuth.');
             console.warn('Supabase is not configured. Please set up environment variables.');
             return;
         }
-        const supabase = createBrowserClient();
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
@@ -73,8 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const signOut = async () => {
-        if (!supabaseConfigured) return;
-        const supabase = createBrowserClient();
+        if (!supabaseConfigured || !supabase) return;
         const { error } = await supabase.auth.signOut();
         if (error) console.error('Error signing out:', error);
     };

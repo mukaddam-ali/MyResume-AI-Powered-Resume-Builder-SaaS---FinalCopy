@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, AlertTriangle, XCircle, Search, Target, Zap, Layout, Type } from 'lucide-react';
+import { CheckCircle, AlertTriangle, XCircle, Search, Target, Zap, Layout, Type, Sparkles } from 'lucide-react';
 
 interface ATSResultsProps {
     data: {
@@ -31,6 +31,11 @@ interface ATSResultsProps {
         feedback?: string[];
         red_flags?: string[];
         summary?: string;
+        suggested_edits?: Array<{
+            section: string;
+            suggestion: string;
+            reason: string;
+        }>;
     } | null;
     loading: boolean;
 }
@@ -47,6 +52,7 @@ export function ATSResults({ data, loading }: ATSResultsProps) {
                             <Search className="absolute inset-0 m-auto h-6 w-6 text-primary animate-pulse" />
                         </div>
                         <p className="text-sm font-medium text-muted-foreground animate-pulse">Running AI Analysis...</p>
+                        <p className="text-xs text-muted-foreground">Checking ATS compatibility & generating suggestions...</p>
                     </div>
                 </CardContent>
             </Card>
@@ -99,6 +105,23 @@ export function ATSResults({ data, loading }: ATSResultsProps) {
     // Premium tier analysis - full AI-powered feedback
     const premiumData = data as Required<typeof data>;
 
+    // Ensure score is 0-100 (handle 0-1 decimals just in case)
+    const displayScore = premiumData.score <= 1 && premiumData.score > 0
+        ? Math.round(premiumData.score * 100)
+        : Math.round(premiumData.score);
+
+    // Normalize category scores if they are likely 1-10 scale
+    const normalizeCategoryScore = (score: number) => {
+        return score <= 10 && score > 0 ? score * 10 : score;
+    };
+
+    const categoryScores = {
+        impact: normalizeCategoryScore(premiumData.category_scores.impact),
+        brevity: normalizeCategoryScore(premiumData.category_scores.brevity),
+        style: normalizeCategoryScore(premiumData.category_scores.style),
+        structure: normalizeCategoryScore(premiumData.category_scores.structure),
+    };
+
     const getScoreColor = (score: number) => {
         if (score >= 80) return 'text-green-500';
         if (score >= 60) return 'text-yellow-500';
@@ -139,13 +162,13 @@ export function ATSResults({ data, loading }: ATSResultsProps) {
                                 stroke="currentColor"
                                 strokeWidth="8"
                                 strokeDasharray={2 * Math.PI * 45}
-                                strokeDashoffset={2 * Math.PI * 45 * ((100 - premiumData.score) / 100)}
+                                strokeDashoffset={2 * Math.PI * 45 * ((100 - displayScore) / 100)}
                                 strokeLinecap="round"
-                                className={`transition-all duration-1000 ease-out ${getScoreColor(premiumData.score)}`}
+                                className={`transition-all duration-1000 ease-out ${getScoreColor(displayScore)}`}
                             />
                         </svg>
                         <div className="absolute flex flex-col items-center">
-                            <span className={`text-3xl font-bold ${getScoreColor(premiumData.score)}`}>{premiumData.score}</span>
+                            <span className={`text-3xl font-bold ${getScoreColor(displayScore)}`}>{displayScore}</span>
                             <span className="text-xs uppercase font-bold text-muted-foreground">Score</span>
                         </div>
                     </div>
@@ -154,38 +177,42 @@ export function ATSResults({ data, loading }: ATSResultsProps) {
                         <div className="space-y-1">
                             <div className="flex justify-between text-xs font-medium">
                                 <span className="flex items-center gap-1.5"><Zap className="w-3 h-3" /> Impact</span>
-                                <span>{premiumData.category_scores.impact}/100</span>
+                                <span>{categoryScores.impact}/100</span>
                             </div>
-                            <Progress value={premiumData.category_scores.impact} className="h-2" indicatorClassName={getScoreBg(premiumData.category_scores.impact)} />
+                            <Progress value={categoryScores.impact} className="h-2" indicatorClassName={getScoreBg(categoryScores.impact)} />
                         </div>
                         <div className="space-y-1">
                             <div className="flex justify-between text-xs font-medium">
                                 <span className="flex items-center gap-1.5"><Layout className="w-3 h-3" /> Structure</span>
-                                <span>{premiumData.category_scores.structure}/100</span>
+                                <span>{categoryScores.structure}/100</span>
                             </div>
-                            <Progress value={premiumData.category_scores.structure} className="h-2" indicatorClassName={getScoreBg(premiumData.category_scores.structure)} />
+                            <Progress value={categoryScores.structure} className="h-2" indicatorClassName={getScoreBg(categoryScores.structure)} />
                         </div>
                         <div className="space-y-1">
                             <div className="flex justify-between text-xs font-medium">
                                 <span className="flex items-center gap-1.5"><Type className="w-3 h-3" /> Brevity</span>
-                                <span>{premiumData.category_scores.brevity}/100</span>
+                                <span>{categoryScores.brevity}/100</span>
                             </div>
-                            <Progress value={premiumData.category_scores.brevity} className="h-2" indicatorClassName={getScoreBg(premiumData.category_scores.brevity)} />
+                            <Progress value={categoryScores.brevity} className="h-2" indicatorClassName={getScoreBg(categoryScores.brevity)} />
                         </div>
                         <div className="space-y-1">
                             <div className="flex justify-between text-xs font-medium">
                                 <span className="flex items-center gap-1.5"><Target className="w-3 h-3" /> Style</span>
-                                <span>{premiumData.category_scores.style}/100</span>
+                                <span>{categoryScores.style}/100</span>
                             </div>
-                            <Progress value={premiumData.category_scores.style} className="h-2" indicatorClassName={getScoreBg(premiumData.category_scores.style)} />
+                            <Progress value={categoryScores.style} className="h-2" indicatorClassName={getScoreBg(categoryScores.style)} />
                         </div>
                     </div>
                 </div>
             </CardHeader>
 
             <CardContent className="p-0 max-h-[400px] overflow-y-auto">
-                <Tabs defaultValue="feedback" className="w-full">
+                <Tabs defaultValue="suggestions" className="w-full">
                     <TabsList className="w-full justify-start rounded-none border-b bg-background px-4 h-12">
+                        <TabsTrigger value="suggestions" className="data-[state=active]:bg-primary/5">
+                            Suggestions
+                            {premiumData.suggested_edits && premiumData.suggested_edits.length > 0 && <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-[10px] bg-primary/10 text-primary">{premiumData.suggested_edits.length}</Badge>}
+                        </TabsTrigger>
                         <TabsTrigger value="feedback" className="data-[state=active]:bg-primary/5">Feedback</TabsTrigger>
                         <TabsTrigger value="keywords" className="data-[state=active]:bg-primary/5">
                             Keywords
@@ -198,6 +225,35 @@ export function ATSResults({ data, loading }: ATSResultsProps) {
                     </TabsList>
 
                     <div className="p-6">
+                        <TabsContent value="suggestions" className="mt-0 space-y-4">
+                            {premiumData.suggested_edits && premiumData.suggested_edits.length > 0 ? (
+                                premiumData.suggested_edits.map((edit, i) => (
+                                    <div key={i} className="rounded-lg border bg-card text-card-foreground shadow-sm">
+                                        <div className="p-4 space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <Badge variant="outline" className="capitalize">{edit.section}</Badge>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="text-sm font-medium text-muted-foreground">Reasoning</p>
+                                                <p className="text-sm text-foreground">{edit.reason}</p>
+                                            </div>
+                                            <div className="space-y-1 bg-muted/40 p-3 rounded-md border border-dashed">
+                                                <p className="text-xs font-semibold text-primary uppercase tracking-wider flex items-center gap-1">
+                                                    <Sparkles className="h-3 w-3" /> Try This
+                                                </p>
+                                                <p className="text-sm italic text-foreground/90 leading-relaxed">"{edit.suggestion}"</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-20" />
+                                    <p>No specific rewrite suggestions generated. Your content might already be strong!</p>
+                                </div>
+                            )}
+                        </TabsContent>
+
                         <TabsContent value="feedback" className="mt-0 space-y-4">
                             <div className="space-y-3">
                                 {premiumData.feedback.map((item, i) => (

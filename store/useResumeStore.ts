@@ -60,7 +60,7 @@ export interface PersonalInfo {
     socialMedia?: SocialMedia[];
 }
 
-export type TemplateType = 'classic' | 'modern' | 'minimalist' | 'creative';
+export type TemplateType = 'classic' | 'modern' | 'minimalist' | 'creative' | 'velvet';
 
 export interface CustomSectionItem {
     id: string;
@@ -1086,7 +1086,7 @@ export const useResumeStore = create<ResumeState>()(
                                 selectedTemplate: get().resumes[id]?.selectedTemplate || 'modern',
                                 themeColor: get().resumes[id]?.themeColor || '#112e51',
                                 contentScale: 1,
-                                isBrandingEnabled: false,
+                                isBrandingEnabled: true,
                                 fontFamily: 'roboto'
                             }
                         },

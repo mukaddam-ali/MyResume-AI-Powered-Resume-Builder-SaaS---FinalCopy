@@ -1,4 +1,4 @@
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createGroq } from "@ai-sdk/groq";
 import { generateText } from "ai";
 import { NextResponse } from "next/server";
 
@@ -6,9 +6,9 @@ export async function POST(req: Request) {
     try {
         const { type, title, context } = await req.json();
 
-        if (!process.env.GEMINI_API_KEY) {
+        if (!process.env.GROQ_API_KEY) {
             return NextResponse.json(
-                { error: "GEMINI_API_KEY is not set in environment variables." },
+                { error: "GROQ_API_KEY is not set in environment variables." },
                 { status: 500 }
             );
         }
@@ -45,12 +45,12 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Invalid generation type" }, { status: 400 });
         }
 
-        const google = createGoogleGenerativeAI({
-            apiKey: process.env.GEMINI_API_KEY
+        const groq = createGroq({
+            apiKey: process.env.GROQ_API_KEY
         });
 
         const { text } = await generateText({
-            model: google("gemini-2.0-flash"),
+            model: groq("llama-3.3-70b-versatile"),
             prompt: prompt,
         });
 

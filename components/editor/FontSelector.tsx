@@ -11,31 +11,31 @@ import UpgradeButton from '@/components/payment/UpgradeButton';
 
 export const FONT_OPTIONS = [
     // --- FREE FONTS ---
-    { id: 'inter', name: 'Inter (Clean)', family: 'var(--font-inter)', premium: false },
+    { id: 'inter', name: 'Inter (Clean)', family: 'Inter, sans-serif', premium: false },
     { id: 'roboto', name: 'Roboto (Classic)', family: 'Roboto, sans-serif', premium: false },
-    { id: 'merriweather', name: 'Merriweather (Slab)', family: 'var(--font-merriweather)', premium: false },
-    { id: 'oswald', name: 'Oswald (Condensed)', family: 'var(--font-oswald)', premium: false },
+    { id: 'merriweather', name: 'Merriweather (Slab)', family: 'Merriweather, serif', premium: false },
+    { id: 'oswald', name: 'Oswald (Condensed)', family: 'Oswald, sans-serif', premium: false },
 
     // --- PREMIUM FONTS (Pro Plan Only) ---
     // Modern Sans
-    { id: 'manrope', name: 'Manrope (Modern)', family: 'var(--font-manrope)', premium: true },
-    { id: 'dm-sans', name: 'DM Sans (Friendly)', family: 'var(--font-dm-sans)', premium: true },
-    { id: 'montserrat', name: 'Montserrat (Geometric)', family: 'var(--font-montserrat)', premium: true },
-    { id: 'raleway', name: 'Raleway (Elegant)', family: 'var(--font-raleway)', premium: true },
-    { id: 'space-grotesk', name: 'Space Grotesk (Tech)', family: 'var(--font-space-grotesk)', premium: true },
+    { id: 'manrope', name: 'Manrope (Modern)', family: 'Manrope, sans-serif', premium: true },
+    { id: 'dm-sans', name: 'DM Sans (Friendly)', family: 'DM Sans, sans-serif', premium: true },
+    { id: 'montserrat', name: 'Montserrat (Geometric)', family: 'Montserrat, sans-serif', premium: true },
+    { id: 'raleway', name: 'Raleway (Elegant)', family: 'Raleway, sans-serif', premium: true },
+    { id: 'space-grotesk', name: 'Space Grotesk (Tech)', family: 'Space Grotesk, sans-serif', premium: true },
 
     // Elegant Serif
-    { id: 'playfair', name: 'Playfair Display', family: 'var(--font-playfair)', premium: true },
-    { id: 'lora', name: 'Lora (Calligraphic)', family: 'var(--font-lora)', premium: true },
-    { id: 'pt-serif', name: 'PT Serif (Academic)', family: 'var(--font-pt-serif)', premium: true },
-    { id: 'libre-baskerville', name: 'Libre Baskerville', family: 'var(--font-libre-baskerville)', premium: true },
-    { id: 'crimson-pro', name: 'Crimson Pro', family: 'var(--font-crimson-pro)', premium: true },
+    { id: 'playfair', name: 'Playfair Display', family: 'Playfair Display, serif', premium: true },
+    { id: 'lora', name: 'Lora (Calligraphic)', family: 'Lora, serif', premium: true },
+    { id: 'pt-serif', name: 'PT Serif (Academic)', family: 'PT Serif, serif', premium: true },
+    { id: 'libre-baskerville', name: 'Libre Baskerville', family: 'Libre Baskerville, serif', premium: true },
+    { id: 'crimson-pro', name: 'Crimson Pro', family: 'Crimson Pro, serif', premium: true },
 ];
 
 export function FontSelector() {
-    const { resumes, activeResumeId, setFontFamily, userTier } = useResumeStore();
-    const activeResume = activeResumeId ? resumes[activeResumeId] : null;
-    const currentFont = activeResume?.fontFamily || 'roboto';
+    const userTier = useResumeStore(state => state.userTier);
+    const currentFont = useResumeStore(state => state.activeResumeId ? state.resumes[state.activeResumeId]?.fontFamily : undefined) || 'roboto';
+    const setFontFamily = useResumeStore(state => state.setFontFamily);
     const [showUpgradeDialog, setShowUpgradeDialog] = React.useState(false);
 
     const handleFontChange = (value: string) => {

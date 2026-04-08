@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ResumeData } from '@/store/useResumeStore';
+import { useResumeStore, ResumeData } from '@/store/useResumeStore';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
 import { ResumeDocument } from './ResumeDocument';
 import { normalizeResumeData } from '@/lib/normalizeResume';
 import { Button } from '@/components/ui/button';
+import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue';
 
 // Define window interface for global pdfjsLib
 declare global {
@@ -33,6 +34,7 @@ const PDFJS_WORKER_CDN = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_
  * This ensures the library never touches the build system.
  */
 export default function ScriptPDFViewer({ data, className }: ScriptPDFViewerProps) {
+    const userTier = useResumeStore((state) => state.userTier);
     const [libLoaded, setLibLoaded] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -41,8 +43,12 @@ export default function ScriptPDFViewer({ data, className }: ScriptPDFViewerProp
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRefs = useRef<HTMLCanvasElement[]>([]);
 
-    // Normalize data
-    const normalizedData = React.useMemo(() => normalizeResumeData(data), [data]);
+    // Debounce first to prevent doing heavy normalization mapping on every keystroke
+    const debouncedData = useDebouncedValue(data, 800);
+    const normalizedData = React.useMemo(() => normalizeResumeData(debouncedData), [debouncedData]);
+
+    // Track font registration to avoid redundant calls
+    const fontsRegisteredRef = useRef(false);
 
     // 1. Inject Script
     useEffect(() => {
@@ -96,12 +102,15 @@ export default function ScriptPDFViewer({ data, className }: ScriptPDFViewerProp
                 setLoading(true);
                 setError(null);
 
-                // Register fonts
-                const { registerClientFonts } = await import('@/lib/fonts-client');
-                registerClientFonts();
+                // Register fonts (only once)
+                if (!fontsRegisteredRef.current) {
+                    const { registerClientFonts } = await import('@/lib/fonts-client');
+                    registerClientFonts();
+                    fontsRegisteredRef.current = true;
+                }
 
                 // Generate Blob
-                const doc = <ResumeDocument data={normalizedData} userTier="pro" />;
+                const doc = <ResumeDocument data={normalizedData} userTier={userTier} />;
                 const blob = await pdf(doc).toBlob();
                 const arrayBuffer = await blob.arrayBuffer();
 
@@ -179,7 +188,7 @@ export default function ScriptPDFViewer({ data, className }: ScriptPDFViewerProp
         return () => {
             cancelled = true;
         };
-    }, [libLoaded, normalizedData, scale]);
+    }, [libLoaded, normalizedData, userTier, scale]);
 
     // Responsive Scale
     useEffect(() => {

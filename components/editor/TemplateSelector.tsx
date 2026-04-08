@@ -10,7 +10,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Layout, FileText, Code, PenTool, Palette, Sparkles, Crown, Trash2, Shield } from "lucide-react";
+import { Layout, FileText, PenTool, Palette, Sparkles, Crown, Trash2, Shield } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -20,10 +20,14 @@ import { cn } from "@/lib/utils";
 
 
 export function TemplateSelector() {
-    const { resumes, activeResumeId, setTemplate, loadExampleData, resetResume, userTier, setBrandingEnabled } = useResumeStore();
-    const activeResume = activeResumeId ? resumes[activeResumeId] : null;
-    const selectedTemplate = activeResume?.selectedTemplate || 'classic';
-    const isBrandingEnabled = activeResume?.isBrandingEnabled ?? true;
+    const activeResumeId = useResumeStore(state => state.activeResumeId);
+    const selectedTemplate = useResumeStore(state => state.activeResumeId ? state.resumes[state.activeResumeId]?.selectedTemplate : undefined) || 'classic';
+    const isBrandingEnabled = useResumeStore(state => state.activeResumeId ? state.resumes[state.activeResumeId]?.isBrandingEnabled : undefined) ?? true;
+    const setTemplate = useResumeStore(state => state.setTemplate);
+    const loadExampleData = useResumeStore(state => state.loadExampleData);
+    const resetResume = useResumeStore(state => state.resetResume);
+    const userTier = useResumeStore(state => state.userTier);
+    const setBrandingEnabled = useResumeStore(state => state.setBrandingEnabled);
     const [showTemplateUpgrade, setShowTemplateUpgrade] = React.useState(false);
     const [showBrandingUpgrade, setShowBrandingUpgrade] = React.useState(false);
 
@@ -32,6 +36,8 @@ export function TemplateSelector() {
         { id: 'modern', name: 'Modern', icon: Layout, premium: false, comingSoon: false },
         { id: 'minimalist', name: 'Minimal', icon: PenTool, premium: false, comingSoon: false },
         { id: 'creative', name: 'Creative', icon: Palette, premium: true, comingSoon: false },
+        { id: 'velvet', name: 'Velvet', icon: Sparkles, premium: true, comingSoon: false },
+
     ] as const;
 
 

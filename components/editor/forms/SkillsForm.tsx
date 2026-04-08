@@ -80,8 +80,9 @@ function SortableSkillBadge({ skill, onRemove }: { skill: string, onRemove: (s: 
 import { SectionScaleControl } from "../SectionScaleControl";
 
 export function SkillsForm() {
-    const { resumes, activeResumeId, setSkills } = useResumeStore();
-    const activeResume = activeResumeId ? resumes[activeResumeId] : null;
+    const activeResumeId = useResumeStore((state) => state.activeResumeId);
+    const rawSkills = useResumeStore((state) => state.activeResumeId ? state.resumes[state.activeResumeId]?.skills : undefined) || [];
+    const setSkills = useResumeStore((state) => state.setSkills);
     const [searchText, setSearchText] = useState("");
     const [showDropdown, setShowDropdown] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -93,12 +94,12 @@ export function SkillsForm() {
         })
     );
 
-    if (!activeResume) return null;
+    if (!activeResumeId) return null;
 
-    const selectedSkills = Array.isArray(activeResume.skills)
-        ? activeResume.skills
-        : typeof activeResume.skills === 'string'
-            ? (activeResume.skills as string).split(',').map(s => s.trim()).filter(Boolean)
+    const selectedSkills = Array.isArray(rawSkills)
+        ? rawSkills
+        : typeof rawSkills === 'string'
+            ? (rawSkills as string).split(',').map(s => s.trim()).filter(Boolean)
             : [];
 
     // Filter out duplicates for display logic only

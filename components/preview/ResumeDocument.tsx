@@ -65,7 +65,6 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
         selectedTemplate,
         themeColor,
         contentScale,
-        isBrandingEnabled,
         fontFamily,
         sectionOrder,
         sectionScales,
@@ -76,6 +75,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
     const fontId = fontFamily;
 
     const effectiveFontId = fontId || 'roboto';
+    const showBranding = userTier === 'free';
 
     // Client-Side Rendering: Enable Custom Fonts
     // map user selection to registered font family
@@ -84,7 +84,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
     // Fallback if mapping fails
     if (!pdfFontFamily) pdfFontFamily = 'Helvetica';
 
-    console.log(`Font "${effectiveFontId}" → "${pdfFontFamily}"`);
+    console.log(`Font "${effectiveFontId}" â†’ "${pdfFontFamily}"`);
 
     // Use default if not set
     const accentColor = customThemeColor || '#112e51';
@@ -753,7 +753,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                                 <View key={edu.id} style={{ marginBottom: 8 }}>
                                     <Text style={minimalistStyles.company}>{edu.school}</Text>
                                     <Text style={minimalistStyles.title}>{edu.degree}</Text>
-                                    <Text style={minimalistStyles.date}>{edu.startDate} – {edu.endDate}</Text>
+                                    <Text style={minimalistStyles.date}>{edu.startDate} â€“ {edu.endDate}</Text>
                                 </View>
                             ))}
                         </View>
@@ -782,7 +782,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                                             <Text style={minimalistStyles.company}>{exp.company}, </Text>
                                             <Text style={minimalistStyles.title}>{exp.role}</Text>
                                         </View>
-                                        <Text style={minimalistStyles.date}>{exp.startDate} – {exp.endDate}</Text>
+                                        <Text style={minimalistStyles.date}>{exp.startDate} â€“ {exp.endDate}</Text>
                                     </View>
                                     <PdfFormattedText text={exp.description} style={minimalistStyles.description} />
                                 </View>
@@ -824,9 +824,9 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                         <View style={minimalistStyles.header}>
                             <Text style={minimalistStyles.name}>{personalInfo.fullName}</Text>
                             {personalInfo.jobTitle && <Text style={{ fontSize: 14, color: '#9ca3af', marginBottom: 16, fontFamily: 'Times-Roman', textTransform: 'uppercase', letterSpacing: 2 }}>{personalInfo.jobTitle}</Text>}
-                            <Text style={minimalistStyles.contact}>{personalInfo.email} • {personalInfo.phone} • {personalInfo.location}</Text>
+                            <Text style={minimalistStyles.contact}>{personalInfo.email} â€¢ {personalInfo.phone} â€¢ {personalInfo.location}</Text>
                             <Text style={minimalistStyles.contact}>
-                                {[personalInfo.website, personalInfo.linkedin, personalInfo.github].filter(Boolean).map(s => s?.replace(/^https?:\/\/(www\.)?/, '')).join(' • ')}
+                                {[personalInfo.website, personalInfo.linkedin, personalInfo.github].filter(Boolean).map(s => s?.replace(/^https?:\/\/(www\.)?/, '')).join(' â€¢ ')}
                             </Text>
                             {/* Social Media */}
                             <View style={{ alignItems: 'center', marginTop: 4 }}>
@@ -849,7 +849,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             </View>
                         </View>
                     </View>
-                    {isBrandingEnabled && <Text style={styles.branding} fixed>Powered by MyResume</Text>}
+                    {showBranding && <Text style={styles.branding} fixed>Powered by MyResume</Text>}
                 </Page>
             </Document >
         )
@@ -1004,7 +1004,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             {mainSections.map(id => renderModernSection(id, false))}
                         </View>
                     </View>
-                    {isBrandingEnabled && <Text style={styles.branding} fixed>Powered by MyResume</Text>}
+                    {showBranding && <Text style={styles.branding} fixed>Powered by MyResume</Text>}
                 </Page>
             </Document>
         );
@@ -1154,7 +1154,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             {mainSections.map(renderCreativeSection)}
                         </View>
                     </View>
-                    {isBrandingEnabled && <Text style={styles.branding} fixed>Powered by MyResume</Text>}
+                    {showBranding && <Text style={styles.branding} fixed>Powered by MyResume</Text>}
                 </Page>
             </Document>
         )
@@ -1263,8 +1263,130 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
 
     const personalStyles = getClassicStyles(sectionScales?.personal || 1);
 
+    // â”€â”€â”€ VELVET TEMPLATE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    if (selectedTemplate === 'velvet') {
+        const vStyles = createScaledStyles({
+            page: { flexDirection: 'column', backgroundColor: '#FFFFFF', fontFamily: pdfFontFamily, fontSize: 10, paddingHorizontal: 52, paddingVertical: 44 },
+            name: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', color: '#111827', letterSpacing: -0.5, marginBottom: 3 },
+            jobTitle: { fontSize: 9, textAlign: 'center', color: '#6b7280', textTransform: 'uppercase', letterSpacing: 2.5, marginBottom: 8 },
+            rule: { borderBottomWidth: 0.5, borderBottomColor: '#d1d5db', marginBottom: 2 },
+            rule2: { borderBottomWidth: 0.5, borderBottomColor: '#d1d5db', marginBottom: 10 },
+            contact: { fontSize: 8, color: '#6b7280', textAlign: 'center', lineHeight: 1.5, marginBottom: 18 },
+            sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4, marginTop: 14 },
+            sectionRule: { width: 2, height: 11, backgroundColor: accentColor },
+            sectionTitle: { fontSize: 7, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 2, color: '#6b7280' },
+            divider: { borderBottomWidth: 0.5, borderBottomColor: '#e5e7eb', marginBottom: 10 },
+            itemGroup: { marginBottom: 9 },
+            bold: { fontWeight: 'bold', fontSize: 9.5, color: '#111827' },
+            italic: { fontStyle: 'italic', fontSize: 8.5, color: accentColor, marginBottom: 2 },
+            text: { fontSize: 8.5, color: '#4b5563', lineHeight: 1.45 },
+            date: { fontSize: 7.5, color: '#9ca3af' },
+            row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 1 },
+            summaryText: { fontSize: 8.5, color: '#4b5563', lineHeight: 1.5 },
+        });
 
+        const renderVelvetSection = (id: string) => {
+            const customSection = data.customSections?.find(s => s.id === id);
+            if (customSection) return (
+                <View key={id} style={{ marginBottom: 10 }}>
+                    <View style={vStyles.sectionHeader}><View style={vStyles.sectionRule} /><Text style={vStyles.sectionTitle}>{customSection.title}</Text></View>
+                    <View style={vStyles.divider} />
+                    {customSection.items.map((item: any) => (
+                        <View key={item.id} style={vStyles.itemGroup}>
+                            <View style={vStyles.row}><Text style={vStyles.bold}>{item.name}</Text><Text style={vStyles.date}>{item.date}</Text></View>
+                            <PdfFormattedText text={item.description} style={vStyles.text} />
+                        </View>
+                    ))}
+                </View>
+            );
+            switch (id) {
+                case 'education': return education.length > 0 && (
+                    <View key="education" style={{ marginBottom: 10 }}>
+                        <View style={vStyles.sectionHeader}><View style={vStyles.sectionRule} /><Text style={vStyles.sectionTitle}>{sectionTitles.education || 'Education'}</Text></View>
+                        <View style={vStyles.divider} />
+                        {education.map((edu: any) => (
+                            <View key={edu.id} style={vStyles.itemGroup}>
+                                <Text style={vStyles.bold}>{edu.school}</Text>
+                                <Text style={{ fontSize: 8.5, fontStyle: 'italic', color: '#6b7280' }}>{edu.degree}</Text>
+                                <Text style={vStyles.date}>{edu.startDate} â€“ {edu.endDate}</Text>
+                            </View>
+                        ))}
+                    </View>
+                );
+                case 'skills': return skills && skills.length > 0 && (
+                    <View key="skills" style={{ marginBottom: 10 }}>
+                        <View style={vStyles.sectionHeader}><View style={vStyles.sectionRule} /><Text style={vStyles.sectionTitle}>{sectionTitles.skills || 'Skills'}</Text></View>
+                        <View style={vStyles.divider} />
+                        <Text style={{ fontSize: 8.5, color: '#4b5563', lineHeight: 1.6 }}>{skills.filter(s => s && s.trim()).map(s => s.trim()).join('  Â·  ')}</Text>
+                    </View>
+                );
+                case 'experience': return experience.length > 0 && (
+                    <View key="experience" style={{ marginBottom: 10 }}>
+                        <View style={vStyles.sectionHeader}><View style={vStyles.sectionRule} /><Text style={vStyles.sectionTitle}>{sectionTitles.experience || 'Experience'}</Text></View>
+                        <View style={vStyles.divider} />
+                        {experience.map((exp: any) => (
+                            <View key={exp.id} style={vStyles.itemGroup}>
+                                <View style={vStyles.row}><Text style={vStyles.bold}>{exp.company}</Text><Text style={vStyles.date}>{exp.startDate} â€“ {exp.endDate}</Text></View>
+                                <Text style={vStyles.italic}>{exp.role}</Text>
+                                <PdfFormattedText text={exp.description} style={vStyles.text} />
+                            </View>
+                        ))}
+                    </View>
+                );
+                case 'projects': return projects.length > 0 && (
+                    <View key="projects" style={{ marginBottom: 10 }}>
+                        <View style={vStyles.sectionHeader}><View style={vStyles.sectionRule} /><Text style={vStyles.sectionTitle}>{sectionTitles.projects || 'Projects'}</Text></View>
+                        <View style={vStyles.divider} />
+                        {projects.map((proj: any) => (
+                            <View key={proj.id} style={vStyles.itemGroup}>
+                                <View style={vStyles.row}>
+                                    <Text style={vStyles.bold}>{proj.name}</Text>
+                                    {proj.link && <Link src={proj.link} style={{ fontSize: 7.5, color: accentColor }}>{proj.linkText || 'View'}</Link>}
+                                </View>
+                                {proj.technologies && <Text style={{ fontSize: 7.5, fontStyle: 'italic', color: '#9ca3af', marginBottom: 2 }}>{proj.technologies}</Text>}
+                                <PdfFormattedText text={proj.description} style={vStyles.text} />
+                            </View>
+                        ))}
+                    </View>
+                );
+                default: return null;
+            }
+        };
 
+        const contactLine = [personalInfo.email, personalInfo.phone, personalInfo.location,
+        personalInfo.website?.replace(/^https?:\/\/(www\.)?/, ''),
+        personalInfo.linkedin?.replace(/^https?:\/\/(www\.)?/, ''),
+        personalInfo.github?.replace(/^https?:\/\/(www\.)?/, '')
+        ].filter(Boolean).join('   Â·   ');
+
+        return (
+            <Document>
+                <Page size="A4" style={vStyles.page}>
+                    {/* Centered header */}
+                    <Text style={vStyles.name}>{personalInfo.fullName}</Text>
+                    {personalInfo.jobTitle && <Text style={vStyles.jobTitle}>{personalInfo.jobTitle}</Text>}
+                    {/* Double hairline rule */}
+                    <View style={vStyles.rule} />
+                    <View style={vStyles.rule2} />
+                    {contactLine.length > 0 && <Text style={vStyles.contact}>{contactLine}</Text>}
+
+                    {/* Summary */}
+                    {personalInfo.summary && (
+                        <View style={{ marginBottom: 12 }}>
+                            <View style={vStyles.sectionHeader}><View style={vStyles.sectionRule} /><Text style={vStyles.sectionTitle}>Profile</Text></View>
+                            <View style={vStyles.divider} />
+                            <PdfFormattedText text={personalInfo.summary} style={vStyles.summaryText} />
+                        </View>
+                    )}
+
+                    {sectionOrder.map(renderVelvetSection)}
+
+                    {showBranding && <Text style={styles.branding} fixed>Powered by MyResume</Text>}
+                </Page>
+            </Document>
+        );
+    }
+    // ─── CLASSIC TEMPLATE (Default fallback) ─────────────────────────────────────────
     return (
         <Document>
             <Page size="A4" style={classicStyles.page}>
@@ -1298,8 +1420,8 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                     {sectionOrder.map(renderClassicSection)}
                 </View>
 
-                {isBrandingEnabled && (
-                    <Text style={styles.branding} fixed>Powered by MyResume</Text>
+                {showBranding && (
+                    <Text style={classicStyles.branding} fixed>Powered by MyResume</Text>
                 )}
             </Page>
         </Document>

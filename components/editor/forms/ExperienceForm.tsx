@@ -29,8 +29,12 @@ import { SortableItem } from "../SortableItem";
 import { SectionScaleControl } from "../SectionScaleControl";
 
 export function ExperienceForm() {
-    const { resumes, activeResumeId, addExperience, removeExperience, updateExperience, reorderItems } = useResumeStore();
-    const activeResume = activeResumeId ? resumes[activeResumeId] : null;
+    const activeResumeId = useResumeStore((state) => state.activeResumeId);
+    const experience = useResumeStore((state) => state.activeResumeId ? state.resumes[state.activeResumeId]?.experience : undefined) || [];
+    const addExperience = useResumeStore((state) => state.addExperience);
+    const removeExperience = useResumeStore((state) => state.removeExperience);
+    const updateExperience = useResumeStore((state) => state.updateExperience);
+    const reorderItems = useResumeStore((state) => state.reorderItems);
     const [isGenerating, setIsGenerating] = useState<string | null>(null);
 
     const sensors = useSensors(
@@ -40,9 +44,7 @@ export function ExperienceForm() {
         })
     );
 
-    if (!activeResume) return null;
-
-    const { experience } = activeResume;
+    if (!activeResumeId) return null;
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;

@@ -40,12 +40,15 @@ const SOCIAL_PLATFORMS = [
 ];
 
 export function PersonalInfoForm() {
-    const { resumes, activeResumeId, setPersonalInfo } = useResumeStore();
-    const activeResume = activeResumeId ? resumes[activeResumeId] : null;
-    const personalInfo = activeResume?.personalInfo || {
-        fullName: '', jobTitle: '', email: '', phone: '', location: '',
-        linkedin: '', website: '', github: '', summary: '', socialMedia: []
-    };
+    const activeResumeId = useResumeStore((state) => state.activeResumeId);
+    const personalInfo = useResumeStore((state) =>
+        (state.activeResumeId && state.resumes[state.activeResumeId]?.personalInfo) || {
+            fullName: '', jobTitle: '', email: '', phone: '', location: '',
+            linkedin: '', website: '', github: '', summary: '', socialMedia: []
+        }
+    );
+    const activeResume = useResumeStore((state) => state.activeResumeId ? state.resumes[state.activeResumeId] : null);
+    const setPersonalInfo = useResumeStore((state) => state.setPersonalInfo);
 
     const handleSocialAdd = (platformId: string) => {
         const platform = SOCIAL_PLATFORMS.find(p => p.id === platformId);

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Loader2 } from "lucide-react";
-import { ResumeData } from "@/store/useResumeStore";
+import { useResumeStore, ResumeData } from "@/store/useResumeStore";
 
 interface DownloadResumeButtonProps {
     fileName?: string;
@@ -20,6 +20,7 @@ export const DownloadResumeButton = ({
     size = "default",
     data
 }: DownloadResumeButtonProps) => {
+    const userTier = useResumeStore((state) => state.userTier);
     const [isGenerating, setIsGenerating] = useState(false);
 
     const handleDownload = async () => {
@@ -35,7 +36,7 @@ export const DownloadResumeButton = ({
             const normalizedData = normalizeResumeData(data);
 
             // Generate Blob client-side
-            const blob = await pdf(<ResumeDocument data={normalizedData} userTier="pro" />).toBlob();
+            const blob = await pdf(<ResumeDocument data={normalizedData} userTier={userTier} />).toBlob();
 
             // Create download link
             const url = window.URL.createObjectURL(blob);

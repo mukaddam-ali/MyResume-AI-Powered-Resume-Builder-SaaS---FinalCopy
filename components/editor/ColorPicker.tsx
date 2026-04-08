@@ -22,12 +22,14 @@ const PRESET_COLORS = [
 ];
 
 export function ColorPicker() {
-    const { resumes, activeResumeId, setThemeColor, userTier } = useResumeStore();
-    const activeResume = activeResumeId ? resumes[activeResumeId] : null;
-    const themeColor = activeResume?.themeColor || '#112e51';
+    const activeResumeId = useResumeStore(state => state.activeResumeId);
+    const themeColor = useResumeStore(state => state.activeResumeId ? state.resumes[state.activeResumeId]?.themeColor : undefined) || '#112e51';
+    const selectedTemplate = useResumeStore(state => state.activeResumeId ? state.resumes[state.activeResumeId]?.selectedTemplate : undefined);
+    const setThemeColor = useResumeStore(state => state.setThemeColor);
+    const userTier = useResumeStore(state => state.userTier);
     const [isOpen, setIsOpen] = useState(false);
 
-    const isHidden = activeResume?.selectedTemplate === 'github' || activeResume?.selectedTemplate === 'minimalist';
+    const isHidden = selectedTemplate === 'minimalist';
 
     if (isHidden) return null;
 

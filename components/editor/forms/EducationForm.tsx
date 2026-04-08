@@ -29,9 +29,12 @@ import { SortableItem } from "../SortableItem";
 import { SectionScaleControl } from "../SectionScaleControl";
 
 export function EducationForm() {
-    const { resumes, activeResumeId, addEducation, removeEducation, updateEducation, reorderItems } = useResumeStore();
-    const activeResume = activeResumeId ? resumes[activeResumeId] : null;
-    const education = activeResume?.education || [];
+    const activeResumeId = useResumeStore((state) => state.activeResumeId);
+    const education = useResumeStore((state) => state.activeResumeId ? state.resumes[state.activeResumeId]?.education : []) || [];
+    const addEducation = useResumeStore((state) => state.addEducation);
+    const removeEducation = useResumeStore((state) => state.removeEducation);
+    const updateEducation = useResumeStore((state) => state.updateEducation);
+    const reorderItems = useResumeStore((state) => state.reorderItems);
 
     const sensors = useSensors(
         useSensor(PointerSensor),

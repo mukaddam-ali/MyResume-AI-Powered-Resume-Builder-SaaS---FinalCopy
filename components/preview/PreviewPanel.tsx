@@ -32,8 +32,8 @@ const PaymentHandler = ({ setHasPaid }: { setHasPaid: (val: boolean) => void }) 
 }
 
 export function PreviewPanel() {
-    const { resumes, activeResumeId } = useResumeStore();
-    const activeResume = activeResumeId ? resumes[activeResumeId] : null;
+    const activeResumeId = useResumeStore(state => state.activeResumeId);
+    const activeResume = useResumeStore(state => state.activeResumeId ? state.resumes[state.activeResumeId] : null);
 
     const [client, setClient] = useState(false);
     const [hasPaid, setHasPaid] = useState(true);
@@ -87,13 +87,10 @@ export function PreviewPanel() {
             </React.Suspense>
 
             {/* Header */}
-            <div className="py-4 px-8 border-b dark:border-slate-800 shrink-0 z-10 bg-white/50 dark:bg-transparent backdrop-blur-sm">
-                <div className="w-full flex justify-between items-center px-8">
+            <div className="py-4 pl-4 sm:pl-8 lg:pl-12 pr-4 border-b dark:border-slate-800 shrink-0 z-10 bg-white/50 dark:bg-transparent backdrop-blur-sm">
+                <div className="w-full flex justify-between items-center">
                     <div className="flex items-center gap-4">
                         <h2 className="font-semibold text-slate-700 dark:text-slate-200">Real PDF Preview</h2>
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700">
-                            <span className="text-xs text-slate-500">Auto-updates on change</span>
-                        </div>
                     </div>
                     {!hasPaid ? (
                         <Button
