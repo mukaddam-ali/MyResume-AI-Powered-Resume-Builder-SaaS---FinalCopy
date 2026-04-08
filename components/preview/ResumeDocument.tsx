@@ -1298,7 +1298,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             <View key={edu.id} style={vStyles.itemGroup}>
                                 <Text style={vStyles.bold}>{edu.school}</Text>
                                 <Text style={{ fontSize: 8.5, fontStyle: 'italic', color: '#6b7280' }}>{edu.degree}</Text>
-                                <Text style={vStyles.date}>{edu.startDate} â€“ {edu.endDate}</Text>
+                                <Text style={vStyles.date}>{edu.startDate} – {edu.endDate}</Text>
                             </View>
                         ))}
                     </View>
@@ -1316,7 +1316,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                         <View style={vStyles.divider} />
                         {experience.map((exp: any) => (
                             <View key={exp.id} style={vStyles.itemGroup}>
-                                <View style={vStyles.row}><Text style={vStyles.bold}>{exp.company}</Text><Text style={vStyles.date}>{exp.startDate} â€“ {exp.endDate}</Text></View>
+                                <View style={vStyles.row}><Text style={vStyles.bold}>{exp.company}</Text><Text style={vStyles.date}>{exp.startDate} – {exp.endDate}</Text></View>
                                 <Text style={vStyles.italic}>{exp.role}</Text>
                                 <PdfFormattedText text={exp.description} style={vStyles.text} />
                             </View>
@@ -1347,7 +1347,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
         personalInfo.website?.replace(/^https?:\/\/(www\.)?/, ''),
         personalInfo.linkedin?.replace(/^https?:\/\/(www\.)?/, ''),
         personalInfo.github?.replace(/^https?:\/\/(www\.)?/, '')
-        ].filter(Boolean).join('   Â·   ');
+        ].filter(Boolean).join('   ·   ');
 
         return (
             <Document>
