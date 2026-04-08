@@ -115,7 +115,7 @@ export function normalizeResumeData(data: any): any {
         selectedTemplate: data?.selectedTemplate || 'classic',
         themeColor: data?.themeColor || '#112e51',
         contentScale: typeof data?.contentScale === 'number' ? data.contentScale : 1,
-        isBrandingEnabled: data?.isBrandingEnabled !== false,
+
         fontFamily: data?.fontFamily || 'roboto',
     };
 }

@@ -91,7 +91,7 @@ export interface ResumeData {
     selectedTemplate: TemplateType;
     themeColor: string;
     contentScale: number;
-    isBrandingEnabled: boolean;
+
     fontFamily: string;
     analysisResult?: AnalysisResult | null;
     sectionScales?: Record<string, number>;
@@ -151,7 +151,7 @@ interface ResumeState {
     getAnalysisCache: (hash: string) => ATSAnalysisResult | null;
 
     // Content Actions
-    setBrandingEnabled: (enabled: boolean) => void;
+
 
 
     // Content Actions (Operate on Active Resume)
@@ -245,21 +245,6 @@ export const useResumeStore = create<ResumeState>()(
                 const isExpired = Date.now() - entry.timestamp > 60 * 60 * 1000;
                 return isExpired ? null : entry.result;
             },
-
-            setBrandingEnabled: (enabled) => set((state) => {
-                const activeId = state.activeResumeId;
-                if (!activeId || !state.resumes[activeId]) return {};
-                return {
-                    resumes: {
-                        ...state.resumes,
-                        [activeId]: {
-                            ...state.resumes[activeId],
-                            isBrandingEnabled: enabled,
-                            lastModified: Date.now()
-                        }
-                    }
-                };
-            }),
 
             // --- Content Actions ---
             setPersonalInfo: (info) =>
@@ -730,7 +715,7 @@ export const useResumeStore = create<ResumeState>()(
                     selectedTemplate: 'modern',
                     themeColor: '#3b82f6',
                     contentScale: 1,
-                    isBrandingEnabled: true,
+
                     fontFamily: 'roboto',
                     sectionScales: {},
                 };
@@ -842,7 +827,7 @@ export const useResumeStore = create<ResumeState>()(
                     selectedTemplate: source.selectedTemplate, // Keep template
                     themeColor: source.themeColor, // Keep theme
                     contentScale: 1,
-                    isBrandingEnabled: true,
+
                     fontFamily: source.fontFamily || 'roboto',
                     sectionScales: {},
                 };
@@ -1086,7 +1071,7 @@ export const useResumeStore = create<ResumeState>()(
                                 selectedTemplate: get().resumes[id]?.selectedTemplate || 'modern',
                                 themeColor: get().resumes[id]?.themeColor || '#112e51',
                                 contentScale: 1,
-                                isBrandingEnabled: true,
+            
                                 fontFamily: 'roboto'
                             }
                         },

@@ -678,16 +678,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
             fontSize: 10, // Reduced from 14
             color: customThemeColor,
         },
-        branding: {
-            position: 'absolute',
-            bottom: 20,
-            left: 0,
-            right: 0,
-            textAlign: 'center',
-            fontSize: 8,
-            color: '#9ca3af',
-            fontFamily: pdfFontFamily,
-        },
+
         skillPill: {
             backgroundColor: '#f3f4f6',
             paddingHorizontal: 10,
