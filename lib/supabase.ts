@@ -14,25 +14,7 @@ export const createBrowserClient = () => {
 
   return createSSRBrowserClient(
     supabaseUrl,
-    supabaseKey,
-    {
-      cookies: {
-        get(name: string) {
-          if (typeof document === 'undefined') return undefined
-          const value = `; ${document.cookie}`
-          const parts = value.split(`; ${name}=`)
-          if (parts.length === 2) return parts.pop()?.split(';').shift()
-        },
-        set(name: string, value: string, options: any) {
-          if (typeof document === 'undefined') return
-          document.cookie = `${name}=${value}; path=/; ${options.maxAge ? `max-age=${options.maxAge};` : ''}`
-        },
-        remove(name: string, options: any) {
-          if (typeof document === 'undefined') return
-          document.cookie = `${name}=; path=/; max-age=0`
-        },
-      },
-    }
+    supabaseKey
   )
 };
 

@@ -37,6 +37,8 @@ export async function GET(request: Request) {
 
         if (!error) {
             return NextResponse.redirect(`${origin}/editor`)
+        } else {
+            console.error('exchangeCodeForSession error:', error)
         }
     }
 
