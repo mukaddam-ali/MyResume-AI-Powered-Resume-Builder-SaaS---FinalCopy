@@ -39,9 +39,12 @@ export async function GET(request: Request) {
             return NextResponse.redirect(`${origin}/editor`)
         } else {
             console.error('exchangeCodeForSession error:', error)
+            return NextResponse.redirect(`${origin}/?error=${encodeURIComponent(error.message || 'unknown_auth_error')}`)
         }
     }
 
-    // Return to homepage if there's an error
-    return NextResponse.redirect(`${origin}/`)
+    // Return to homepage if there's no code or another error
+    const errorParam = requestUrl.searchParams.get('error') || 'unknown';
+    const errorDescription = requestUrl.searchParams.get('error_description') || 'no_code_provided';
+    return NextResponse.redirect(`${origin}/?error=${errorParam}&error_desc=${errorDescription}`)
 }
