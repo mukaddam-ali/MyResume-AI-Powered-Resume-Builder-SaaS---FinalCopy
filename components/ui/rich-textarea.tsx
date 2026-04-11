@@ -8,13 +8,14 @@ import { Toggle } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils';
 
 interface RichTextareaProps {
+    id?: string;
     value?: string;
     onValueChange?: (value: string) => void;
     className?: string;
     placeholder?: string;
 }
 
-export const RichTextarea = ({ value = '', onValueChange, className, placeholder }: RichTextareaProps) => {
+export const RichTextarea = ({ id, value = '', onValueChange, className, placeholder }: RichTextareaProps) => {
     const editor = useEditor({
         immediatelyRender: false,
         extensions: [
@@ -54,7 +55,7 @@ export const RichTextarea = ({ value = '', onValueChange, className, placeholder
     }
 
     return (
-        <div className={cn("border rounded-md overflow-hidden bg-background focus-within:ring-1 focus-within:ring-ring", className)}>
+        <div id={id} className={cn("border rounded-md overflow-hidden bg-background focus-within:ring-1 focus-within:ring-ring", className)}>
             {/* Toolbar at the top */}
             <div className="flex flex-wrap items-center gap-1 border-b bg-muted/40 p-1">
                 <Toggle

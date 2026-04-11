@@ -8,7 +8,7 @@ export async function POST(req: Request) {
 
         if (!process.env.GROQ_API_KEY) {
             return NextResponse.json(
-                { error: "GROQ_API_KEY is not set in environment variables." },
+                { error: "AI service is not configured. The GROQ_API_KEY environment variable is missing. Please add it to your Vercel project settings under Settings → Environment Variables." },
                 { status: 500 }
             );
         }
