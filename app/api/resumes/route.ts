@@ -1,8 +1,9 @@
-import { supabase } from '@/lib/supabase';
+import { createRouteClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
 
 // GET /api/resumes - Fetch all resumes for authenticated user
 export async function GET() {
+    const supabase = await createRouteClient();
     if (!supabase) {
         return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
     }
@@ -28,6 +29,7 @@ export async function GET() {
 
 // POST /api/resumes - Create new resume
 export async function POST(request: Request) {
+    const supabase = await createRouteClient();
     if (!supabase) {
         return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
     }

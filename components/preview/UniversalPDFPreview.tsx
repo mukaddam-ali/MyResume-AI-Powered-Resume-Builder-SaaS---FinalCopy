@@ -52,7 +52,7 @@ export default function UniversalPDFPreview({ data, className }: UniversalPDFPre
             /Google Inc/.test(vendor) &&
             !/Edg/.test(userAgent);
 
-        // Chrome gets script injection rendering, everything else gets blob iframe
+        // Chrome gets local script injection rendering, everything else gets blob iframe
         setRenderMode(isChrome ? 'script' : 'blob');
 
         console.log('🔍 Browser Detection:', {
@@ -72,7 +72,7 @@ export default function UniversalPDFPreview({ data, className }: UniversalPDFPre
         );
     }
 
-    // Render based on browser capabilities
+    // Render based on browser capabilities (fallback to script if needed)
     if (renderMode === 'script') {
         return <ScriptPDFViewer data={data} className={className} />;
     }

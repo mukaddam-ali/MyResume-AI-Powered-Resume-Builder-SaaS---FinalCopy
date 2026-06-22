@@ -76,7 +76,7 @@ export function PDFLivePreview({ zoom = 100 }: PDFLivePreviewProps) {
                 </div>
             )}
 
-            <div className="w-full h-full flex items-start justify-start overflow-auto bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950 p-8">
+            <div className="w-full h-full flex items-start justify-start overflow-auto bg-gradient-to-b from-slate-50 to-slate-100 dark:from-zinc-900 dark:to-zinc-950 p-8">
                 <PDFErrorBoundary>
                     {debouncedResume && (
                         <PDFViewer

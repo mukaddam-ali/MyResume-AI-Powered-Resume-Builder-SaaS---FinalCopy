@@ -137,6 +137,7 @@ export default function DashboardPage() {
                                 resume={resume}
                                 onDelete={handleDeleteResume}
                                 onDuplicate={handleDuplicateResume}
+                                onEdit={handleEditResume}
                             />
                         </motion.div>
                     ))}

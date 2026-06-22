@@ -7,6 +7,15 @@ import { PdfFormattedText } from '@/components/preview/PdfFormattedText';
 import { SOCIAL_ICONS } from './social-icons';
 import { adjustColor, getContrastingColor } from '@/lib/colors';
 
+// Ensure URLs always have a protocol so the PDF viewer opens them as web links
+// rather than treating bare paths as local file references.
+const normalizeUrl = (url: string): string => {
+    if (!url) return url;
+    if (/^https?:\/\//i.test(url)) return url; // already has protocol
+    if (url.startsWith('//')) return `https:${url}`;
+    return `https://${url}`;
+};
+
 // Note: Custom fonts disabled due to fontkit compatibility issues with Google Fonts variable fonts
 // PDF will use built-in Helvetica font instead. Live preview still uses custom Google Fonts.
 // TODO: Host static TTF fonts locally for PDF compatibility
@@ -69,7 +78,11 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
         sectionOrder,
         sectionScales,
         sectionTitles,
+        hideBranding,
     } = data;
+
+    // Show branding unless the user is pro AND has explicitly hidden it
+    const showBranding = !(userTier === 'pro' && hideBranding);
 
     const customThemeColor = themeColor;
     const fontId = fontFamily;
@@ -92,9 +105,13 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
     // Helper to scale styles dynamically
     const createScaledStyles = (styles: any, extraScale: number = 1) => {
         const globalScale = contentScale || 1;
-        if (globalScale === 1 && extraScale === 1) return StyleSheet.create(styles);
+        const spacingScale = data.sectionSpacing ?? 1;
+        
+        if (globalScale === 1 && extraScale === 1 && spacingScale === 1) return StyleSheet.create(styles);
+        
         const scale = globalScale * extraScale;
         const noScaleProps = new Set(['flexGrow', 'flexShrink', 'zIndex', 'opacity', 'fontWeight', 'lineHeight', 'flex', 'top', 'bottom', 'left', 'right']);
+        const spacingProps = new Set(['marginBottom', 'marginTop', 'paddingBottom', 'paddingTop', 'margin', 'padding', 'marginVertical', 'paddingVertical']);
 
         const mapStyles = (obj: any): any => {
             if (Array.isArray(obj)) {
@@ -104,7 +121,11 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
             for (const key in obj) {
                 const val = obj[key];
                 if (typeof val === 'number' && !noScaleProps.has(key)) {
-                    newObj[key] = val * scale;
+                    if (spacingProps.has(key)) {
+                        newObj[key] = val * scale * spacingScale;
+                    } else {
+                        newObj[key] = val * scale;
+                    }
                 } else if (typeof val === 'object' && val !== null) {
                     newObj[key] = mapStyles(val);
                 } else {
@@ -116,12 +137,30 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
         return StyleSheet.create(mapStyles(styles));
     };
 
+    // Branding footer (shown on all templates unless pro + hideBranding)
+    const BrandingFooter = () => showBranding ? (
+        <View fixed style={{
+            position: 'absolute',
+            bottom: 8,
+            left: 0,
+            right: 0,
+            alignItems: 'center',
+        }}>
+            <Text style={{
+                fontSize: 7,
+                color: '#9ca3af',
+                opacity: 0.7,
+                letterSpacing: 0.5,
+            }}>Powered by MyResume</Text>
+        </View>
+    ) : null;
+
     // Helper to render social media icons
     const renderSocialMedia = (styles: any) => {
         if (!personalInfo.socialMedia || personalInfo.socialMedia.length === 0) return null;
 
         return (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: (4 * (data.sectionSpacing ?? 1)) }}>
                 {personalInfo.socialMedia.filter(s => s.enabled).map((social) => {
                     const iconPath = SOCIAL_ICONS[social.platform];
                     if (!iconPath) return null;
@@ -728,22 +767,26 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
             switch (id) {
                 case 'education':
                     return education.length > 0 && (
-                        <View key="education" style={{ marginBottom: 20 }}>
+                        <View key="education" style={{ marginBottom: (20 * (data.sectionSpacing ?? 1)) }}>
                             <Text style={minimalistStyles.sectionTitle}>{sectionTitles.education || "Education"}</Text>
                             {education.map((edu: any) => (
-                                <View key={edu.id} style={{ marginBottom: 8 }}>
-                                    <Text style={minimalistStyles.company}>{edu.school}</Text>
-                                    <Text style={minimalistStyles.title}>{edu.degree}</Text>
-                                    <Text style={minimalistStyles.date}>{edu.startDate} â€“ {edu.endDate}</Text>
+                                <View key={edu.id} style={{ marginBottom: (8 * (data.sectionSpacing ?? 1)) }}>
+                                    <View style={minimalistStyles.row}>
+                                        <Text style={{ flexShrink: 1, paddingRight: 8 }}>
+                                            <Text style={minimalistStyles.company}>{edu.school}</Text>
+                                            <Text style={minimalistStyles.title}>  {edu.degree}</Text>
+                                        </Text>
+                                        <Text style={minimalistStyles.date}>{edu.startDate} – {edu.endDate}</Text>
+                                    </View>
                                 </View>
                             ))}
                         </View>
                     );
                 case 'skills':
                     return skills && skills.length > 0 && (
-                        <View key="skills" style={{ marginBottom: 20 }}>
+                        <View key="skills" style={{ marginBottom: (20 * (data.sectionSpacing ?? 1)) }}>
                             <Text style={minimalistStyles.sectionTitle}>{sectionTitles.skills || "Skills"}</Text>
-                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: (4 * (data.sectionSpacing ?? 1)) }}>
                                 {skills.filter(s => s && s.trim()).map((skill: string, i: number) => (
                                     <View key={i} style={minimalistStyles.skillPill}>
                                         <Text style={minimalistStyles.skillText}>{skill.trim()}</Text>
@@ -778,15 +821,15 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                                 <View key={proj.id} style={minimalistStyles.itemGroup}>
                                     <Text style={minimalistStyles.company}>{proj.name}</Text>
                                     {proj.technologies && (
-                                        <View style={{ marginTop: 2, marginBottom: 2 }}>
+                                        <View style={{ marginTop: 2, marginBottom: (2 * (data.sectionSpacing ?? 1)) }}>
                                             <Text style={{ fontSize: 9, backgroundColor: '#f3f4f6', color: '#374151', padding: '1 3', borderRadius: 2, alignSelf: 'flex-start' }}>
                                                 {proj.technologies}
                                             </Text>
                                         </View>
                                     )}
-                                    <PdfFormattedText text={proj.description} style={{ ...minimalistStyles.description, marginBottom: 4 }} />
+                                    <PdfFormattedText text={proj.description} style={{ ...minimalistStyles.description, marginBottom: (4 * (data.sectionSpacing ?? 1)) }} />
                                     {proj.link && (
-                                        <Link src={proj.link} style={{ fontSize: 9, marginTop: 4, fontStyle: 'italic', color: '#2563eb', textDecoration: 'none' }}>
+                                        <Link src={normalizeUrl(proj.link)} style={{ fontSize: 9, marginTop: 4, fontStyle: 'italic', color: '#2563eb', textDecoration: 'none' }}>
                                             {proj.linkText || "View Project"}
                                         </Link>
                                     )}
@@ -804,13 +847,13 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                     <View style={{ width: '100%', height: '100%' }} wrap={false}>
                         <View style={minimalistStyles.header}>
                             <Text style={minimalistStyles.name}>{personalInfo.fullName}</Text>
-                            {personalInfo.jobTitle && <Text style={{ fontSize: 14, color: '#9ca3af', marginBottom: 16, fontFamily: 'Times-Roman', textTransform: 'uppercase', letterSpacing: 2 }}>{personalInfo.jobTitle}</Text>}
+                            {personalInfo.jobTitle && <Text style={{ fontSize: 14, color: '#9ca3af', marginBottom: (16 * (data.sectionSpacing ?? 1)), fontFamily: 'Times-Roman', textTransform: 'uppercase', letterSpacing: 2 }}>{personalInfo.jobTitle}</Text>}
                             <Text style={minimalistStyles.contact}>{personalInfo.email} â€¢ {personalInfo.phone} â€¢ {personalInfo.location}</Text>
                             <Text style={minimalistStyles.contact}>
                                 {[personalInfo.website, personalInfo.linkedin, personalInfo.github].filter(Boolean).map(s => s?.replace(/^https?:\/\/(www\.)?/, '')).join(' â€¢ ')}
                             </Text>
                             {/* Social Media */}
-                            <View style={{ alignItems: 'center', marginTop: 4 }}>
+                            <View style={{ alignItems: 'center', marginTop: (4 * (data.sectionSpacing ?? 1)) }}>
                                 {renderSocialMedia({ contact: { color: accentColor } })}
                             </View>
                         </View>
@@ -821,7 +864,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             </View>
                             <View style={{ width: '60%' }}>
                                 {personalInfo.summary && (
-                                    <View style={{ marginBottom: 20 }}>
+                                    <View style={{ marginBottom: (20 * (data.sectionSpacing ?? 1)) }}>
                                         <Text style={minimalistStyles.sectionTitle}>{sectionTitles.summary || "Profile"}</Text>
                                         <PdfFormattedText text={personalInfo.summary} style={{ fontSize: 10, lineHeight: 1.4, fontFamily: 'Times-Roman' }} />
                                     </View>
@@ -831,6 +874,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                         </View>
                     </View>
 
+                    <BrandingFooter />
                 </Page>
             </Document >
         )
@@ -851,7 +895,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                         <View key={customSection.id} style={modernStyles.sidebarSection}>
                             <Text style={modernStyles.sidebarTitle}>{customSection.title}</Text>
                             {customSection.items.map((item: any) => (
-                                <View key={item.id} style={{ marginBottom: 8 }}>
+                                <View key={item.id} style={{ marginBottom: (8 * (data.sectionSpacing ?? 1)) }}>
                                     <Text style={modernStyles.sidebarItemName}>{item.name}</Text>
                                     <Text style={modernStyles.sidebarItemDate}>{item.date}</Text>
                                     {item.city && <Text style={modernStyles.sidebarItemCity}>{item.city}</Text>}
@@ -886,10 +930,14 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                         <View key="education" style={modernStyles.sidebarSection}>
                             <Text style={modernStyles.sidebarTitle}>{sectionTitles.education || "Education"}</Text>
                             {education.map((edu: any) => (
-                                <View key={edu.id} style={{ marginBottom: 8 }}>
-                                    <Text style={modernStyles.eduSchool}>{edu.school}</Text>
-                                    <Text style={modernStyles.eduDegree}>{edu.degree}</Text>
-                                    <Text style={modernStyles.eduDate}>{edu.startDate} - {edu.endDate}</Text>
+                                <View key={edu.id} style={{ marginBottom: (8 * (data.sectionSpacing ?? 1)) }}>
+                                    <View style={modernStyles.row}>
+                                        <Text style={{ flexShrink: 1, paddingRight: 8 }}>
+                                            <Text style={modernStyles.eduSchool}>{edu.school}</Text>
+                                            <Text style={modernStyles.eduDegree}>  {edu.degree}</Text>
+                                        </Text>
+                                        <Text style={modernStyles.eduDate}>{edu.startDate} - {edu.endDate}</Text>
+                                    </View>
                                 </View>
                             ))}
                         </View>
@@ -930,19 +978,19 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             <Text style={modernStyles.sectionTitle}>{sectionTitles.projects || "Projects"}</Text>
                             {projects.map((proj: any) => (
                                 <View key={proj.id} style={modernStyles.projectCard}>
-                                    <View style={{ marginBottom: 6 }}>
+                                    <View style={{ marginBottom: (6 * (data.sectionSpacing ?? 1)) }}>
                                         <Text style={{ fontWeight: 'bold', fontSize: 11, color: '#111827' }}>{proj.name}</Text>
                                         {proj.technologies && (
-                                            <View style={{ flexDirection: 'row', marginTop: 3 }}>
+                                            <View style={{ flexDirection: 'row', marginTop: (3 * (data.sectionSpacing ?? 1)) }}>
                                                 <Text style={{ fontSize: 9, backgroundColor: '#e5e7eb', color: '#4b5563', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
                                                     {proj.technologies}
                                                 </Text>
                                             </View>
                                         )}
                                     </View>
-                                    <PdfFormattedText text={proj.description} style={{ fontSize: 10, lineHeight: 1.4, color: '#4b5563', marginBottom: 4 }} />
+                                    <PdfFormattedText text={proj.description} style={{ fontSize: 10, lineHeight: 1.4, color: '#4b5563', marginBottom: (4 * (data.sectionSpacing ?? 1)) }} />
                                     {proj.link && (
-                                        <Link src={proj.link} style={{ fontSize: 9, color: '#2563eb', fontWeight: 'bold', marginTop: 4, textDecoration: 'none' }}>
+                                        <Link src={normalizeUrl(proj.link)} style={{ fontSize: 9, color: '#2563eb', fontWeight: 'bold', marginTop: 4, textDecoration: 'none' }}>
                                             {proj.linkText || "View Project ->"}
                                         </Link>
                                     )}
@@ -985,7 +1033,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             {mainSections.map(id => renderModernSection(id, false))}
                         </View>
                     </View>
-
+                    <BrandingFooter />
                 </Page>
             </Document>
         );
@@ -1002,7 +1050,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
             const customSection = data.customSections?.find(s => s.id === id);
             if (customSection) {
                 return (
-                    <View key={customSection.id} style={{ marginBottom: 20 }}>
+                    <View key={customSection.id} style={{ marginBottom: (20 * (data.sectionSpacing ?? 1)) }}>
                         {/* We use different titles for sidebar vs main usually, but here simplicity is key */}
                         <Text style={sidebarSections.includes(id) ? creativeStyles.sidebarTitle : creativeStyles.sectionTitle}>
                             {customSection.title}
@@ -1028,10 +1076,14 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                         <View key="education" style={creativeStyles.sidebarContent}>
                             <Text style={creativeStyles.sidebarTitle}>{sectionTitles.education || "Education"}</Text>
                             {education.map((edu: any) => (
-                                <View key={edu.id} style={{ marginBottom: 10 }}>
-                                    <Text style={creativeStyles.eduSchool}>{edu.school}</Text>
-                                    <Text style={creativeStyles.eduDegree}>{edu.degree}</Text>
-                                    <Text style={creativeStyles.eduDate}>{edu.startDate} - {edu.endDate}</Text>
+                                <View key={edu.id} style={{ marginBottom: (10 * (data.sectionSpacing ?? 1)) }}>
+                                    <View style={creativeStyles.expHeader}>
+                                        <Text style={{ flexShrink: 1, paddingRight: 8 }}>
+                                            <Text style={creativeStyles.eduSchool}>{edu.school}</Text>
+                                            <Text style={creativeStyles.eduDegree}>  {edu.degree}</Text>
+                                        </Text>
+                                        <Text style={creativeStyles.eduDate}>{edu.startDate} - {edu.endDate}</Text>
+                                    </View>
                                 </View>
                             ))}
                         </View>
@@ -1051,7 +1103,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                     );
                 case 'experience':
                     return experience.length > 0 && (
-                        <View key="experience" style={{ marginBottom: 20 }}>
+                        <View key="experience" style={{ marginBottom: (20 * (data.sectionSpacing ?? 1)) }}>
                             <Text style={creativeStyles.sectionTitle}>{sectionTitles.experience || "Professional Experience"}</Text>
                             {experience.map((exp: any) => (
                                 <View key={exp.id} style={creativeStyles.expItem}>
@@ -1068,17 +1120,17 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                     );
                 case 'projects':
                     return projects.length > 0 && (
-                        <View key="projects" style={{ marginBottom: 20 }}>
+                        <View key="projects" style={{ marginBottom: (20 * (data.sectionSpacing ?? 1)) }}>
                             <Text style={creativeStyles.sectionTitle}>{sectionTitles.projects || "Projects"}</Text>
                             {projects.map((proj: any) => (
-                                <View key={proj.id} style={{ marginBottom: 10 }}>
+                                <View key={proj.id} style={{ marginBottom: (10 * (data.sectionSpacing ?? 1)) }}>
                                     <View style={creativeStyles.expHeader}>
                                         <View style={{ flexDirection: 'column' }}>
                                             <Text style={creativeStyles.companyName}>{proj.name}</Text>
                                         </View>
                                     </View>
                                     {proj.technologies && (
-                                        <View style={{ marginBottom: 4, marginTop: 1 }}>
+                                        <View style={{ marginBottom: (4 * (data.sectionSpacing ?? 1)), marginTop: (1 * (data.sectionSpacing ?? 1)) }}>
                                             <Text style={{ fontSize: 9, color: '#6b7280', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#e5e7eb', padding: '1 3', borderRadius: 2, alignSelf: 'flex-start' }}>
                                                 {proj.technologies}
                                             </Text>
@@ -1099,13 +1151,13 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                     <View style={creativeStyles.container} wrap={false}>
                         {/* Sidebar */}
                         <View style={creativeStyles.sidebar}>
-                            <View style={{ marginTop: 16 }}>
+                            <View style={{ marginTop: (16 * (data.sectionSpacing ?? 1)) }}>
                                 <Text style={personalStyles.name}>{personalInfo.fullName}</Text>
                                 {personalInfo.jobTitle && <Text style={personalStyles.role}>{personalInfo.jobTitle}</Text>}
                             </View>
 
                             {(personalInfo.email || personalInfo.phone || personalInfo.location || personalInfo.website || personalInfo.linkedin || personalInfo.github) && (
-                                <View style={{ marginTop: 32 }}>
+                                <View style={{ marginTop: (32 * (data.sectionSpacing ?? 1)) }}>
                                     <Text style={personalStyles.sidebarTitle}>{sectionTitles.contact || "Contact"}</Text>
                                     <View style={{ gap: 8 }}>
                                         {personalInfo.email && <Text style={personalStyles.sidebarText}>{personalInfo.email}</Text>}
@@ -1126,7 +1178,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                         {/* Main Content */}
                         <View style={creativeStyles.main}>
                             {personalInfo.summary && (
-                                <View style={{ marginBottom: 32 }}>
+                                <View style={{ marginBottom: (32 * (data.sectionSpacing ?? 1)) }}>
                                     <Text style={personalStyles.sectionTitle}>{sectionTitles.summary || "Profile"}</Text>
                                     <PdfFormattedText text={personalInfo.summary} style={personalStyles.mainText} />
                                 </View>
@@ -1135,7 +1187,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             {mainSections.map(renderCreativeSection)}
                         </View>
                     </View>
-
+                    <BrandingFooter />
                 </Page>
             </Document>
         )
@@ -1155,7 +1207,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                 <View key={customSection.id} style={classicStyles.itemGroup}>
                     <Text style={classicStyles.sectionTitle}>{customSection.title}</Text>
                     {customSection.items.map((item: any) => (
-                        <View key={item.id} style={{ marginBottom: 5 }}>
+                        <View key={item.id} style={{ marginBottom: (5 * (data.sectionSpacing ?? 1)) }}>
                             <View style={classicStyles.row}>
                                 <Text style={classicStyles.bold}>{item.name}</Text>
                                 <Text style={classicStyles.text}>{item.date}</Text>
@@ -1173,12 +1225,16 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                 return education.length > 0 && (
                     <View key="education" style={classicStyles.itemGroup}>
                         <Text style={classicStyles.sectionTitle}>{sectionTitles.education || "Education"}</Text>
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                        <View style={{ flexDirection: 'column' }}>
                             {education.map((edu: any) => (
-                                <View key={edu.id} style={{ flexDirection: 'row', alignItems: 'baseline', gap: 3 }}>
-                                    <Text style={classicStyles.bold}>{edu.school}</Text>
-                                    <Text style={classicStyles.italic}>{edu.degree}</Text>
-                                    <Text style={{ fontSize: 9, color: '#6b7280' }}>({edu.startDate} - {edu.endDate})</Text>
+                                <View key={edu.id} style={{ marginBottom: (8 * (data.sectionSpacing ?? 1)) }}>
+                                    <View style={classicStyles.row}>
+                                        <Text style={{ flexShrink: 1, paddingRight: 8 }}>
+                                            <Text style={classicStyles.bold}>{edu.school}</Text>
+                                            <Text style={classicStyles.italic}>  {edu.degree}</Text>
+                                        </Text>
+                                        <Text style={classicStyles.text}>{edu.startDate} - {edu.endDate}</Text>
+                                    </View>
                                 </View>
                             ))}
                         </View>
@@ -1188,7 +1244,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                 return skills && skills.length > 0 && (
                     <View key="skills" style={classicStyles.itemGroup}>
                         <Text style={classicStyles.sectionTitle}>{sectionTitles.skills || "Skills"}</Text>
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 4 }}>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: (4 * (data.sectionSpacing ?? 1)) }}>
                             {skills.filter(s => s && s.trim()).map((skill: string, i: number) => (
                                 <View key={i} style={classicStyles.skillPill}>
                                     <Text style={classicStyles.skillText}>{skill.trim()}</Text>
@@ -1202,7 +1258,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                     <View key="experience" style={classicStyles.itemGroup}>
                         <Text style={classicStyles.sectionTitle}>{sectionTitles.experience || "Professional Experience"}</Text>
                         {experience.map((exp: any) => (
-                            <View key={exp.id} style={{ marginBottom: 8 }}>
+                            <View key={exp.id} style={{ marginBottom: (8 * (data.sectionSpacing ?? 1)) }}>
                                 <View style={classicStyles.row}>
                                     <Text style={classicStyles.bold}>{exp.company}</Text>
                                     <Text style={classicStyles.text}>{exp.startDate} - {exp.endDate}</Text>
@@ -1218,17 +1274,17 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                     <View key="projects" style={classicStyles.itemGroup}>
                         <Text style={classicStyles.sectionTitle}>{sectionTitles.projects || "Projects"}</Text>
                         {projects.map((proj: any) => (
-                            <View key={proj.id} style={{ marginBottom: 8 }}>
+                            <View key={proj.id} style={{ marginBottom: (8 * (data.sectionSpacing ?? 1)) }}>
                                 <View style={classicStyles.row}>
                                     <Text style={classicStyles.bold}>{proj.name}</Text>
                                     {proj.link && (
-                                        <Link src={proj.link} style={{ fontSize: 9, color: 'blue', textDecoration: 'none' }}>
+                                        <Link src={normalizeUrl(proj.link)} style={{ fontSize: 9, color: 'blue', textDecoration: 'none' }}>
                                             {proj.linkText || "View Project"}
                                         </Link>
                                     )}
                                 </View>
                                 {proj.technologies && (
-                                    <Text style={{ fontSize: 9, color: '#4b5563', fontStyle: 'italic', marginBottom: 2 }}>
+                                    <Text style={{ fontSize: 9, color: '#4b5563', fontStyle: 'italic', marginBottom: (2 * (data.sectionSpacing ?? 1)) }}>
                                         {proj.technologies}
                                     </Text>
                                 )}
@@ -1269,7 +1325,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
         const renderVelvetSection = (id: string) => {
             const customSection = data.customSections?.find(s => s.id === id);
             if (customSection) return (
-                <View key={id} style={{ marginBottom: 10 }}>
+                <View key={id} style={{ marginBottom: (10 * (data.sectionSpacing ?? 1)) }}>
                     <View style={vStyles.sectionHeader}><View style={vStyles.sectionRule} /><Text style={vStyles.sectionTitle}>{customSection.title}</Text></View>
                     <View style={vStyles.divider} />
                     {customSection.items.map((item: any) => (
@@ -1282,27 +1338,31 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
             );
             switch (id) {
                 case 'education': return education.length > 0 && (
-                    <View key="education" style={{ marginBottom: 10 }}>
+                    <View key="education" style={{ marginBottom: (10 * (data.sectionSpacing ?? 1)) }}>
                         <View style={vStyles.sectionHeader}><View style={vStyles.sectionRule} /><Text style={vStyles.sectionTitle}>{sectionTitles.education || 'Education'}</Text></View>
                         <View style={vStyles.divider} />
                         {education.map((edu: any) => (
                             <View key={edu.id} style={vStyles.itemGroup}>
-                                <Text style={vStyles.bold}>{edu.school}</Text>
-                                <Text style={{ fontSize: 8.5, fontStyle: 'italic', color: '#6b7280' }}>{edu.degree}</Text>
-                                <Text style={vStyles.date}>{edu.startDate} – {edu.endDate}</Text>
+                                <View style={vStyles.row}>
+                                    <Text style={{ flexShrink: 1, paddingRight: 8 }}>
+                                        <Text style={vStyles.bold}>{edu.school}</Text>
+                                        <Text style={{ fontSize: 8.5, fontStyle: 'italic', color: '#6b7280' }}>  {edu.degree}</Text>
+                                    </Text>
+                                    <Text style={vStyles.date}>{edu.startDate} – {edu.endDate}</Text>
+                                </View>
                             </View>
                         ))}
                     </View>
                 );
                 case 'skills': return skills && skills.length > 0 && (
-                    <View key="skills" style={{ marginBottom: 10 }}>
+                    <View key="skills" style={{ marginBottom: (10 * (data.sectionSpacing ?? 1)) }}>
                         <View style={vStyles.sectionHeader}><View style={vStyles.sectionRule} /><Text style={vStyles.sectionTitle}>{sectionTitles.skills || 'Skills'}</Text></View>
                         <View style={vStyles.divider} />
                         <Text style={{ fontSize: 8.5, color: '#4b5563', lineHeight: 1.6 }}>{skills.filter(s => s && s.trim()).map(s => s.trim()).join('  \u00B7  ')}</Text>
                     </View>
                 );
                 case 'experience': return experience.length > 0 && (
-                    <View key="experience" style={{ marginBottom: 10 }}>
+                    <View key="experience" style={{ marginBottom: (10 * (data.sectionSpacing ?? 1)) }}>
                         <View style={vStyles.sectionHeader}><View style={vStyles.sectionRule} /><Text style={vStyles.sectionTitle}>{sectionTitles.experience || 'Experience'}</Text></View>
                         <View style={vStyles.divider} />
                         {experience.map((exp: any) => (
@@ -1315,16 +1375,16 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                     </View>
                 );
                 case 'projects': return projects.length > 0 && (
-                    <View key="projects" style={{ marginBottom: 10 }}>
+                    <View key="projects" style={{ marginBottom: (10 * (data.sectionSpacing ?? 1)) }}>
                         <View style={vStyles.sectionHeader}><View style={vStyles.sectionRule} /><Text style={vStyles.sectionTitle}>{sectionTitles.projects || 'Projects'}</Text></View>
                         <View style={vStyles.divider} />
                         {projects.map((proj: any) => (
                             <View key={proj.id} style={vStyles.itemGroup}>
                                 <View style={vStyles.row}>
                                     <Text style={vStyles.bold}>{proj.name}</Text>
-                                    {proj.link && <Link src={proj.link} style={{ fontSize: 7.5, color: accentColor }}>{proj.linkText || 'View'}</Link>}
+                                    {proj.link && <Link src={normalizeUrl(proj.link)} style={{ fontSize: 7.5, color: accentColor }}>{proj.linkText || 'View'}</Link>}
                                 </View>
-                                {proj.technologies && <Text style={{ fontSize: 7.5, fontStyle: 'italic', color: '#9ca3af', marginBottom: 2 }}>{proj.technologies}</Text>}
+                                {proj.technologies && <Text style={{ fontSize: 7.5, fontStyle: 'italic', color: '#9ca3af', marginBottom: (2 * (data.sectionSpacing ?? 1)) }}>{proj.technologies}</Text>}
                                 <PdfFormattedText text={proj.description} style={vStyles.text} />
                             </View>
                         ))}
@@ -1353,7 +1413,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
 
                     {/* Summary */}
                     {personalInfo.summary && (
-                        <View style={{ marginBottom: 12 }}>
+                        <View style={{ marginBottom: (12 * (data.sectionSpacing ?? 1)) }}>
                             <View style={vStyles.sectionHeader}><View style={vStyles.sectionRule} /><Text style={vStyles.sectionTitle}>Profile</Text></View>
                             <View style={vStyles.divider} />
                             <PdfFormattedText text={personalInfo.summary} style={vStyles.summaryText} />
@@ -1362,7 +1422,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
 
                     {sectionOrder.map(renderVelvetSection)}
 
-
+                    <BrandingFooter />
                 </Page>
             </Document>
         );
@@ -1374,7 +1434,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                 <View style={{ width: '100%', height: '100%' }} wrap={false}>
                     <View style={classicStyles.header}>
                         <Text style={personalStyles.name}>{personalInfo.fullName}</Text>
-                        {personalInfo.jobTitle && <Text style={{ fontSize: 14, color: '#4b5563', marginBottom: 8, textTransform: 'uppercase' }}>{personalInfo.jobTitle}</Text>}
+                        {personalInfo.jobTitle && <Text style={{ fontSize: 14, color: '#4b5563', marginBottom: (8 * (data.sectionSpacing ?? 1)), textTransform: 'uppercase' }}>{personalInfo.jobTitle}</Text>}
                         <Text style={personalStyles.contact}>
                             {[
                                 personalInfo.email,
@@ -1386,7 +1446,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             ].filter(Boolean).join(' | ')}
                         </Text>
                         {/* Social Media */}
-                        <View style={{ alignItems: 'center', marginTop: 4 }}>
+                        <View style={{ alignItems: 'center', marginTop: (4 * (data.sectionSpacing ?? 1)) }}>
                             {renderSocialMedia({ contact: { color: accentColor } })}
                         </View>
                     </View>
@@ -1401,7 +1461,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                     {sectionOrder.map(renderClassicSection)}
                 </View>
 
-
+                <BrandingFooter />
             </Page>
         </Document>
     );

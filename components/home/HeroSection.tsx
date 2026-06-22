@@ -2,10 +2,14 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, FileText, Sparkles } from "lucide-react";
-import { motion } from "framer-motion";
+import { ArrowRight, FileText, Sparkles, Upload, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
+import { ImportResumeButton } from "@/components/home/ImportResumeButton";
 
 export function HeroSection() {
+    const [showImport, setShowImport] = useState(false);
+
     const containerVariants = {
         hidden: { opacity: 0 },
         visible: {
@@ -62,6 +66,57 @@ export function HeroSection() {
                             View Templates
                         </Button>
                     </Link>
+                </motion.div>
+
+                {/* ── Import existing resume ─────────────────────────── */}
+                <motion.div variants={itemVariants} className="flex flex-col items-center gap-3 w-full max-w-md">
+                    <div className="flex items-center gap-3 w-full">
+                        <div className="flex-1 h-px bg-border" />
+                        <span className="text-xs text-muted-foreground font-medium uppercase tracking-widest">or</span>
+                        <div className="flex-1 h-px bg-border" />
+                    </div>
+
+                    <Button
+                        id="import-resume-toggle-btn"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowImport((v) => !v)}
+                        className="gap-2 text-muted-foreground hover:text-foreground rounded-full px-6 h-10 border border-dashed hover:border-primary/50 hover:bg-primary/5 transition-all"
+                    >
+                        {showImport ? (
+                            <><X className="h-4 w-4" /> Close</>  
+                        ) : (
+                            <><Upload className="h-4 w-4" /> Import Existing Resume PDF</>
+                        )}
+                    </Button>
+
+                    <AnimatePresence>
+                        {showImport && (
+                            <motion.div
+                                key="import-panel"
+                                initial={{ opacity: 0, height: 0, y: -8 }}
+                                animate={{ opacity: 1, height: "auto", y: 0 }}
+                                exit={{ opacity: 0, height: 0, y: -8 }}
+                                transition={{ duration: 0.3, ease: "easeOut" }}
+                                className="overflow-hidden w-full"
+                            >
+                                <div className="pt-2">
+                                    <div className="rounded-2xl border bg-background/80 backdrop-blur-sm p-4 shadow-lg">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
+                                                <Upload className="h-3.5 w-3.5 text-primary" />
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-semibold">AI Resume Import</p>
+                                                <p className="text-xs text-muted-foreground">Gemini reads your PDF and fills in every section automatically</p>
+                                            </div>
+                                        </div>
+                                        <ImportResumeButton />
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </motion.div>
 
                 {/* Floating Preview Element */}

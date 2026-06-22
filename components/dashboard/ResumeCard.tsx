@@ -6,7 +6,6 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { Edit, Trash2, Copy, FileText, Calendar } from "lucide-react";
-import Link from "next/link";
 import {
     Dialog,
     DialogContent,
@@ -23,9 +22,10 @@ interface ResumeCardProps {
     resume: ResumeData;
     onDelete: (id: string) => void;
     onDuplicate: (id: string) => void;
+    onEdit: (id: string) => void;
 }
 
-export function ResumeCard({ resume, onDelete, onDuplicate }: ResumeCardProps) {
+export function ResumeCard({ resume, onDelete, onDuplicate, onEdit }: ResumeCardProps) {
     const lastModified = new Date(resume.lastModified);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -65,12 +65,10 @@ export function ResumeCard({ resume, onDelete, onDuplicate }: ResumeCardProps) {
                 </div>
             </CardContent>
             <CardFooter className="pt-3 border-t bg-muted/20 gap-3">
-                <Link href={`/editor`} className="flex-1">
-                    <Button variant="default" className="w-full">
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                    </Button>
-                </Link>
+                <Button variant="default" className="flex-1" onClick={() => onEdit(resume.id)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit
+                </Button>
 
                 <Button variant="outline" size="icon" onClick={() => onDuplicate(resume.id)} title="Duplicate" className="h-11 w-11">
                     <Copy className="h-4 w-4" />

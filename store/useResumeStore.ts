@@ -91,11 +91,13 @@ export interface ResumeData {
     selectedTemplate: TemplateType;
     themeColor: string;
     contentScale: number;
+    sectionSpacing?: number;
 
     fontFamily: string;
     analysisResult?: AnalysisResult | null;
     sectionScales?: Record<string, number>;
     isPublic?: boolean; // New: template visibility - defaults to false (private)
+    hideBranding?: boolean; // Pro feature: hide "Powered by MyResume" branding
 }
 
 
@@ -175,8 +177,10 @@ interface ResumeState {
     reorderSections: (newOrder: string[]) => void;
     reorderItems: (sectionKey: keyof ResumeData, newItems: any[]) => void;
     setContentScale: (scale: number) => void;
+    setSectionSpacing: (spacing: number) => void;
     setSectionScale: (sectionId: string, scale: number) => void;
     setFontFamily: (font: string) => void;
+    setHideBranding: (hide: boolean) => void;
 
     // Custom Section Actions
     addCustomSection: (title: string) => void;
@@ -510,6 +514,17 @@ export const useResumeStore = create<ResumeState>()(
                 };
             }),
 
+            setSectionSpacing: (spacing) => set((state) => {
+                const resumeId = state.activeResumeId;
+                if (!resumeId) return {};
+                return {
+                    resumes: {
+                        ...state.resumes,
+                        [resumeId]: { ...state.resumes[resumeId], sectionSpacing: spacing, lastModified: Date.now() }
+                    }
+                };
+            }),
+
             addCustomSection: (title) => set((state) => {
                 const activeResume = state.resumes[state.activeResumeId!];
                 if (!activeResume) return {};
@@ -679,6 +694,21 @@ export const useResumeStore = create<ResumeState>()(
                 }
             }),
 
+            setHideBranding: (hide) => set((state) => {
+                const activeId = state.activeResumeId;
+                if (!activeId || !state.resumes[activeId]) return {};
+                return {
+                    resumes: {
+                        ...state.resumes,
+                        [activeId]: {
+                            ...state.resumes[activeId],
+                            hideBranding: hide,
+                            lastModified: Date.now()
+                        }
+                    }
+                };
+            }),
+
             // --- Management Actions ---
             addResume: (name) => set((state) => {
                 const id = Math.random().toString(36).substring(2, 9);
@@ -715,6 +745,7 @@ export const useResumeStore = create<ResumeState>()(
                     selectedTemplate: 'modern',
                     themeColor: '#3b82f6',
                     contentScale: 1,
+                    sectionSpacing: 1,
 
                     fontFamily: 'roboto',
                     sectionScales: {},
@@ -759,6 +790,16 @@ export const useResumeStore = create<ResumeState>()(
                         console.error('Error unpublishing template on delete:', error);
                         // Continue with deletion even if unpublish fails
                     }
+                }
+
+                // Delete from cloud (Supabase) so it doesn't come back on next loadFromCloud
+                try {
+                    await fetch(`/api/resumes/${id}`, {
+                        method: 'DELETE',
+                    });
+                } catch (error) {
+                    console.error('Error deleting resume from cloud:', error);
+                    // Continue with local deletion even if cloud deletion fails
                 }
 
                 // Delete from local store
@@ -854,8 +895,8 @@ export const useResumeStore = create<ResumeState>()(
                             }),
                         });
 
-                        if (!response.ok) {
-                            // If resume doesn't exist, create it
+                        if (response.status === 404 || response.status === 406) {
+                            // Resume truly doesn't exist in cloud yet — create it
                             await fetch('/api/resumes', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -881,17 +922,42 @@ export const useResumeStore = create<ResumeState>()(
                     const response = await fetch('/api/resumes');
                     if (!response.ok) throw new Error('Failed to fetch resumes');
 
-                    const { resumes } = await response.json();
+                    const { resumes: cloudResumes } = await response.json();
 
-                    if (resumes && resumes.length > 0) {
-                        const resumesMap: Record<string, ResumeData> = {};
-                        resumes.forEach((r: any) => {
-                            resumesMap[r.data.id] = r.data;
+                    if (cloudResumes && cloudResumes.length > 0) {
+                        // Build a de-duplicated map from cloud data:
+                        // If multiple rows share the same data.id (old duplicate bug),
+                        // keep only the one with the latest last_modified.
+                        const cloudMap: Record<string, ResumeData> = {};
+                        cloudResumes.forEach((r: any) => {
+                            const existing = cloudMap[r.data.id];
+                            if (!existing || r.data.lastModified > existing.lastModified) {
+                                cloudMap[r.data.id] = r.data;
+                            }
                         });
 
+                        // Merge with local store: for each resume, keep whichever
+                        // version (local vs cloud) has the newer lastModified.
+                        const localResumes = get().resumes;
+                        const mergedMap: Record<string, ResumeData> = { ...cloudMap };
+
+                        Object.values(localResumes).forEach((localResume) => {
+                            const cloudVersion = cloudMap[localResume.id];
+                            if (!cloudVersion || localResume.lastModified > cloudVersion.lastModified) {
+                                // Local is newer — keep local version
+                                mergedMap[localResume.id] = localResume;
+                            }
+                        });
+
+                        // Preserve current activeResumeId if it still exists, otherwise use first
+                        const currentActiveId = get().activeResumeId;
+                        const newActiveId = currentActiveId && mergedMap[currentActiveId]
+                            ? currentActiveId
+                            : Object.keys(mergedMap)[0] || null;
+
                         set({
-                            resumes: resumesMap,
-                            activeResumeId: resumes[0].data.id,
+                            resumes: mergedMap,
+                            activeResumeId: newActiveId,
                             syncStatus: 'synced',
                             lastSyncError: null,
                         });

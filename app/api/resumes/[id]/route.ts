@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { createRouteClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
 
 // GET /api/resumes/[id] - Fetch single resume
@@ -8,6 +8,7 @@ export async function GET(
 ) {
     const { id } = await params;
 
+    const supabase = await createRouteClient();
     if (!supabase) {
         return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
     }
@@ -32,13 +33,14 @@ export async function GET(
     return NextResponse.json({ resume });
 }
 
-// PUT /api/resumes/[id] - Update resume
+// PUT /api/resumes/[id] - Update resume (id = local resume data id, stored inside JSON column)
 export async function PUT(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     const { id } = await params;
 
+    const supabase = await createRouteClient();
     if (!supabase) {
         return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
     }
@@ -57,28 +59,28 @@ export async function PUT(
     if (data !== undefined) updateData.data = data;
     updateData.last_modified = new Date().toISOString();
 
-    const { data: resume, error } = await supabase
+    // Match on the resume ID stored inside the JSON `data` column, not the Supabase row UUID
+    const { error } = await supabase
         .from('resumes')
         .update(updateData)
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .select()
-        .single();
+        .eq('data->>id', id)
+        .eq('user_id', user.id);
 
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ resume });
+    return NextResponse.json({ success: true });
 }
 
-// DELETE /api/resumes/[id] - Delete resume
+// DELETE /api/resumes/[id] - Delete resume (id = local resume data id, stored inside JSON column)
 export async function DELETE(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
     const { id } = await params;
 
+    const supabase = await createRouteClient();
     if (!supabase) {
         return NextResponse.json({ error: 'Supabase not configured' }, { status: 503 });
     }
@@ -89,10 +91,11 @@ export async function DELETE(
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Match on the resume ID stored inside the JSON `data` column, not the Supabase row UUID
     const { error } = await supabase
         .from('resumes')
         .delete()
-        .eq('id', id)
+        .eq('data->>id', id)
         .eq('user_id', user.id);
 
     if (error) {

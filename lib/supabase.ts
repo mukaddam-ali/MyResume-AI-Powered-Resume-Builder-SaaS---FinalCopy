@@ -14,14 +14,74 @@ export const createBrowserClient = () => {
 
   return createSSRBrowserClient(
     supabaseUrl,
-    supabaseKey
+    supabaseKey,
+    {
+      global: {
+        fetch: async (url, options) => {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout for client auth queries
+          try {
+            const res = await fetch(url, {
+              ...options,
+              signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+            return res;
+          } catch (err) {
+            clearTimeout(timeoutId);
+            // Return a mock offline response to silence raw browser console TypeError
+            return new Response(
+              JSON.stringify({
+                error: 'service_unavailable',
+                error_description: 'Supabase server is unreachable or request timed out.'
+              }),
+              {
+                status: 400,
+                statusText: 'Bad Request',
+                headers: { 'Content-Type': 'application/json' }
+              }
+            );
+          }
+        }
+      }
+    }
   )
 };
 
-// Standard client for general use (only created if configured)
-// NOTE: This uses localStorage - only use for non-auth queries
+// Standard client for NON-AUTH database queries only (e.g. public templates)
+// persistSession:false prevents it from competing with the SSR cookie-based client
 export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseKey)
+  ? createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false },
+      global: {
+        fetch: async (url, options) => {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout for public queries
+          try {
+            const res = await fetch(url, {
+              ...options,
+              signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+            return res;
+          } catch (err) {
+            clearTimeout(timeoutId);
+            // Return a mock offline response to silence raw browser console TypeError
+            return new Response(
+              JSON.stringify({
+                error: 'service_unavailable',
+                error_description: 'Supabase server is unreachable or request timed out.'
+              }),
+              {
+                status: 400,
+                statusText: 'Bad Request',
+                headers: { 'Content-Type': 'application/json' }
+              }
+            );
+          }
+        }
+      }
+    })
   : null;
 
 // Helper to check if Supabase is configured

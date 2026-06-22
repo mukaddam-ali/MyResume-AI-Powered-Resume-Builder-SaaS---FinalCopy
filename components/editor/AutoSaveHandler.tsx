@@ -11,6 +11,7 @@ export function AutoSaveHandler() {
     const { syncStatus, setSyncStatus, syncToCloud, activeResumeId, resumes } = useResumeStore();
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isFirstRender = useRef(true);
+    const pendingSyncRef = useRef(false);
 
     // Watch for changes in the active resume
     const activeResume = activeResumeId ? resumes[activeResumeId] : null;
@@ -29,20 +30,27 @@ export function AutoSaveHandler() {
             clearTimeout(timeoutRef.current);
         }
 
-        // Set status to syncing (or 'unsaved' state could be added)
-        // For now, we'll just trigger the sync after delay
+        // Mark that we have pending changes to sync
+        pendingSyncRef.current = true;
+
         if (syncStatus === 'synced' || syncStatus === 'error') {
             setSyncStatus('idle'); // Indicate changes are pending
         }
 
         // Debounce sync
         timeoutRef.current = setTimeout(() => {
+            pendingSyncRef.current = false;
             syncToCloud(user.id);
         }, AUTOSAVE_DELAY);
 
         return () => {
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
+            }
+            // If there are unsaved changes when navigating away, sync immediately
+            if (pendingSyncRef.current && user) {
+                pendingSyncRef.current = false;
+                syncToCloud(user.id);
             }
         };
     }, [activeResume, user, syncToCloud, setSyncStatus]);

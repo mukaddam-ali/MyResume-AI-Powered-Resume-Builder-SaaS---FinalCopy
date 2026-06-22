@@ -15,17 +15,21 @@ export default function EditorPage() {
     const [mobileView, setMobileView] = useState<'editor' | 'preview'>('editor');
 
     useEffect(() => {
-        // If store is not hydrated yet, wait (if we had a hydration flag). 
-        // Assuming persist works reasonably fast.
-
-        // Use a timeout to allow hydration
+        // Allow hydration to complete before acting
         const timer = setTimeout(() => {
-            if (activeResumeId) return;
+            // If activeResumeId is set AND that resume actually exists in the store, do nothing
+            if (activeResumeId && resumes[activeResumeId]) return;
 
+            // activeResumeId is missing or points to a deleted/invalid resume
             const resumeIds = Object.keys(resumes);
             if (resumeIds.length > 0) {
-                setActiveResume(resumeIds[0]);
+                // Switch to the most recently modified resume instead of creating a new one
+                const mostRecent = resumeIds.sort(
+                    (a, b) => resumes[b].lastModified - resumes[a].lastModified
+                )[0];
+                setActiveResume(mostRecent);
             } else {
+                // No resumes at all — create the first one
                 addResume("My First Resume");
             }
         }, 100);

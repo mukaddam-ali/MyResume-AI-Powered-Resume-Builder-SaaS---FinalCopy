@@ -1,31 +1,6 @@
 import { NextResponse } from "next/server";
 import { createGroq } from "@ai-sdk/groq";
-import { generateObject } from "ai";
-import { z } from "zod";
-
-const analysisSchema = z.object({
-    score: z.number(),
-    category_scores: z.object({
-        impact: z.number(),
-        brevity: z.number(),
-        style: z.number(),
-        structure: z.number(),
-    }),
-    keywords: z.object({
-        found: z.array(z.string()),
-        missing: z.array(z.string()),
-    }),
-    feedback: z.array(z.string()),
-    red_flags: z.array(z.string()),
-    summary: z.string(),
-    suggested_edits: z.array(
-        z.object({
-            section: z.string(),
-            suggestion: z.string(),
-            reason: z.string(),
-        })
-    ),
-});
+import { generateText } from "ai";
 
 /**
  * Optimize resume data to reduce token usage
@@ -38,7 +13,7 @@ function optimizeResumeData(data: any) {
         experience: data.experience?.map((exp: any) => ({
             role: exp.title,
             company: exp.company,
-            highlights: exp.description?.substring(0, 300) // Truncate
+            highlights: exp.description?.substring(0, 300)
         })).slice(0, 5),
         education: data.education?.map((edu: any) => ({
             degree: edu.degree,
@@ -64,46 +39,92 @@ export async function POST(req: Request) {
             );
         }
 
-        console.log("✅ Using Groq API via Vercel AI SDK");
+        console.log("✅ Using Groq API (generateText + JSON parse)");
 
         const { resumeData, jobDescription } = await req.json();
 
-        // Optimize payload
         const optimizedResume = optimizeResumeData(resumeData);
 
-        const prompt = `
-        Act as a strict, professional Applicant Tracking System (ATS) and expert Resume Coach.
-        1. Analyze the RESUME SUMMARY below.
-        2. Check for impact, clarity, keywords, and red flags.
-        ${jobDescription ? '3. Compare relevance to the JOB DESCRIPTION.' : ''}
-        4. Provide specific, actionable SUGGESTED EDITS for key sections (Summary, Experience, etc.) to improve the ATS score.
+        const prompt = `You are a strict ATS (Applicant Tracking System) and expert Resume Coach.
+Analyze the resume data below and respond ONLY with a valid JSON object — no markdown, no code fences, no extra text.
 
-        IMPORTANT SCORING RULE:
-        - The 'score' MUST be an integer between 0 and 100.
-        - Do NOT return a decimal (e.g., 0.85). Return 85.
-        - All 'category_scores' (impact, brevity, style, structure) MUST also be between 0 and 100.
+REQUIRED JSON STRUCTURE:
+{
+  "score": <integer 0-100>,
+  "category_scores": {
+    "impact": <integer 0-100>,
+    "brevity": <integer 0-100>,
+    "style": <integer 0-100>,
+    "structure": <integer 0-100>
+  },
+  "keywords": {
+    "found": ["<keyword>", ...],
+    "missing": ["<keyword>", ...]
+  },
+  "feedback": ["<actionable feedback string>", ...],
+  "red_flags": ["<issue string>", ...],
+  "summary": "<1-2 sentence analysis summary>",
+  "suggested_edits": [
+    { "section": "<section name>", "suggestion": "<what to change>", "reason": "<why>" }
+  ]
+}
 
-        RESUME SUMMARY:
-        ${JSON.stringify(optimizedResume, null, 2)}
+RULES:
+- All scores MUST be integers, not decimals.
+- "summary" MUST be a non-empty string.
+- "feedback" MUST have at least 2 items.
+- "red_flags" can be an empty array [].
+- "suggested_edits" is optional, include 2-3 max if relevant.
+- Output ONLY the JSON object. Nothing else.
+${jobDescription ? "Also compare relevance to the JOB DESCRIPTION provided." : ""}
 
-        ${jobDescription ? `JOB DESCRIPTION (Analyze against this):\n${jobDescription.slice(0, 1500)}` : ''}
-        `;
+RESUME DATA:
+${JSON.stringify(optimizedResume, null, 2)}
+${jobDescription ? `\nJOB DESCRIPTION:\n${jobDescription.slice(0, 1500)}` : ""}`;
 
         const groq = createGroq({ apiKey });
 
-        try {
-            const { object } = await generateObject({
-                model: groq("meta-llama/llama-4-scout-17b-16e-instruct"),
-                schema: analysisSchema,
-                prompt: prompt,
-                temperature: 0.3,
-            });
+        const { text } = await generateText({
+            model: groq("llama-3.3-70b-versatile"),
+            prompt,
+            temperature: 0.2,
+        });
 
-            return NextResponse.json(object);
-        } catch (apiError: any) {
-            console.error("Groq API Call Failed:", apiError);
-            throw apiError; // Re-throw to be caught by outer catch
+        // Strip any accidental markdown code fences
+        const cleaned = text
+            .trim()
+            .replace(/^```(?:json)?\s*/i, "")
+            .replace(/```\s*$/i, "")
+            .trim();
+
+        let parsed: any;
+        try {
+            parsed = JSON.parse(cleaned);
+        } catch (parseErr) {
+            console.error("JSON parse failed. Raw response:", text);
+            throw new Error("Model returned invalid JSON. Please try again.");
         }
+
+        // Light normalization — ensure required fields have correct types
+        const result = {
+            score: Math.round(Number(parsed.score ?? 0)),
+            category_scores: {
+                impact: Math.round(Number(parsed.category_scores?.impact ?? 0)),
+                brevity: Math.round(Number(parsed.category_scores?.brevity ?? 0)),
+                style: Math.round(Number(parsed.category_scores?.style ?? 0)),
+                structure: Math.round(Number(parsed.category_scores?.structure ?? 0)),
+            },
+            keywords: {
+                found: Array.isArray(parsed.keywords?.found) ? parsed.keywords.found : [],
+                missing: Array.isArray(parsed.keywords?.missing) ? parsed.keywords.missing : [],
+            },
+            feedback: Array.isArray(parsed.feedback) ? parsed.feedback : [],
+            red_flags: Array.isArray(parsed.red_flags) ? parsed.red_flags : [],
+            summary: parsed.summary ?? "",
+            suggested_edits: Array.isArray(parsed.suggested_edits) ? parsed.suggested_edits : [],
+        };
+
+        return NextResponse.json(result);
 
     } catch (error: any) {
         console.error("ATS Analysis failed:", error);

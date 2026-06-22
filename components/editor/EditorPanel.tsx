@@ -6,6 +6,7 @@ import { useMemo, useEffect, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -215,6 +216,13 @@ export function EditorPanel() {
     const addSection = useResumeStore(state => state.addSection);
     const updateResumeName = useResumeStore(state => state.updateResumeName);
     const renameSection = useResumeStore(state => state.renameSection);
+    const contentScale = useResumeStore(state => state.activeResumeId ? state.resumes[state.activeResumeId]?.contentScale : undefined) || 1;
+    const sectionSpacing = useResumeStore(state => state.activeResumeId ? state.resumes[state.activeResumeId]?.sectionSpacing : undefined) ?? 1;
+    const setContentScale = useResumeStore(state => state.setContentScale);
+    const setSectionSpacing = useResumeStore(state => state.setSectionSpacing);
+    const userTier = useResumeStore(state => state.userTier);
+    const hideBranding = useResumeStore(state => state.activeResumeId ? state.resumes[state.activeResumeId]?.hideBranding : false) ?? false;
+    const setHideBranding = useResumeStore(state => state.setHideBranding);
 
     // Calculate missing standard sections
     const standardSections = ['education', 'experience', 'projects', 'skills'];
@@ -299,10 +307,86 @@ export function EditorPanel() {
             <div className="flex-1">
                 <div className="py-6 px-3 overflow-x-hidden max-w-full">
                     <ResumeScore />
+                    
+                    {/* Scale Controls */}
+                    <div className="mb-6 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="flex flex-col gap-3">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">General Scale</span>
+                                    <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                                        {Math.round(contentScale * 100)}%
+                                    </span>
+                                </div>
+                                <Slider
+                                    value={[contentScale]}
+                                    onValueChange={(vals) => setContentScale(vals[0])}
+                                    min={0.6}
+                                    max={1.4}
+                                    step={0.02}
+                                />
+                            </div>
+                            <div className="flex flex-col gap-3">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Section Space</span>
+                                    <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                                        {Math.round(sectionSpacing * 100)}%
+                                    </span>
+                                </div>
+                                <Slider
+                                    value={[sectionSpacing]}
+                                    onValueChange={(vals) => setSectionSpacing(vals[0])}
+                                    min={0.2}
+                                    max={2.0}
+                                    step={0.1}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <ColorPicker />
                         <FontSelector />
                     </div>
+
+                    {/* Branding Toggle */}
+                    <div className="mb-6 flex items-center justify-between gap-4 px-4 py-3 rounded-xl border border-border bg-muted/30">
+                        <div className="flex flex-col gap-0.5">
+                            <span className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                Remove Branding
+                                {userTier !== 'pro' && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase"
+                                        style={{ background: 'linear-gradient(135deg, #f59e0b, #f97316)', color: '#fff' }}>
+                                        PRO
+                                    </span>
+                                )}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                                {userTier === 'pro'
+                                    ? 'Hide the "Powered by MyResume" footer from your PDF'
+                                    : 'Upgrade to Pro to remove the branding watermark'}
+                            </span>
+                        </div>
+                        <button
+                            id="branding-toggle"
+                            role="switch"
+                            aria-checked={userTier === 'pro' && hideBranding}
+                            disabled={userTier !== 'pro'}
+                            onClick={() => userTier === 'pro' && setHideBranding(!hideBranding)}
+                            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${
+                                userTier !== 'pro'
+                                    ? 'cursor-not-allowed opacity-40 bg-muted'
+                                    : hideBranding
+                                        ? 'bg-emerald-500'
+                                        : 'bg-input'
+                            }`}
+                        >
+                            <span className={`pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform ${
+                                userTier === 'pro' && hideBranding ? 'translate-x-6' : 'translate-x-1'
+                            }`} />
+                        </button>
+                    </div>
+
                     <TemplateSelector />
 
                     <Tabs defaultValue="personal" className="w-full">

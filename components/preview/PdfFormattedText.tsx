@@ -8,12 +8,33 @@ interface PdfFormattedTextProps {
     supportsItalic?: boolean;
 }
 
+/**
+ * Sanitize text for React-PDF. Replaces problematic unicode characters
+ * that cause mojibake (â€¢, â€", etc.) with safe ASCII equivalents.
+ */
+function sanitizeForPdf(text: string): string {
+    return text
+        // Mojibake bullet variants → plain hyphen bullet
+        .replace(/â€¢/g, '-')
+        .replace(/\u2022/g, '-')   // actual bullet •
+        .replace(/â€"/g, '-')       // em dash mojibake
+        .replace(/\u2013/g, '-')   // en dash –
+        .replace(/\u2014/g, '-')   // em dash —
+        .replace(/\u2018|\u2019/g, "'") // smart single quotes
+        .replace(/\u201c|\u201d/g, '"') // smart double quotes
+        // Strip any remaining non-Latin-Extended characters that may cause issues
+        .replace(/[^\x00-\xFF]/g, '');
+}
+
 export const PdfFormattedText = ({ text = '', style, children, supportsItalic = true }: PdfFormattedTextProps & { children?: React.ReactNode }) => {
     if (!text) return null;
 
+    // Sanitize before parsing
+    const safeText = sanitizeForPdf(text);
+
     // Detect if the text is plain text with newlines (legacy data) or HTML (new Tiptap data)
-    const isHtml = /<[a-z][\s\S]*>/i.test(text);
-    const htmlContent = isHtml ? text : text.replace(/\n/g, '<br />');
+    const isHtml = /<[a-z][\s\S]*>/i.test(safeText);
+    const htmlContent = isHtml ? safeText : safeText.replace(/\n/g, '<br />');
 
     // Force empty paragraphs to render correctly by adding a break tag
     let cleanedContent = htmlContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');

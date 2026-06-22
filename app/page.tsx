@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { TemplateGallery } from "@/components/home/TemplateGallery";
 import { HeroSection } from "@/components/home/HeroSection";
 import { FeaturesSection } from "@/components/home/FeaturesSection";
+import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 
 export default function Home() {
   return (
@@ -36,6 +37,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <FeedbackWidget />
     </div>
   );
 }

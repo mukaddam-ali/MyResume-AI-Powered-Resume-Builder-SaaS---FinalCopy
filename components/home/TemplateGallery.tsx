@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { useResumeStore, ResumeData } from "@/store/useResumeStore";
 import { Button } from "@/components/ui/button";
-import { FileText, Copy, Loader2 } from "lucide-react";
+import { FileText, Copy, Eye, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { TemplatePreviewModal } from "@/components/home/TemplatePreviewModal";
 
 interface PublicTemplate {
     id: string;
@@ -23,6 +24,7 @@ export function TemplateGallery() {
     const [templates, setTemplates] = useState<PublicTemplate[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [previewTemplate, setPreviewTemplate] = useState<PublicTemplate | null>(null);
     const { resumes, setActiveResume } = useResumeStore();
 
     useEffect(() => {
@@ -162,17 +164,38 @@ export function TemplateGallery() {
                             )}
                         </div>
 
-                        <Button
-                            onClick={() => handleCopyTemplate(template)}
-                            className="w-full mt-6 gap-2"
-                            size="sm"
-                        >
-                            <Copy className="h-4 w-4" />
-                            Use This Template
-                        </Button>
+                        <div className="mt-6 flex gap-2">
+                            <Button
+                                id={`template-review-btn-${template.id}`}
+                                variant="outline"
+                                onClick={() => setPreviewTemplate(template)}
+                                className="flex-1 gap-2"
+                                size="sm"
+                            >
+                                <Eye className="h-4 w-4" />
+                                Review
+                            </Button>
+                            <Button
+                                id={`template-use-btn-${template.id}`}
+                                onClick={() => handleCopyTemplate(template)}
+                                className="flex-1 gap-2"
+                                size="sm"
+                            >
+                                <Copy className="h-4 w-4" />
+                                Use Template
+                            </Button>
+                        </div>
                     </motion.div>
                 ))}
             </div>
+
+            {/* Template Preview Modal */}
+            <TemplatePreviewModal
+                isOpen={!!previewTemplate}
+                onClose={() => setPreviewTemplate(null)}
+                onUse={() => previewTemplate && handleCopyTemplate(previewTemplate)}
+                template={previewTemplate}
+            />
         </section>
     );
 }

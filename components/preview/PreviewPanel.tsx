@@ -2,8 +2,9 @@
 
 import { useResumeStore } from "@/store/useResumeStore";
 import { Button } from "@/components/ui/button";
-import { Loader2, Lock, ZoomIn, ZoomOut } from "lucide-react";
+import { Loader2, Lock, AlertTriangle, ZoomIn, ZoomOut } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { Slider } from "@/components/ui/slider";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { DownloadResumeButton } from "./DownloadResumeButton";
@@ -19,14 +20,17 @@ const UniversalPDFPreview = dynamic(() => import("./UniversalPDFPreview"), {
 });
 
 // Wrapper to handle SearchParams without Suspense boundary issues
-const PaymentHandler = ({ setHasPaid }: { setHasPaid: (val: boolean) => void }) => {
+const URLParamsHandler = ({ setHasPaid, setShowCaution }: { setHasPaid: (val: boolean) => void, setShowCaution: (val: boolean) => void }) => {
     const searchParams = useSearchParams();
 
     useEffect(() => {
         if (searchParams.get("success") === "true") {
             setHasPaid(true);
         }
-    }, [searchParams, setHasPaid]);
+        if (searchParams.get("imported") === "true") {
+            setShowCaution(true);
+        }
+    }, [searchParams, setHasPaid, setShowCaution]);
 
     return null;
 }
@@ -34,9 +38,12 @@ const PaymentHandler = ({ setHasPaid }: { setHasPaid: (val: boolean) => void }) 
 export function PreviewPanel() {
     const activeResumeId = useResumeStore(state => state.activeResumeId);
     const activeResume = useResumeStore(state => state.activeResumeId ? state.resumes[state.activeResumeId] : null);
+    const setContentScale = useResumeStore(state => state.setContentScale);
+    const setSectionSpacing = useResumeStore(state => state.setSectionSpacing);
 
     const [client, setClient] = useState(false);
     const [hasPaid, setHasPaid] = useState(true);
+    const [showCaution, setShowCaution] = useState(false);
     const [loading, setLoading] = useState(false);
     const [zoom, setZoom] = useState(100);
 
@@ -80,41 +87,51 @@ export function PreviewPanel() {
     }
 
     return (
-        <div className="h-full flex flex-col relative border-t dark:border-transparent bg-slate-50 dark:bg-slate-950 z-0">
+        <div className="h-full flex flex-col relative border-t dark:border-transparent bg-slate-50 dark:bg-background z-0">
             {/* Search Params Listener */}
             <React.Suspense fallback={null}>
-                <PaymentHandler setHasPaid={setHasPaid} />
+                <URLParamsHandler setHasPaid={setHasPaid} setShowCaution={setShowCaution} />
             </React.Suspense>
 
             {/* Header */}
-            <div className="py-4 pl-4 sm:pl-8 lg:pl-12 pr-4 border-b dark:border-slate-800 shrink-0 z-10 bg-white/50 dark:bg-transparent backdrop-blur-sm">
-                <div className="w-full flex justify-between items-center">
-                    <div className="flex items-center gap-4">
-                        <h2 className="font-semibold text-slate-700 dark:text-slate-200">Real PDF Preview</h2>
+            <div className="py-4 pl-4 sm:pl-8 lg:pl-12 pr-4 border-b dark:border-border shrink-0 z-10 bg-white/50 dark:bg-transparent backdrop-blur-sm">
+                <div className="flex flex-col gap-4">
+                    <div className="w-full flex justify-between items-center">
+                        <div className="flex items-center gap-4">
+                            <h2 className="font-semibold text-slate-700 dark:text-slate-200">Real PDF Preview</h2>
+                        </div>
+                        {!hasPaid ? (
+                            <Button
+                                size="sm"
+                                onClick={handleUnlock}
+                                disabled={loading}
+                                className="bg-texastech-red hover:bg-texastech-red/90 text-white gap-2 shadow-sm"
+                            >
+                                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
+                                Unlock Download ($9)
+                            </Button>
+                        ) : (
+                            <div className="flex gap-2">
+                                <DownloadResumeButton
+                                    key={activeResume.lastModified}
+                                    fileName={`${activeResume.personalInfo.fullName.replace(/\s+/g, '_')}_Resume.pdf`}
+                                    data={activeResume}
+                                />
+                            </div>
+                        )}
                     </div>
-                    {!hasPaid ? (
-                        <Button
-                            size="sm"
-                            onClick={handleUnlock}
-                            disabled={loading}
-                            className="bg-texastech-red hover:bg-texastech-red/90 text-white gap-2 shadow-sm"
-                        >
-                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
-                            Unlock Download ($9)
-                        </Button>
-                    ) : (
-                        <div className="flex gap-2">
-                            <DownloadResumeButton
-                                key={activeResume.lastModified}
-                                fileName={`${activeResume.personalInfo.fullName.replace(/\s+/g, '_')}_Resume.pdf`}
-                                data={activeResume}
-                            />
+                    {showCaution && (
+                        <div className="flex items-start gap-2.5 bg-amber-50/80 dark:bg-amber-500/10 p-3 rounded-xl border border-amber-200/60 dark:border-amber-500/20">
+                            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                            <p className="text-sm text-amber-800 dark:text-amber-200/90 leading-tight">
+                                <span className="font-semibold">Caution:</span> Document scales may overlap if text is too large. Use the general scale to adjust the overall fit.
+                            </p>
                         </div>
                     )}
                 </div>
             </div>
 
-            <div id="preview-container" className="flex-1 overflow-hidden relative bg-gray-200 dark:bg-slate-900">
+            <div id="preview-container" className="flex-1 overflow-hidden relative bg-gray-200 dark:bg-zinc-950">
                 {/* Universal PDF Preview - Auto-detects browser for optimal rendering */}
                 <UniversalPDFPreview
                     data={activeResume}

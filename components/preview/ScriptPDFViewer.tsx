@@ -21,9 +21,8 @@ interface ScriptPDFViewerProps {
     className?: string;
 }
 
-const PDFJS_VERSION = '4.8.69';
-const PDFJS_CDN = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.min.mjs`;
-const PDFJS_WORKER_CDN = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.worker.min.mjs`;
+const PDFJS_CDN = '/js/pdf.min.mjs';
+const PDFJS_WORKER_CDN = '/js/pdf.worker.min.mjs';
 
 /**
  * Script-Injected PDF Viewer
@@ -209,7 +208,7 @@ export default function ScriptPDFViewer({ data, className }: ScriptPDFViewerProp
 
     if (error) {
         return (
-            <div className={`flex flex-col items-center justify-center p-8 bg-gray-50 dark:bg-slate-900/50 ${className}`}>
+            <div className={`flex flex-col items-center justify-center p-8 bg-gray-50 dark:bg-zinc-950/50 ${className}`}>
                 <AlertCircle className="w-10 h-10 text-red-500 mb-2" />
                 <p className="text-red-600 font-medium">Preview Failed</p>
                 <p className="text-xs text-red-400 max-w-xs text-center">{error}</p>
@@ -218,9 +217,9 @@ export default function ScriptPDFViewer({ data, className }: ScriptPDFViewerProp
     }
 
     return (
-        <div className={`flex flex-col h-full bg-gray-100 dark:bg-slate-900 relative ${className}`}>
+        <div className={`flex flex-col h-full bg-gray-100 dark:bg-zinc-950 relative ${className}`}>
             {(loading || !libLoaded) && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 dark:bg-zinc-950/80 backdrop-blur-sm">
                     <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
                 </div>
             )}

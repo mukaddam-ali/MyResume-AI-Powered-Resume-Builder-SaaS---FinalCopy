@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Prevent webpack from bundling these server-side packages.
+  // pdf-parse reads test files from disk and must be loaded natively, not bundled.
+  serverExternalPackages: ["pdf-parse"],
+
   webpack: (config, { isServer }) => {
     // Disable canvas and encoding aliases
     config.resolve.alias.canvas = false;
@@ -26,7 +30,7 @@ const nextConfig: NextConfig = {
 
     return config;
   },
-  transpilePackages: ['react-pdf', 'pdfjs-dist'],
+  transpilePackages: ['react-pdf'],
   experimental: {
     esmExternals: "loose",
   },

@@ -58,9 +58,13 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                             <div className="space-y-4">
                                 {education.map(edu => (
                                     <div key={edu.id}>
-                                        <div className="font-bold">{edu.school}</div>
-                                        <div className="text-xs opacity-80">{edu.degree}</div>
-                                        <div className="text-[10px] opacity-60 mt-1">{edu.startDate} – {edu.endDate}</div>
+                                        <div className="flex justify-between items-baseline">
+                                            <div className="flex items-baseline gap-1.5">
+                                                <div className="font-bold">{edu.school}</div>
+                                                <div className="text-xs opacity-80">{edu.degree}</div>
+                                            </div>
+                                            <div className="text-[10px] opacity-60">{edu.startDate} – {edu.endDate}</div>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -77,9 +81,13 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                             <div className="space-y-4">
                                 {education.map(edu => (
                                     <div key={edu.id}>
-                                        <div className="font-bold">{edu.school}</div>
-                                        <div className="text-xs opacity-80">{edu.degree}</div>
-                                        <div className="text-[10px] opacity-60 mt-1">{edu.startDate} – {edu.endDate}</div>
+                                        <div className="flex justify-between items-baseline">
+                                            <div className="flex items-baseline gap-1.5">
+                                                <div className="font-bold">{edu.school}</div>
+                                                <div className="text-xs opacity-80">{edu.degree}</div>
+                                            </div>
+                                            <div className="text-[10px] opacity-60">{edu.startDate} – {edu.endDate}</div>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -93,9 +101,13 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                             <h3 className="font-bold uppercase tracking-widest text-xs mb-4">{sectionTitles.education || "Education"}</h3>
                             {education.map(edu => (
                                 <div key={edu.id} className="mb-4">
-                                    <div className="font-semibold">{edu.school}</div>
-                                    <div className="italic text-sm text-gray-600">{edu.degree}</div>
-                                    <div className="text-xs text-gray-500 mt-1">{edu.startDate} – {edu.endDate}</div>
+                                    <div className="flex justify-between items-baseline">
+                                        <div className="flex items-baseline gap-1.5">
+                                            <div className="font-semibold">{edu.school}</div>
+                                            <div className="italic text-sm text-gray-600">{edu.degree}</div>
+                                        </div>
+                                        <div className="text-xs text-gray-500">{edu.startDate} – {edu.endDate}</div>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -106,12 +118,16 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                 return (
                     <div key="education" className="mb-6">
                         <h3 className="text-lg font-bold uppercase border-b border-gray-200 pb-1 mb-3" style={{ color: themeColor }}>{sectionTitles.education || "Education"}</h3>
-                        <div className="flex flex-wrap gap-x-4 gap-y-2">
+                        <div className="space-y-4">
                             {education.map(edu => (
-                                <div key={edu.id} className="flex items-baseline gap-1.5">
-                                    <div className="font-bold text-sm">{edu.school}</div>
-                                    <div className="text-sm italic text-gray-700">{edu.degree}</div>
-                                    <div className="text-xs text-gray-500">({edu.startDate} – {edu.endDate})</div>
+                                <div key={edu.id}>
+                                    <div className="flex justify-between items-baseline">
+                                        <div className="flex items-baseline gap-1.5">
+                                            <div className="font-bold text-sm">{edu.school}</div>
+                                            <div className="text-sm italic text-gray-700">{edu.degree}</div>
+                                        </div>
+                                        <div className="text-xs text-gray-500">{edu.startDate} – {edu.endDate}</div>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -363,7 +379,7 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                                 <div key={proj.id}>
                                     <div className="flex justify-between font-bold text-sm">
                                         <span>{proj.name}</span>
-                                        {proj.link && <a href={proj.link} className="text-blue-600 font-normal hover:underline text-xs">{proj.linkText || proj.link}</a>}
+                                        {proj.link && <a href={/^https?:\/\//i.test(proj.link) ? proj.link : `https://${proj.link}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 font-normal hover:underline text-xs">{proj.linkText || proj.link}</a>}
                                     </div>
                                     {proj.technologies && (
                                         <div className="text-xs text-gray-600 italic mb-1">

@@ -19,7 +19,9 @@ export const RichTextarea = ({ id, value = '', onValueChange, className, placeho
     const editor = useEditor({
         immediatelyRender: false,
         extensions: [
-            StarterKit,
+            StarterKit.configure({
+                // Disable built-in strike/underline variants that may overlap
+            }),
             Underline,
             TextAlign.configure({
                 types: ['heading', 'paragraph'],
@@ -55,7 +57,7 @@ export const RichTextarea = ({ id, value = '', onValueChange, className, placeho
     }
 
     return (
-        <div id={id} className={cn("border rounded-md overflow-hidden bg-background focus-within:ring-1 focus-within:ring-ring", className)}>
+        <div id={id} className={cn("relative border rounded-md overflow-hidden bg-background focus-within:ring-1 focus-within:ring-ring", className)}>
             {/* Toolbar at the top */}
             <div className="flex flex-wrap items-center gap-1 border-b bg-muted/40 p-1">
                 <Toggle

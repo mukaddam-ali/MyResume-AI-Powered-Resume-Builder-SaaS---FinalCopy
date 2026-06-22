@@ -95,7 +95,7 @@ export default function ServerPDFPreview({ data, className }: ServerPDFPreviewPr
     }, [pdfUrl]);
 
     return (
-        <div className={`relative w-full h-full flex flex-col items-center bg-gray-100 dark:bg-slate-900 ${className}`}>
+        <div className={`relative w-full h-full flex flex-col items-center bg-gray-100 dark:bg-zinc-950 ${className}`}>
             {loading && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 dark:bg-black/50 backdrop-blur-sm">
                     <Loader2 className="w-8 h-8 animate-spin text-primary" />
