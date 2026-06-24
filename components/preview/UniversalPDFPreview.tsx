@@ -47,19 +47,25 @@ export default function UniversalPDFPreview({ data, className }: UniversalPDFPre
         const userAgent = navigator.userAgent;
         const vendor = navigator.vendor;
 
+        // Detect Mobile devices
+        const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(userAgent);
+
         // Detect Chrome (but NOT Edge, which also reports Chrome in UA)
         const isChrome = /Chrome/.test(userAgent) &&
             /Google Inc/.test(vendor) &&
             !/Edg/.test(userAgent);
 
-        // Chrome gets local script injection rendering, everything else gets blob iframe
-        setRenderMode(isChrome ? 'script' : 'blob');
+        // Mobile devices and Chrome get local script injection rendering (PDF.js canvas),
+        // other desktop browsers get blob iframe
+        const mode = (isMobile || isChrome) ? 'script' : 'blob';
+        setRenderMode(mode);
 
         console.log('🔍 Browser Detection:', {
             userAgent: userAgent.substring(0, 50),
             vendor,
+            isMobile,
             isChrome,
-            renderMode: isChrome ? 'script' : 'blob'
+            renderMode: mode
         });
     }, []);
 
