@@ -196,7 +196,7 @@ export default function ScriptPDFViewer({ data, className }: ScriptPDFViewerProp
                 const padding = 32; // p-4 (16px left + 16px right)
                 const width = containerRef.current.clientWidth - padding;
                 // Standard A4 width ~595px at scale 1
-                const newScale = Math.min(Math.max(width / 595, 0.6), 2.0);
+                const newScale = Math.min(Math.max(width / 595, 0.35), 2.0);
                 setScale(newScale);
             }
         };
