@@ -36,9 +36,17 @@ export function SectionScaleControl({ sectionId }: SectionScaleControlProps) {
                 step={0.05}
                 onValueChange={handleScaleChange}
                 className="w-[100px] sm:w-[120px]"
+                aria-label={`Font scaling for ${sectionId} section`}
             />
             <span className="w-8 text-right font-mono text-muted-foreground">{Math.round(scale * 100)}%</span>
-            <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto" onClick={handleReset} title="Reset Scale">
+            <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 ml-auto"
+                onClick={handleReset}
+                title="Reset Scale"
+                aria-label="Reset Font Scale"
+            >
                 <RotateCcw className="h-3 w-3" />
             </Button>
         </div>

@@ -147,6 +147,7 @@ function SortableTabTrigger({ id, value, label, onDelete, onRename }: { id: stri
                 if (onRename) setIsEditing(true);
             }}
             title="Double-click to rename"
+            role="presentation"
         >
             <TabsTrigger
                 value={value}
@@ -167,6 +168,7 @@ function SortableTabTrigger({ id, value, label, onDelete, onRename }: { id: stri
                             }}
                             className="absolute right-1 p-1 rounded-sm hover:bg-destructive/10 text-muted-foreground/50 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all z-10"
                             title="Delete Section"
+                            aria-label={`Delete ${label} section`}
                         >
                             <Trash2 className="w-3 h-3" />
                         </button>
@@ -319,7 +321,7 @@ export function EditorPanel() {
                             <div className="flex flex-col gap-3">
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">General Scale</span>
-                                    <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                                    <span className="text-xs font-mono text-slate-600 dark:text-slate-300">
                                         {Math.round(contentScale * 100)}%
                                     </span>
                                 </div>
@@ -329,12 +331,13 @@ export function EditorPanel() {
                                     min={0.6}
                                     max={1.4}
                                     step={0.02}
+                                    aria-label="General content scale"
                                 />
                             </div>
                             <div className="flex flex-col gap-3">
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Section Space</span>
-                                    <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                                    <span className="text-xs font-mono text-slate-600 dark:text-slate-300">
                                         {Math.round(sectionSpacing * 100)}%
                                     </span>
                                 </div>
@@ -344,6 +347,7 @@ export function EditorPanel() {
                                     min={0.2}
                                     max={2.0}
                                     step={0.1}
+                                    aria-label="Section spacing scale"
                                 />
                             </div>
                         </div>
@@ -360,6 +364,7 @@ export function EditorPanel() {
                                 id="branding-toggle"
                                 role="switch"
                                 aria-checked={userTier === 'pro' && hideBranding}
+                                aria-label="Remove branding toggle"
                                 disabled={userTier !== 'pro'}
                                 onClick={() => userTier === 'pro' && setHideBranding(!hideBranding)}
                                 className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${
@@ -390,27 +395,29 @@ export function EditorPanel() {
                             collisionDetection={closestCenter}
                             onDragEnd={handleDragEnd}
                         >
-                            <TabsList className="flex flex-wrap h-auto gap-2 mb-4 bg-background p-2 w-full justify-start">
-                                <SortableContext
-                                    items={sectionOrder}
-                                    strategy={rectSortingStrategy}
-                                >
-                                    {sectionOrder.map((sectionId) => {
-                                        // Allow deleting everything except Personal Info
-                                        const canDelete = sectionId !== 'personal';
-                                        return (
-                                            <div key={sectionId} className="min-w-[120px]">
-                                                <SortableTabTrigger
-                                                    id={sectionId}
-                                                    value={sectionId}
-                                                    label={getSectionLabel(sectionId, customSections, sectionTitles)}
-                                                    onDelete={canDelete ? () => removeSection(sectionId) : undefined}
-                                                    onRename={(newTitle) => renameSection(sectionId, newTitle)}
-                                                />
-                                            </div>
-                                        );
-                                    })}
-                                </SortableContext>
+                            <div className="flex flex-wrap h-auto gap-2 mb-4 bg-background p-2 w-full justify-start">
+                                <TabsList className="flex flex-wrap h-auto gap-2 bg-transparent p-0 justify-start border-none shadow-none">
+                                    <SortableContext
+                                        items={sectionOrder}
+                                        strategy={rectSortingStrategy}
+                                    >
+                                        {sectionOrder.map((sectionId) => {
+                                            // Allow deleting everything except Personal Info
+                                            const canDelete = sectionId !== 'personal';
+                                            return (
+                                                <div key={sectionId} className="min-w-[120px]" role="presentation">
+                                                    <SortableTabTrigger
+                                                        id={sectionId}
+                                                        value={sectionId}
+                                                        label={getSectionLabel(sectionId, customSections, sectionTitles)}
+                                                        onDelete={canDelete ? () => removeSection(sectionId) : undefined}
+                                                        onRename={(newTitle) => renameSection(sectionId, newTitle)}
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                    </SortableContext>
+                                </TabsList>
 
                                 {/* Inline Add Section Input */}
                                 {isAddingSection && (
@@ -453,6 +460,7 @@ export function EditorPanel() {
                                                     variant="outline"
                                                     size="sm"
                                                     className="w-full h-8 gap-1 border-dashed text-xs"
+                                                    aria-label="Add Section"
                                                 >
                                                     <Plus className="h-3 w-3" /> Add
                                                 </Button>
@@ -485,7 +493,7 @@ export function EditorPanel() {
                                         </DropdownMenu>
                                     </div>
                                 )}
-                            </TabsList>
+                            </div>
                         </DndContext>
 
                         {/* Content sections */}

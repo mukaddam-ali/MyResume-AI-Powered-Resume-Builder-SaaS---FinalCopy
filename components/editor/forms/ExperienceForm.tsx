@@ -138,37 +138,42 @@ export function ExperienceForm() {
                                             size="icon"
                                             className="absolute top-2 right-2 text-destructive hover:text-destructive"
                                             onClick={() => removeExperience(exp.id)}
+                                            aria-label="Remove experience entry"
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <Label>Company</Label>
+                                                <Label htmlFor={`company-${exp.id}`}>Company</Label>
                                                 <Input
+                                                    id={`company-${exp.id}`}
                                                     value={exp.company}
                                                     onChange={(e) => updateExperience(exp.id, { company: e.target.value })}
                                                     placeholder="Tech Corp"
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label>Role</Label>
+                                                <Label htmlFor={`role-${exp.id}`}>Role</Label>
                                                 <Input
+                                                    id={`role-${exp.id}`}
                                                     value={exp.role}
                                                     onChange={(e) => updateExperience(exp.id, { role: e.target.value })}
                                                     placeholder="Software Engineer Intern"
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label>Start Date</Label>
+                                                <Label htmlFor={`startDate-${exp.id}`}>Start Date</Label>
                                                 <Input
+                                                    id={`startDate-${exp.id}`}
                                                     value={exp.startDate}
                                                     onChange={(e) => updateExperience(exp.id, { startDate: e.target.value })}
                                                     placeholder="Jun 2023"
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label>End Date</Label>
+                                                <Label htmlFor={`endDate-${exp.id}`}>End Date</Label>
                                                 <Input
+                                                    id={`endDate-${exp.id}`}
                                                     value={exp.endDate}
                                                     onChange={(e) => updateExperience(exp.id, { endDate: e.target.value })}
                                                     placeholder="Aug 2023"

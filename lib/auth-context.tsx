@@ -3,7 +3,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { createBrowserClient, isSupabaseReady } from './supabase';
-import { useResumeStore } from '@/store/useResumeStore';
 
 interface AuthContextType {
     user: User | null;
@@ -20,9 +19,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [session, setSession] = useState<Session | null>(null);
     const [loading, setLoading] = useState(true);
+    const [userTier, setUserTier] = useState<'free' | 'pro'>('free');
 
-    // Get userTier from store and compute isPremium
-    const userTier = useResumeStore((state) => state.userTier);
     const isPremium = userTier === 'pro';
 
     // Check if Supabase is configured
@@ -35,32 +33,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, [supabaseConfigured]);
 
     useEffect(() => {
+        let active = true;
+        let unsubscribeStore: (() => void) | null = null;
+
+        // Dynamically import the store to keep it out of the layout eager JS bundle
+        import('@/store/useResumeStore').then((module) => {
+            if (!active) return;
+            const store = module.useResumeStore;
+            setUserTier(store.getState().userTier);
+            unsubscribeStore = store.subscribe((state) => {
+                setUserTier(state.userTier);
+            });
+        }).catch((err) => {
+            console.error('Failed to load resume store dynamically in AuthProvider:', err);
+        });
+
         if (!supabaseConfigured || !supabase) {
             // Supabase not configured, just set loading to false
             setLoading(false);
             return;
         }
 
-        // Get initial session — wrapped in try/catch to handle network failures gracefully
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            setLoading(false);
-        }).catch((err) => {
-            console.warn('Supabase getSession failed (server may be unreachable):', err);
-            setLoading(false);
-        });
+        let subscription: { unsubscribe: () => void } | null = null;
 
-        // Listen for auth changes
-        const {
-            data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            setLoading(false);
-        });
+        // Defer initial auth checks to avoid blocking the critical rendering frame
+        const timeoutId = setTimeout(() => {
+            supabase.auth.getSession().then(({ data: { session } }) => {
+                setSession(session);
+                setUser(session?.user ?? null);
+                setLoading(false);
+            }).catch((err) => {
+                console.warn('Supabase getSession failed (server may be unreachable):', err);
+                setLoading(false);
+            });
 
-        return () => subscription.unsubscribe();
+            // Listen for auth changes
+            const {
+                data: { subscription: sub },
+            } = supabase.auth.onAuthStateChange((_event, session) => {
+                setSession(session);
+                setUser(session?.user ?? null);
+                setLoading(false);
+            });
+            subscription = sub;
+        }, 100);
+
+        return () => {
+            active = false;
+            clearTimeout(timeoutId);
+            if (subscription) {
+                subscription.unsubscribe();
+            }
+            if (unsubscribeStore) {
+                unsubscribeStore();
+            }
+        };
     }, [supabaseConfigured, supabase]);
 
     const signInWithGoogle = async () => {

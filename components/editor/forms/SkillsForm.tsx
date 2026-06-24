@@ -69,6 +69,7 @@ function SortableSkillBadge({ skill, onRemove }: { skill: string, onRemove: (s: 
                             onRemove(skill);
                         }
                     }}
+                    aria-label={`Remove ${skill} skill`}
                 >
                     <X className="h-3 w-3" />
                 </Button>

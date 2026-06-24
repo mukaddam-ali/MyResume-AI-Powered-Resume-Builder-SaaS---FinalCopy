@@ -162,7 +162,7 @@ export function TemplateSelector() {
                     value={selectedTemplate}
                     onValueChange={handleTemplateChange}
                 >
-                    <SelectTrigger className="w-[200px]">
+                    <SelectTrigger className="w-[200px]" aria-label="Select design layout template">
                         <SelectValue>
                             {(() => {
                                 const selected = templates.find(t => t.id === selectedTemplate);

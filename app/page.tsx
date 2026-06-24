@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { HeroSection } from "@/components/home/HeroSection";
-import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
+import { LazySection } from "@/components/home/LazySection";
 import dynamic from "next/dynamic";
 
 // Lazy-load below-the-fold sections so they don't block the initial hero paint.
@@ -16,6 +16,11 @@ const TemplateGallery = dynamic(
   () => import("@/components/home/TemplateGallery").then((m) => ({ default: m.TemplateGallery }))
 );
 
+// FeedbackWidget is a floating widget not required for the initial paint/LCP.
+const FeedbackWidget = dynamic(
+  () => import("@/components/feedback/FeedbackWidget").then((m) => m.FeedbackWidget)
+);
+
 export default function Home() {
   return (
     <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8 flex flex-col min-h-screen">
@@ -23,8 +28,12 @@ export default function Home() {
       <HeroSection />
 
       {/* Below-the-fold sections — loaded lazily after hero paints */}
-      <FeaturesSection />
-      <TemplateGallery />
+      <LazySection minHeight="400px">
+        <FeaturesSection />
+      </LazySection>
+      <LazySection minHeight="500px">
+        <TemplateGallery />
+      </LazySection>
 
       {/* CTA Section */}
       <section aria-labelledby="cta-heading" className="py-20">

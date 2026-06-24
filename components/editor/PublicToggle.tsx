@@ -35,6 +35,7 @@ export function PublicToggle() {
                             checked={isPublic}
                             onCheckedChange={() => toggleResumeVisibility(activeResume.id)}
                             className="data-[state=checked]:bg-green-600"
+                            aria-label="Toggle public/private resume visibility"
                         />
                     </div>
                 </TooltipTrigger>

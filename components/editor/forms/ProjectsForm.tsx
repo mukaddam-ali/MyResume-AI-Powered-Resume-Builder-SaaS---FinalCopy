@@ -79,6 +79,7 @@ function LinkColorPicker({
                 onChange={handleColorChange}
                 className="opacity-0 w-full h-full cursor-pointer absolute inset-0 text-[0px]"
                 title="Choose link text color"
+                aria-label="Choose link text color"
             />
         </div>
     );
@@ -191,6 +192,7 @@ export function ProjectsForm() {
                                             size="icon"
                                             onClick={() => removeProject(proj.id)}
                                             className="text-destructive hover:bg-destructive/10"
+                                            aria-label="Remove project entry"
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
@@ -198,16 +200,18 @@ export function ProjectsForm() {
                                     <CardContent className="pl-10">
                                         <div className="grid gap-4">
                                             <div className="grid gap-2">
-                                                <Label>Project Name</Label>
+                                                <Label htmlFor={`proj-name-${proj.id}`}>Project Name</Label>
                                                 <Input
+                                                    id={`proj-name-${proj.id}`}
                                                     value={proj.name}
                                                     onChange={(e) => updateProject(proj.id, { name: e.target.value })}
                                                     placeholder="E.g. E-commerce Platform"
                                                 />
                                             </div>
                                             <div className="grid gap-2">
-                                                <Label>Technologies</Label>
+                                                <Label htmlFor={`proj-tech-${proj.id}`}>Technologies</Label>
                                                 <Input
+                                                    id={`proj-tech-${proj.id}`}
                                                     value={proj.technologies}
                                                     onChange={(e) => updateProject(proj.id, { technologies: e.target.value })}
                                                     placeholder="React, Node.js, PostgreSQL"
@@ -215,8 +219,9 @@ export function ProjectsForm() {
                                             </div>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="grid gap-2">
-                                                    <Label>Link (Optional)</Label>
+                                                    <Label htmlFor={`proj-link-${proj.id}`}>Link (Optional)</Label>
                                                     <Input
+                                                        id={`proj-link-${proj.id}`}
                                                         value={proj.link}
                                                         onChange={(e) => updateProject(proj.id, { link: e.target.value })}
                                                         placeholder="e.g., github.com/username/project"
@@ -224,9 +229,10 @@ export function ProjectsForm() {
                                                     />
                                                 </div>
                                                 <div className="grid gap-2">
-                                                    <Label>Link Text (Optional)</Label>
+                                                    <Label htmlFor={`proj-linktext-${proj.id}`}>Link Text (Optional)</Label>
                                                     <div className="relative flex items-center">
                                                         <Input
+                                                            id={`proj-linktext-${proj.id}`}
                                                             value={proj.linkText || ''}
                                                             onChange={(e) => updateProject(proj.id, { linkText: e.target.value })}
                                                             placeholder="e.g., View Project, GitHub"

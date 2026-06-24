@@ -157,8 +157,9 @@ export function PreviewPanel() {
                 {/* Fullscreen Toggle Button */}
                 <button
                     onClick={() => setIsFullscreen(true)}
-                    className="absolute bottom-6 right-6 p-3 bg-white dark:bg-zinc-900 text-slate-800 dark:text-slate-100 rounded-full shadow-2xl border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800 hover:scale-105 active:scale-95 transition-all duration-200 z-20 group"
+                    className="hidden md:block absolute bottom-6 right-6 p-3 bg-white dark:bg-zinc-900 text-slate-800 dark:text-slate-100 rounded-full shadow-2xl border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800 hover:scale-105 active:scale-95 transition-all duration-200 z-20 group"
                     title="Fullscreen Preview"
+                    aria-label="Fullscreen Preview"
                 >
                     <Maximize2 className="h-5 w-5 group-hover:rotate-45 transition-transform duration-200" />
                 </button>

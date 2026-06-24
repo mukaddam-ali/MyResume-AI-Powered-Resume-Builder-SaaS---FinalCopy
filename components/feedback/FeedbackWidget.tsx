@@ -87,7 +87,7 @@ export function FeedbackWidget() {
                 </PopoverTrigger>
                 <PopoverContent className="w-80 mr-4 mb-2 p-0 overflow-hidden" side="top" align="end">
                     <div className="bg-primary px-4 py-3 flex justify-between items-center text-primary-foreground">
-                        <h3 className="font-semibold">Send Feedback</h3>
+                        <p className="font-semibold">Send Feedback</p>
                         <Button
                             variant="ghost"
                             size="icon"
@@ -104,7 +104,7 @@ export function FeedbackWidget() {
                                 <div className="h-12 w-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-3">
                                     <Star className="h-6 w-6 fill-current" />
                                 </div>
-                                <h4 className="font-medium text-lg">Thank You!</h4>
+                                <p className="font-medium text-lg">Thank You!</p>
                                 <p className="text-muted-foreground text-sm mt-1">
                                     Your feedback helps us improve.
                                 </p>

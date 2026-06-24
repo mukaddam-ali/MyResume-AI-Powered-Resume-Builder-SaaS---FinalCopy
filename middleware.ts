@@ -87,6 +87,6 @@ export const config = {
         /*
          * Match page routes only — skip static assets, API routes, and internal Next.js paths.
          */
-        '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff|woff2|ttf)$).*)',
+        '/((?!_next/static|_next/image|favicon.ico|robots\\.txt|sitemap\\.xml|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff|woff2|ttf)$).*)',
     ],
 }

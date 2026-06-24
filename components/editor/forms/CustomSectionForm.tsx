@@ -120,14 +120,16 @@ export function CustomSectionForm({ sectionId }: CustomSectionFormProps) {
                                             size="icon"
                                             className="absolute top-2 right-2 text-red-500 hover:text-red-700 hover:bg-red-50"
                                             onClick={() => removeCustomItem(section.id, item.id)}
+                                            aria-label="Remove custom section item"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
                                         <div className="space-y-4">
                                             <div className="flex justify-between items-start">
                                                 <div className="grid gap-2 flex-1 mr-4">
-                                                    <Label>Name / Title</Label>
+                                                    <Label htmlFor={`custom-name-${item.id}`}>Name / Title</Label>
                                                     <Input
+                                                        id={`custom-name-${item.id}`}
                                                         value={item.name}
                                                         onChange={(e) => updateCustomItem(section.id, item.id, { name: e.target.value })}
                                                         placeholder="e.g. Volunteer at Animal Shelter"
@@ -137,16 +139,18 @@ export function CustomSectionForm({ sectionId }: CustomSectionFormProps) {
 
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="grid gap-2">
-                                                    <Label>Date / Duration</Label>
+                                                    <Label htmlFor={`custom-date-${item.id}`}>Date / Duration</Label>
                                                     <Input
+                                                        id={`custom-date-${item.id}`}
                                                         value={item.date}
                                                         onChange={(e) => updateCustomItem(section.id, item.id, { date: e.target.value })}
                                                         placeholder="e.g. 2020 - Present"
                                                     />
                                                 </div>
                                                 <div className="grid gap-2">
-                                                    <Label>City / Location (Optional)</Label>
+                                                    <Label htmlFor={`custom-city-${item.id}`}>City / Location (Optional)</Label>
                                                     <Input
+                                                        id={`custom-city-${item.id}`}
                                                         value={item.city || ''}
                                                         onChange={(e) => updateCustomItem(section.id, item.id, { city: e.target.value })}
                                                         placeholder="e.g. Austin, TX"

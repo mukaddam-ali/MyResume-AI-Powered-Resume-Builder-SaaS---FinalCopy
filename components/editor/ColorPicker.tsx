@@ -58,6 +58,7 @@ export function ColorPicker() {
                         )}
                         style={{ backgroundColor: color.value }}
                         title={color.name}
+                        aria-label={`Set theme color to ${color.name}`}
                     >
                         {themeColor === color.value && (
                             <Check className="h-4 w-4 text-white drop-shadow-md" />
@@ -67,10 +68,13 @@ export function ColorPicker() {
 
                 <Popover>
                     <PopoverTrigger asChild>
-                        <button className={cn(
-                            "w-8 h-8 rounded-full border border-muted-foreground/20 flex items-center justify-center transition-all relative overflow-hidden group",
-                            userTier === 'free' ? "cursor-not-allowed opacity-70" : "hover:scale-110"
-                        )}>
+                        <button 
+                            className={cn(
+                                "w-8 h-8 rounded-full border border-muted-foreground/20 flex items-center justify-center transition-all relative overflow-hidden group",
+                                userTier === 'free' ? "cursor-not-allowed opacity-70" : "hover:scale-110"
+                            )}
+                            aria-label="Custom color picker"
+                        >
                             <span className="sr-only">Custom Color</span>
                             <div className="w-full h-full absolute inset-0 bg-gradient-to-br from-red-500 via-green-500 to-blue-500 opacity-50" />
                             {userTier === 'free' ? (
@@ -104,6 +108,7 @@ export function ColorPicker() {
                                         value={themeColor}
                                         onChange={(e) => setThemeColor(e.target.value)}
                                         className="w-12 h-10 p-1 cursor-pointer"
+                                        aria-label="Custom theme color picker"
                                     />
                                     <Input
                                         type="text"
@@ -111,6 +116,7 @@ export function ColorPicker() {
                                         onChange={(e) => setThemeColor(e.target.value)}
                                         placeholder="#000000"
                                         className="flex-1 font-mono text-xs"
+                                        aria-label="Custom hex theme color input"
                                     />
                                 </div>
                             )}

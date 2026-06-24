@@ -258,6 +258,8 @@ export function ResumeScore() {
                             onClick={() => setIsExpanded(!isExpanded)}
                             className="p-1 hover:bg-muted rounded-full transition-colors"
                             title={isExpanded ? "Collapse Results" : "Expand Results"}
+                            aria-expanded={isExpanded}
+                            aria-label={isExpanded ? "Collapse scan results" : "Expand scan results"}
                         >
                             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </button>

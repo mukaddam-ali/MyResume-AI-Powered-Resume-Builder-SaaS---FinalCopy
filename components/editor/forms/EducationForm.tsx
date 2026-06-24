@@ -94,37 +94,42 @@ export function EducationForm() {
                                             size="icon"
                                             className="absolute top-2 right-2 text-destructive hover:text-destructive"
                                             onClick={() => removeEducation(edu.id)}
+                                            aria-label="Remove education entry"
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <Label>School</Label>
+                                                <Label htmlFor={`school-${edu.id}`}>School</Label>
                                                 <Input
+                                                    id={`school-${edu.id}`}
                                                     value={edu.school}
                                                     onChange={(e) => updateEducation(edu.id, { school: e.target.value })}
                                                     placeholder="University of Texas"
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label>Degree</Label>
+                                                <Label htmlFor={`degree-${edu.id}`}>Degree</Label>
                                                 <Input
+                                                    id={`degree-${edu.id}`}
                                                     value={edu.degree}
                                                     onChange={(e) => updateEducation(edu.id, { degree: e.target.value })}
                                                     placeholder="BS Computer Science"
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label>Start Date</Label>
+                                                <Label htmlFor={`startDate-${edu.id}`}>Start Date</Label>
                                                 <Input
+                                                    id={`startDate-${edu.id}`}
                                                     value={edu.startDate}
                                                     onChange={(e) => updateEducation(edu.id, { startDate: e.target.value })}
                                                     placeholder="Jun 2020"
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label>End Date</Label>
+                                                <Label htmlFor={`endDate-${edu.id}`}>End Date</Label>
                                                 <Input
+                                                    id={`endDate-${edu.id}`}
                                                     value={edu.endDate}
                                                     onChange={(e) => updateEducation(edu.id, { endDate: e.target.value })}
                                                     placeholder="May 2024"

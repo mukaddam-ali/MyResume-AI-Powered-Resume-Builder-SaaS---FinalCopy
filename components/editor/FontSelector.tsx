@@ -61,7 +61,7 @@ export function FontSelector() {
                 </div>
 
                 <Select value={currentFont} onValueChange={handleFontChange}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full" aria-label="Select typography font style">
                         <SelectValue placeholder="Select Font" />
                     </SelectTrigger>
                     <SelectContent>

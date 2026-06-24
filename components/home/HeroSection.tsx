@@ -7,7 +7,12 @@ import { ArrowRight, FileText, Sparkles, Upload, X } from "lucide-react";
 // instead of the full framer-motion bundle (~100KB), reducing TBT and LCP.
 import { LazyMotion, domAnimation, m, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { ImportResumeButton } from "@/components/home/ImportResumeButton";
+import dynamic from "next/dynamic";
+
+const ImportResumeButton = dynamic(
+    () => import("@/components/home/ImportResumeButton").then((m) => m.ImportResumeButton),
+    { ssr: false }
+);
 
 export function HeroSection() {
     const [showImport, setShowImport] = useState(false);
@@ -28,7 +33,7 @@ export function HeroSection() {
         visible: {
             y: 0,
             opacity: 1,
-            transition: { type: "spring", stiffness: 100 } as any
+            transition: { type: "tween", ease: "easeOut", duration: 0.4 } as any
         }
     };
 
@@ -37,31 +42,23 @@ export function HeroSection() {
             <section className="relative overflow-hidden pt-16 pb-20 lg:pt-32 lg:pb-28">
                 <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-500/20 via-background to-background" />
 
-                <m.div
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="visible"
-                    className="w-full flex flex-col items-center text-center gap-8"
-                >
-                    <m.div variants={itemVariants} className="inline-flex items-center rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80">
+                <div className="w-full flex flex-col items-center text-center gap-8 md:animate-in md:fade-in md:slide-in-from-bottom-4 md:duration-500">
+                    <div className="inline-flex items-center rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80 md:animate-in md:fade-in md:slide-in-from-bottom-2 md:duration-300">
                         <Sparkles className="mr-2 h-4 w-4 text-primary" aria-hidden="true" />
                         <span>v2.0 Now Live with Active Design</span>
-                    </m.div>
+                    </div>
 
-                    <m.h1
-                        variants={itemVariants}
-                        className="text-4xl font-extrabold tracking-tight lg:text-7xl bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300"
-                    >
+                    <h1 className="text-4xl font-extrabold tracking-tight lg:text-7xl bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 md:animate-in md:fade-in md:slide-in-from-bottom-4 md:duration-500 md:delay-100">
                         Build a Resume That <br />
                         <span className="text-primary">Gets You Hired.</span>
-                    </m.h1>
+                    </h1>
 
-                    <m.p variants={itemVariants} className="max-w-[42rem] leading-normal text-muted-foreground sm:text-xl sm:leading-8">
+                    <p className="max-w-[42rem] leading-normal text-muted-foreground sm:text-xl sm:leading-8 md:animate-in md:fade-in md:slide-in-from-bottom-4 md:duration-500 md:delay-200">
                         Create ATS-friendly, professionally designed resumes in minutes.
                         Real-time preview, AI scoring, and instant PDF export.
-                    </m.p>
+                    </p>
 
-                    <m.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 min-w-[200px]">
+                    <div className="flex flex-col sm:flex-row gap-4 min-w-[200px] md:animate-in md:fade-in md:slide-in-from-bottom-4 md:duration-500 md:delay-300">
                         {/* aria-label distinguishes this link from the CTA section link below */}
                         <Link href="/editor" aria-label="Build my resume in the editor">
                             <Button size="lg" className="h-14 px-8 text-lg bg-primary hover:bg-primary/90 text-white gap-2 w-full sm:w-auto shadow-xl shadow-blue-500/20 transition-all hover:scale-105 font-semibold rounded-full">
@@ -73,10 +70,10 @@ export function HeroSection() {
                                 View Templates
                             </Button>
                         </Link>
-                    </m.div>
+                    </div>
 
                     {/* ── Import existing resume ─────────────────────────── */}
-                    <m.div variants={itemVariants} className="flex flex-col items-center gap-3 w-full max-w-md">
+                    <div className="flex flex-col items-center gap-3 w-full max-w-md md:animate-in md:fade-in md:slide-in-from-bottom-4 md:duration-500 md:delay-400">
                         <div className="flex items-center gap-3 w-full">
                             <div className="flex-1 h-px bg-border" />
                             <span className="text-xs text-muted-foreground font-medium uppercase tracking-widest">or</span>
@@ -127,14 +124,12 @@ export function HeroSection() {
                                 </m.div>
                             )}
                         </AnimatePresence>
-                    </m.div>
+                    </div>
 
                     {/* Floating Preview Element */}
-                    <m.div
-                        initial={{ y: 40, opacity: 0, rotateX: 20 }}
-                        animate={{ y: 0, opacity: 1, rotateX: 0 }}
-                        transition={{ delay: 0.6, duration: 0.8, type: "spring" }}
-                        className="mt-16 relative w-full max-w-5xl mx-auto p-2 bg-gradient-to-b from-border to-transparent rounded-xl"
+                    <div
+                        style={{ willChange: 'transform' }}
+                        className="mt-16 relative w-full max-w-5xl mx-auto p-2 bg-gradient-to-b from-border to-transparent rounded-xl md:animate-in md:fade-in md:slide-in-from-bottom-4 md:duration-500 md:delay-500"
                         aria-hidden="true"
                     >
                         <div className="rounded-lg overflow-hidden shadow-2xl border bg-background/50 backdrop-blur">
@@ -183,8 +178,8 @@ export function HeroSection() {
                                 </div>
                             </div>
                         </div>
-                    </m.div>
-                </m.div>
+                    </div>
+                </div>
             </section>
         </LazyMotion>
     );

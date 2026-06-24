@@ -159,12 +159,14 @@ export function PersonalInfoForm() {
                                             onChange={(e) => handleSocialChange(social.id, 'username', e.target.value)}
                                             placeholder={`${platform?.label} Username`}
                                             className="h-8 text-sm"
+                                            aria-label={`${platform?.label || 'Social'} Username`}
                                         />
                                         <Input
                                             value={social.url}
                                             onChange={(e) => handleSocialChange(social.id, 'url', e.target.value)}
                                             placeholder="URL (Optional)"
                                             className="h-8 text-sm"
+                                            aria-label={`${platform?.label || 'Social'} URL`}
                                         />
                                     </div>
                                     <Button
@@ -172,6 +174,7 @@ export function PersonalInfoForm() {
                                         size="icon"
                                         className="h-8 w-8 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
                                         onClick={() => handleSocialRemove(social.id)}
+                                        aria-label={`Remove ${platform?.label || 'social'} profile`}
                                     >
                                         <Trash2 className="h-4 w-4" />
                                     </Button>
@@ -270,10 +273,11 @@ export function PersonalInfoForm() {
                                 <div className="grid grid-cols-2 gap-4 bg-muted/30 p-3 rounded-md">
                                     <div className="space-y-1">
                                         <div className="flex justify-between text-xs">
-                                            <Label>Zoom</Label>
+                                            <Label htmlFor="photo-zoom">Zoom</Label>
                                             <span className="text-muted-foreground">{personalInfo.photoFilters?.scale || 1}x</span>
                                         </div>
                                         <Input
+                                            id="photo-zoom"
                                             type="range"
                                             min="1"
                                             max="3"
@@ -287,10 +291,11 @@ export function PersonalInfoForm() {
                                     </div>
                                     <div className="space-y-1">
                                         <div className="flex justify-between text-xs">
-                                            <Label>Grayscale</Label>
+                                            <Label htmlFor="photo-grayscale">Grayscale</Label>
                                             <span className="text-muted-foreground">{Math.round((personalInfo.photoFilters?.grayscale || 0) * 100)}%</span>
                                         </div>
                                         <Input
+                                            id="photo-grayscale"
                                             type="range"
                                             min="0"
                                             max="1"
@@ -323,10 +328,11 @@ export function PersonalInfoForm() {
                                             <div className="space-y-3 pt-2">
                                                 <div className="space-y-1 animate-in fade-in slide-in-from-top-1">
                                                     <div className="flex justify-between text-xs">
-                                                        <Label>Border Width</Label>
+                                                        <Label htmlFor="photo-border-width">Border Width</Label>
                                                         <span className="text-muted-foreground">{personalInfo.photoFilters?.borderWidth}px</span>
                                                     </div>
                                                     <Input
+                                                        id="photo-border-width"
                                                         type="range"
                                                         min="1"
                                                         max="10"
@@ -340,10 +346,11 @@ export function PersonalInfoForm() {
                                                 </div>
                                                 <div className="space-y-1 animate-in fade-in slide-in-from-top-1">
                                                     <div className="flex justify-between text-xs">
-                                                        <Label>Border Color</Label>
+                                                        <Label htmlFor="photo-border-color">Border Color</Label>
                                                     </div>
                                                     <div className="flex gap-2">
                                                         <Input
+                                                            id="photo-border-color"
                                                             type="color"
                                                             value={personalInfo.photoFilters?.borderColor || '#ffffff'}
                                                             onChange={(e) => setPersonalInfo({
