@@ -51,7 +51,7 @@ export default function EditorPage() {
             </div>
 
             {/* Right Panel - Preview (Sticky) */}
-            <div className={`w-full lg:w-[50%] xl:w-[45%] lg:h-screen sticky top-0 self-start lg:overflow-hidden min-w-0 ${mobileView === 'editor' ? 'hidden lg:block' : ''}`}>
+            <div className={`w-full h-[calc(100vh-4.5rem)] lg:h-screen lg:w-[50%] xl:w-[45%] sticky top-0 self-start lg:overflow-hidden min-w-0 ${mobileView === 'editor' ? 'hidden lg:block' : ''}`}>
                 <PreviewPanel />
             </div>
 
