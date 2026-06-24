@@ -29,7 +29,7 @@ import { TemplateSelector } from "./TemplateSelector";
 
 import { useResumeStore } from "@/store/useResumeStore";
 import { useAuth } from "@/lib/auth-context";
-import { Loader2, Check, Cloud, AlertCircle, GripVertical, LogIn, Trash2 } from "lucide-react";
+import { Loader2, Check, Cloud, AlertCircle, GripVertical, LogIn, Trash2, ArrowLeft } from "lucide-react";
 
 import {
     DndContext,
@@ -256,18 +256,23 @@ export function EditorPanel() {
     return (
         <div className="flex flex-col bg-background border-r min-h-full">
             <div className="py-4 px-3 border-b flex justify-between items-center gap-4">
-                {activeResumeId ? (
-                    <div className="flex-1 mr-4">
-                        <Input
-                            value={activeResumeName}
-                            onChange={(e) => updateResumeName(activeResumeId, e.target.value)}
-                            className="bg-transparent border-transparent hover:border-input focus:border-input px-2 h-auto py-1 text-xl font-bold w-auto min-w-[150px] max-w-[300px]"
-                            aria-label="Rename Resume"
-                        />
-                    </div>
-                ) : (
-                    <h1 className="text-2xl font-bold">Editor</h1>
-                )}
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Link href="/dashboard" className="p-2 hover:bg-muted rounded-full transition-colors flex items-center justify-center shrink-0" title="Back to Dashboard">
+                        <ArrowLeft className="h-5 w-5 text-muted-foreground hover:text-foreground" />
+                    </Link>
+                    {activeResumeId ? (
+                        <div className="flex-1 min-w-0">
+                            <Input
+                                value={activeResumeName}
+                                onChange={(e) => updateResumeName(activeResumeId, e.target.value)}
+                                className="bg-transparent border-transparent hover:border-input focus:border-input px-2 h-auto py-1 text-xl font-bold w-full max-w-[300px]"
+                                aria-label="Rename Resume"
+                            />
+                        </div>
+                    ) : (
+                        <h1 className="text-2xl font-bold truncate">Editor</h1>
+                    )}
+                </div>
 
                 <PublicToggle />
 
@@ -309,7 +314,7 @@ export function EditorPanel() {
                     <ResumeScore />
                     
                     {/* Scale Controls */}
-                    <div className="mb-6 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <div className="mb-6 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="flex flex-col gap-3">
                                 <div className="flex justify-between items-center">
@@ -342,49 +347,39 @@ export function EditorPanel() {
                                 />
                             </div>
                         </div>
+                        <div className="border-t border-slate-200 dark:border-slate-800/80 pt-3 flex items-center justify-between">
+                            <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                Remove Branding
+                                {userTier !== 'pro' && (
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider uppercase text-white bg-gradient-to-r from-amber-500 to-orange-500">
+                                        PRO
+                                    </span>
+                                )}
+                            </span>
+                            <button
+                                id="branding-toggle"
+                                role="switch"
+                                aria-checked={userTier === 'pro' && hideBranding}
+                                disabled={userTier !== 'pro'}
+                                onClick={() => userTier === 'pro' && setHideBranding(!hideBranding)}
+                                className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${
+                                    userTier !== 'pro'
+                                        ? 'cursor-not-allowed opacity-40 bg-muted'
+                                        : hideBranding
+                                            ? 'bg-emerald-500'
+                                            : 'bg-input'
+                                }`}
+                            >
+                                <span className={`pointer-events-none block h-3.5 w-3.5 rounded-full bg-white shadow-lg ring-0 transition-transform ${
+                                    userTier === 'pro' && hideBranding ? 'translate-x-4' : 'translate-x-0.5'
+                                }`} />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <ColorPicker />
                         <FontSelector />
-                    </div>
-
-                    {/* Branding Toggle */}
-                    <div className="mb-6 flex items-center justify-between gap-4 px-4 py-3 rounded-xl border border-border bg-muted/30">
-                        <div className="flex flex-col gap-0.5">
-                            <span className="text-sm font-semibold text-foreground flex items-center gap-2">
-                                Remove Branding
-                                {userTier !== 'pro' && (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase"
-                                        style={{ background: 'linear-gradient(135deg, #f59e0b, #f97316)', color: '#fff' }}>
-                                        PRO
-                                    </span>
-                                )}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                                {userTier === 'pro'
-                                    ? 'Hide the "Powered by MyResume" footer from your PDF'
-                                    : 'Upgrade to Pro to remove the branding watermark'}
-                            </span>
-                        </div>
-                        <button
-                            id="branding-toggle"
-                            role="switch"
-                            aria-checked={userTier === 'pro' && hideBranding}
-                            disabled={userTier !== 'pro'}
-                            onClick={() => userTier === 'pro' && setHideBranding(!hideBranding)}
-                            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${
-                                userTier !== 'pro'
-                                    ? 'cursor-not-allowed opacity-40 bg-muted'
-                                    : hideBranding
-                                        ? 'bg-emerald-500'
-                                        : 'bg-input'
-                            }`}
-                        >
-                            <span className={`pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform ${
-                                userTier === 'pro' && hideBranding ? 'translate-x-6' : 'translate-x-1'
-                            }`} />
-                        </button>
                     </div>
 
                     <TemplateSelector />

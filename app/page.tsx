@@ -28,7 +28,7 @@ export default function Home() {
               <p className="max-w-[600px] text-gray-300 dark:text-gray-300 md:text-xl">
                 Join thousands of students and professionals building their future with MyResume.
               </p>
-              <Link href="/editor" className="pt-4">
+              <Link href="/editor" className="inline-flex items-center mt-4 min-h-[48px]">
                 <Button size="lg" className="bg-white text-slate-900 hover:bg-white/90 dark:bg-primary dark:text-white dark:hover:bg-primary/90 font-semibold h-12 px-8">
                   Create My Resume
                 </Button>

@@ -91,6 +91,7 @@ export function normalizeResumeData(data: any): any {
             description: proj?.description || '',
             link: proj?.link || '',
             linkText: proj?.linkText || '',
+            linkColor: proj?.linkColor || '#2563eb',
             technologies: proj?.technologies || ''
         })) : [],
 

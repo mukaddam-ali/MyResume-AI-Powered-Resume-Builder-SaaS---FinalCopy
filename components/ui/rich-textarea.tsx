@@ -44,9 +44,15 @@ export const RichTextarea = ({ id, value = '', onValueChange, className, placeho
 
     // Sync external value changes (e.g., loading different resumes)
     React.useEffect(() => {
-        if (editor && value && value !== editor.getHTML()) {
-            // Only update if it's actually different to prevent cursor jumping
-            if (editor.getHTML() !== value) {
+        if (editor) {
+            const currentHTML = editor.getHTML();
+            if (value !== currentHTML) {
+                // Handle empty cases to avoid loops
+                const isEmptyValue = value === "" || value === "<p></p>";
+                const isEmptyEditor = editor.isEmpty || currentHTML === "<p></p>";
+                if (isEmptyValue && isEmptyEditor) {
+                    return;
+                }
                 editor.commands.setContent(value);
             }
         }

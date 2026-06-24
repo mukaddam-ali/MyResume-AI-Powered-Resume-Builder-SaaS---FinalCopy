@@ -2,8 +2,9 @@
 
 import { useResumeStore } from "@/store/useResumeStore";
 import { Button } from "@/components/ui/button";
-import { Loader2, Lock, AlertTriangle, ZoomIn, ZoomOut } from "lucide-react";
+import { Loader2, Lock, AlertTriangle, ZoomIn, ZoomOut, Maximize2, Minus, Plus, RotateCcw, X } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Slider } from "@/components/ui/slider";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
@@ -46,6 +47,21 @@ export function PreviewPanel() {
     const [showCaution, setShowCaution] = useState(false);
     const [loading, setLoading] = useState(false);
     const [zoom, setZoom] = useState(100);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                setIsFullscreen(false);
+            }
+        };
+        if (isFullscreen) {
+            window.addEventListener("keydown", handleKeyDown);
+        }
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [isFullscreen]);
 
     useEffect(() => {
         setClient(true);
@@ -137,7 +153,94 @@ export function PreviewPanel() {
                     data={activeResume}
                     className="h-full w-full"
                 />
+
+                {/* Fullscreen Toggle Button */}
+                <button
+                    onClick={() => setIsFullscreen(true)}
+                    className="absolute bottom-6 right-6 p-3 bg-white dark:bg-zinc-900 text-slate-800 dark:text-slate-100 rounded-full shadow-2xl border border-slate-200 dark:border-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-800 hover:scale-105 active:scale-95 transition-all duration-200 z-20 group"
+                    title="Fullscreen Preview"
+                >
+                    <Maximize2 className="h-5 w-5 group-hover:rotate-45 transition-transform duration-200" />
+                </button>
             </div>
+
+            {/* Fullscreen Portal */}
+            {isFullscreen && typeof window !== "undefined" && createPortal(
+                <div className="fixed inset-0 z-[9999] bg-slate-100/95 dark:bg-slate-950/95 backdrop-blur-md flex flex-col font-sans text-slate-800 dark:text-white">
+                    {/* Header */}
+                    <div className="h-16 border-b border-slate-200 dark:border-white/10 px-6 flex items-center justify-between bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm shrink-0">
+                        <div className="flex items-center gap-2">
+                            <span className="font-semibold tracking-wide text-slate-800 dark:text-slate-100">Fullscreen Preview</span>
+                            <span className="text-xs px-2 py-0.5 rounded bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 font-medium">Interactive</span>
+                        </div>
+                        {/* Zoom Controls */}
+                        <div className="flex items-center gap-4 text-slate-600 dark:text-slate-300">
+                            <button
+                                onClick={() => setZoom(prev => Math.max(50, prev - 10))}
+                                className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-md transition-colors hover:text-slate-900 dark:hover:text-white"
+                                title="Zoom Out"
+                            >
+                                <Minus className="h-4 w-4" />
+                            </button>
+                            <span className="font-mono text-sm px-3 py-1 bg-slate-100 dark:bg-white/5 rounded-md min-w-[60px] text-center border border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-200">
+                                {zoom}%
+                            </span>
+                            <button
+                                onClick={() => setZoom(prev => Math.min(200, prev + 10))}
+                                className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-md transition-colors hover:text-slate-900 dark:hover:text-white"
+                                title="Zoom In"
+                            >
+                                <Plus className="h-4 w-4" />
+                            </button>
+                            <button
+                                onClick={() => setZoom(100)}
+                                className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-md transition-colors text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 flex items-center gap-1.5"
+                                title="Reset Zoom"
+                            >
+                                <RotateCcw className="h-3.5 w-3.5" />
+                                Reset
+                            </button>
+                        </div>
+                        {/* Close button */}
+                        <button
+                            onClick={() => setIsFullscreen(false)}
+                            className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-md transition-colors text-slate-500 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                            title="Close (Esc)"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
+                    </div>
+
+                    {/* Preview Area */}
+                    <div className="flex-1 overflow-auto flex p-8 bg-slate-200/40 dark:bg-slate-900/10">
+                        <div 
+                            style={{ 
+                                width: `${794 * (zoom / 100)}px`, 
+                                height: `${1123 * (zoom / 100)}px`,
+                                minWidth: `${794 * (zoom / 100)}px`,
+                                minHeight: `${1123 * (zoom / 100)}px`
+                            }} 
+                            className="relative shadow-2xl transition-all duration-200 bg-white m-auto"
+                        >
+                            <div 
+                                style={{ 
+                                    transform: `scale(${zoom / 100})`, 
+                                    transformOrigin: 'top left',
+                                    width: '794px',
+                                    height: '1123px'
+                                }} 
+                                className="absolute inset-0"
+                            >
+                                <UniversalPDFPreview
+                                    data={activeResume}
+                                    className="h-full w-full"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
         </div >
     );
 }

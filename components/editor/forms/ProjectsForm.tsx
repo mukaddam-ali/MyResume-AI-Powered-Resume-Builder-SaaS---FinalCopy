@@ -33,6 +33,57 @@ import { SortableItem } from "../SortableItem";
 
 import { SectionScaleControl } from "../SectionScaleControl";
 
+function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {
+    let timeout: NodeJS.Timeout | null = null;
+    return (...args: Parameters<T>) => {
+        if (timeout) clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            func(...args);
+        }, wait);
+    };
+}
+
+function LinkColorPicker({
+    initialColor,
+    onChange,
+}: {
+    initialColor: string;
+    onChange: (color: string) => void;
+}) {
+    const [color, setColor] = React.useState(initialColor);
+
+    React.useEffect(() => {
+        setColor(initialColor);
+    }, [initialColor]);
+
+    const debouncedOnChange = React.useMemo(() => {
+        return debounce((nextColor: string) => {
+            onChange(nextColor);
+        }, 100);
+    }, [onChange]);
+
+    const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const nextColor = e.target.value;
+        setColor(nextColor);
+        debouncedOnChange(nextColor);
+    };
+
+    return (
+        <div
+            className="absolute right-2 w-6 h-6 rounded-full border border-muted-foreground/30 shadow-sm flex items-center justify-center overflow-hidden animate-in fade-in"
+            style={{ backgroundColor: color }}
+        >
+            <input
+                type="color"
+                value={color}
+                onChange={handleColorChange}
+                className="opacity-0 w-full h-full cursor-pointer absolute inset-0 text-[0px]"
+                title="Choose link text color"
+            />
+        </div>
+    );
+}
+
 export function ProjectsForm() {
     const activeResumeId = useResumeStore((state) => state.activeResumeId);
     const projects = useResumeStore((state) => state.activeResumeId ? state.resumes[state.activeResumeId]?.projects : undefined) || [];
@@ -174,11 +225,18 @@ export function ProjectsForm() {
                                                 </div>
                                                 <div className="grid gap-2">
                                                     <Label>Link Text (Optional)</Label>
-                                                    <Input
-                                                        value={proj.linkText || ''}
-                                                        onChange={(e) => updateProject(proj.id, { linkText: e.target.value })}
-                                                        placeholder="e.g., View Project, GitHub"
-                                                    />
+                                                    <div className="relative flex items-center">
+                                                        <Input
+                                                            value={proj.linkText || ''}
+                                                            onChange={(e) => updateProject(proj.id, { linkText: e.target.value })}
+                                                            placeholder="e.g., View Project, GitHub"
+                                                            className="pr-10"
+                                                        />
+                                                        <LinkColorPicker
+                                                            initialColor={proj.linkColor || '#2563eb'}
+                                                            onChange={(color) => updateProject(proj.id, { linkColor: color })}
+                                                        />
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div className="grid gap-2">

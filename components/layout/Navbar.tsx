@@ -14,8 +14,8 @@ export function Navbar() {
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="w-full px-4 sm:px-8 lg:px-12 flex h-14 items-center">
-                <Link href="/" className="flex items-center space-x-2 mr-6 pl-3">
-                    <FileText className="h-6 w-6 text-foreground" />
+                <Link href="/" className="flex items-center space-x-2 mr-6 pl-3" aria-label="MyResume home">
+                    <FileText className="h-6 w-6 text-foreground" aria-hidden="true" />
                     <span className="hidden font-bold sm:inline-block">
                         MyResume
                     </span>

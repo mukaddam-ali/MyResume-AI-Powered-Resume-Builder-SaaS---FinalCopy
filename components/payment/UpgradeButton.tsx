@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Star } from "lucide-react";
 import {
@@ -17,8 +17,9 @@ import { Badge } from "@/components/ui/badge";
 import { Check, Zap, Shield, Sparkles } from "lucide-react";
 import { useResumeStore } from "@/store/useResumeStore";
 
-const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-const stripePromise = publishableKey ? loadStripe(publishableKey) : null;
+// NOTE: stripePromise is intentionally NOT initialized at module level.
+// Stripe.js (236 KiB) is deferred and only loaded when the user opens the
+// Upgrade dialog — keeping it off the critical path on every other page.
 
 interface UpgradeButtonProps {
     size?: "default" | "sm" | "lg" | "icon";
@@ -39,8 +40,26 @@ export default function UpgradeButton({
     const [clientSecret, setClientSecret] = useState("");
     const { userTier, setUserTier } = useResumeStore();
 
+    // Lazy Stripe: ref holds the promise once loaded; null until dialog first opens.
+    const stripePromiseRef = useRef<ReturnType<typeof loadStripe> | null>(null);
+    const [stripeReady, setStripeReady] = useState(false);
+
     React.useEffect(() => {
-        if (open && userTier === 'free' && stripePromise) {
+        if (!open) return;
+
+        // Initialize Stripe only on first open
+        if (!stripePromiseRef.current) {
+            const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+            if (key) {
+                stripePromiseRef.current = loadStripe(key);
+                setStripeReady(true);
+            }
+        } else {
+            setStripeReady(true);
+        }
+
+        // Fetch payment intent only if Stripe is configured
+        if (stripePromiseRef.current && userTier === 'free') {
             fetch("/api/create-payment-intent", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -50,6 +69,8 @@ export default function UpgradeButton({
                 .catch((error) => console.error("Error fetching payment intent:", error));
         }
     }, [open, userTier]);
+
+    const stripePromise = stripeReady ? stripePromiseRef.current : null;
 
     const appearance = {
         theme: 'stripe' as const,

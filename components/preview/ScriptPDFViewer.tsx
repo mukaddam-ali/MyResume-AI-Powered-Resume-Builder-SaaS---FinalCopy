@@ -193,9 +193,10 @@ export default function ScriptPDFViewer({ data, className }: ScriptPDFViewerProp
     useEffect(() => {
         const updateScale = () => {
             if (containerRef.current) {
-                const width = containerRef.current.clientWidth;
-                // Standard letter width ~600px at scale 1
-                const newScale = Math.min(Math.max(width / 650, 0.6), 2.0);
+                const padding = 32; // p-4 (16px left + 16px right)
+                const width = containerRef.current.clientWidth - padding;
+                // Standard A4 width ~595px at scale 1
+                const newScale = Math.min(Math.max(width / 595, 0.6), 2.0);
                 setScale(newScale);
             }
         };
@@ -224,7 +225,7 @@ export default function ScriptPDFViewer({ data, className }: ScriptPDFViewerProp
                 </div>
             )}
 
-            <div ref={containerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-8 flex flex-col items-center scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-slate-700">
+            <div ref={containerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-4 flex flex-col items-center scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-slate-700">
                 {/* Canvases injected here */}
             </div>
         </div>

@@ -49,7 +49,6 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
             case 'education':
                 if (education.length === 0) return null;
                 if (selectedTemplate === 'modern') {
-                    if (education.length === 0) return null;
                     return (
                         <div key="education" className="mb-6">
                             <h3 className="uppercase tracking-widest text-xs font-bold border-b pb-2 mb-4 opacity-80 text-white border-white/30">
@@ -57,14 +56,10 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                             </h3>
                             <div className="space-y-4">
                                 {education.map(edu => (
-                                    <div key={edu.id}>
-                                        <div className="flex justify-between items-baseline">
-                                            <div className="flex items-baseline gap-1.5">
-                                                <div className="font-bold">{edu.school}</div>
-                                                <div className="text-xs opacity-80">{edu.degree}</div>
-                                            </div>
-                                            <div className="text-[10px] opacity-60">{edu.startDate} – {edu.endDate}</div>
-                                        </div>
+                                    <div key={edu.id} className="flex flex-col gap-0.5 text-white">
+                                        <div className="font-bold text-sm leading-snug">{edu.school}</div>
+                                        {edu.degree && <div className="text-xs opacity-80">{edu.degree}</div>}
+                                        <div className="text-[10px] opacity-60 mt-0.5">{edu.startDate} – {edu.endDate}</div>
                                     </div>
                                 ))}
                             </div>
@@ -72,7 +67,6 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                     );
                 }
                 if (selectedTemplate === 'creative') {
-                    if (education.length === 0) return null;
                     return (
                         <div key="education" className="mb-6 text-white">
                             <h3 className="uppercase tracking-widest text-xs font-bold border-b pb-2 mb-4 opacity-80 border-white/20">
@@ -80,14 +74,10 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                             </h3>
                             <div className="space-y-4">
                                 {education.map(edu => (
-                                    <div key={edu.id}>
-                                        <div className="flex justify-between items-baseline">
-                                            <div className="flex items-baseline gap-1.5">
-                                                <div className="font-bold">{edu.school}</div>
-                                                <div className="text-xs opacity-80">{edu.degree}</div>
-                                            </div>
-                                            <div className="text-[10px] opacity-60">{edu.startDate} – {edu.endDate}</div>
-                                        </div>
+                                    <div key={edu.id} className="flex flex-col gap-0.5">
+                                        <div className="font-bold text-sm leading-snug">{edu.school}</div>
+                                        {edu.degree && <div className="text-xs opacity-80">{edu.degree}</div>}
+                                        <div className="text-[10px] opacity-60 mt-0.5">{edu.startDate} – {edu.endDate}</div>
                                     </div>
                                 ))}
                             </div>
@@ -95,21 +85,18 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                     );
                 }
                 if (selectedTemplate === 'minimalist') {
-                    if (education.length === 0) return null;
                     return (
                         <div key="education" className="mb-8">
                             <h3 className="font-bold uppercase tracking-widest text-xs mb-4">{sectionTitles.education || "Education"}</h3>
-                            {education.map(edu => (
-                                <div key={edu.id} className="mb-4">
-                                    <div className="flex justify-between items-baseline">
-                                        <div className="flex items-baseline gap-1.5">
-                                            <div className="font-semibold">{edu.school}</div>
-                                            <div className="italic text-sm text-gray-600">{edu.degree}</div>
-                                        </div>
-                                        <div className="text-xs text-gray-500">{edu.startDate} – {edu.endDate}</div>
+                            <div className="space-y-4">
+                                {education.map(edu => (
+                                    <div key={edu.id} className="flex flex-col gap-0.5">
+                                        <div className="font-semibold text-sm leading-snug">{edu.school}</div>
+                                        {edu.degree && <div className="italic text-xs text-gray-600">{edu.degree}</div>}
+                                        <div className="text-[10px] text-gray-500 mt-0.5">{edu.startDate} – {edu.endDate}</div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
                     );
                 }
@@ -330,8 +317,14 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                                             <FormattedText text={proj.description} />
                                         </div>
                                         {proj.link && (
-                                            <a href={proj.link.startsWith('http') ? proj.link : `https://${proj.link}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-blue-600 hover:underline">
-                                                View Project &rarr;
+                                            <a 
+                                                href={proj.link.startsWith('http') ? proj.link : `https://${proj.link}`} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer" 
+                                                className="text-xs font-medium hover:underline"
+                                                style={{ color: proj.linkColor || '#2563eb' }}
+                                            >
+                                                {proj.linkText || 'View Project'} &rarr;
                                             </a>
                                         )}
                                     </div>
@@ -379,7 +372,17 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                                 <div key={proj.id}>
                                     <div className="flex justify-between font-bold text-sm">
                                         <span>{proj.name}</span>
-                                        {proj.link && <a href={/^https?:\/\//i.test(proj.link) ? proj.link : `https://${proj.link}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 font-normal hover:underline text-xs">{proj.linkText || proj.link}</a>}
+                                        {proj.link && (
+                                            <a 
+                                                href={/^https?:\/\//i.test(proj.link) ? proj.link : `https://${proj.link}`} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer" 
+                                                className="font-normal hover:underline text-xs"
+                                                style={{ color: proj.linkColor || '#2563eb' }}
+                                            >
+                                                {proj.linkText || proj.link}
+                                            </a>
+                                        )}
                                     </div>
                                     {proj.technologies && (
                                         <div className="text-xs text-gray-600 italic mb-1">

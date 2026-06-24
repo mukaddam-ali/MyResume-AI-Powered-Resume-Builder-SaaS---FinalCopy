@@ -27,6 +27,7 @@ export interface Project {
     technologies: string;
     link: string;
     linkText?: string; // Custom text to display for the link (e.g., "View Project", "GitHub")
+    linkColor?: string; // Custom color for the link text (e.g., "#2563eb")
 }
 
 export interface SocialMedia {
