@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { useResumeStore } from "@/store/useResumeStore";
 import { useAuth } from "@/lib/auth-context";
-import { FileText, Loader2, Copy, Check, Download, Sparkles, Lock } from "lucide-react";
+import { FileText, Loader2, Copy, Check, Download, Sparkles, Lock, Info, AlertTriangle } from "lucide-react";
 
 type Tone = "professional" | "enthusiastic" | "concise";
 
@@ -26,10 +26,20 @@ export function CoverLetterGenerator() {
     const [tone, setTone] = useState<Tone>("professional");
     const [letter, setLetter] = useState("");
     const [loading, setLoading] = useState(false);
+    const [downloadingPdf, setDownloadingPdf] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
 
     if (!activeResume) return null;
+
+    // The AI writes the letter FROM the resume — warn when key sections are
+    // empty so users know why their letter might come out generic.
+    const missingParts: string[] = [];
+    const info = activeResume.personalInfo;
+    if (!info?.fullName?.trim() || info.fullName.trim() === "New User") missingParts.push("your name");
+    if (!info?.summary?.trim()) missingParts.push("a summary");
+    if (!activeResume.experience?.length) missingParts.push("work experience");
+    if (!activeResume.skills?.length) missingParts.push("skills");
 
     const handleGenerate = async () => {
         setLoading(true);
@@ -60,16 +70,40 @@ export function CoverLetterGenerator() {
         }
     };
 
-    const handleDownload = () => {
-        const blob = new Blob([letter], { type: "text/plain;charset=utf-8" });
+    const triggerDownload = (blob: Blob, extension: string) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${(activeResume.personalInfo.fullName || "cover_letter").replace(/\s+/g, "_")}_Cover_Letter.txt`;
+        a.download = `${(activeResume.personalInfo.fullName || "cover_letter").replace(/\s+/g, "_")}_Cover_Letter.${extension}`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+    };
+
+    const handleDownloadTxt = () => {
+        triggerDownload(new Blob([letter], { type: "text/plain;charset=utf-8" }), "txt");
+    };
+
+    // PDF with the header (name, title, contact details) auto-filled from the
+    // resume. react-pdf is imported on demand — it's heavy and most users copy.
+    const handleDownloadPdf = async () => {
+        setDownloadingPdf(true);
+        try {
+            const [{ pdf }, { CoverLetterDocument }] = await Promise.all([
+                import("@react-pdf/renderer"),
+                import("./CoverLetterDocument"),
+            ]);
+            const blob = await pdf(
+                <CoverLetterDocument resumeData={activeResume} letterText={letter} company={company} />
+            ).toBlob();
+            triggerDownload(blob, "pdf");
+        } catch (e) {
+            console.error("Cover letter PDF error:", e);
+            alert("Could not generate the PDF. You can still copy the text or download it as .txt.");
+        } finally {
+            setDownloadingPdf(false);
+        }
     };
 
     return (
@@ -110,6 +144,26 @@ export function CoverLetterGenerator() {
 
                     {!letter ? (
                         <div className="space-y-4">
+                            {/* The letter is only as good as the resume it reads */}
+                            {missingParts.length > 0 ? (
+                                <div className="flex items-start gap-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                                    <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                                    <p className="text-sm text-amber-800 dark:text-amber-200">
+                                        <strong>Your resume is missing {missingParts.join(", ")}.</strong>{" "}
+                                        The AI writes the cover letter from your resume's content — fill
+                                        those in first for a much stronger, personalized letter.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="flex items-start gap-2.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                                    <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+                                    <p className="text-sm text-blue-800 dark:text-blue-200">
+                                        The AI reads your resume (summary, experience, skills) and matches
+                                        it to the job description — your real achievements, never invented ones.
+                                    </p>
+                                </div>
+                            )}
+
                             <div className="space-y-1.5">
                                 <label className="text-sm font-medium" htmlFor="cl-company">Company name <span className="text-muted-foreground font-normal">(optional)</span></label>
                                 <input
@@ -174,13 +228,25 @@ export function CoverLetterGenerator() {
                                 className="w-full text-sm p-4 rounded-md border bg-background leading-relaxed resize-y focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
                                 aria-label="Generated cover letter (editable)"
                             />
+                            <p className="text-xs text-muted-foreground">
+                                The PDF header (name, title, contact details) is filled automatically from your resume.
+                            </p>
                             <div className="flex flex-wrap gap-2">
+                                <Button
+                                    onClick={handleDownloadPdf}
+                                    disabled={downloadingPdf}
+                                    size="sm"
+                                    className="gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white"
+                                >
+                                    {downloadingPdf ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                                    {downloadingPdf ? "Preparing…" : "Download PDF"}
+                                </Button>
                                 <Button onClick={handleCopy} variant="outline" size="sm" className="gap-1.5">
                                     {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
                                     {copied ? "Copied!" : "Copy"}
                                 </Button>
-                                <Button onClick={handleDownload} variant="outline" size="sm" className="gap-1.5">
-                                    <Download className="h-4 w-4" /> Download .txt
+                                <Button onClick={handleDownloadTxt} variant="outline" size="sm" className="gap-1.5">
+                                    <Download className="h-4 w-4" /> .txt
                                 </Button>
                                 <Button onClick={() => setLetter("")} variant="ghost" size="sm" className="ml-auto">
                                     ← Start over
