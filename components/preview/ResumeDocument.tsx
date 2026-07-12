@@ -1,5 +1,9 @@
 /* eslint-disable jsx-a11y/alt-text */
-"use client";
+// NOTE: intentionally NOT "use client" — this component is rendered on the
+// server by /api/export-pdf (renderToBuffer) AND on the client by the
+// download button / live preview. It uses no hooks, so it works as shared
+// code; a "use client" directive here makes the server route throw
+// "attempted to call a client function from the server" in production.
 import React from 'react';
 import { Page, Text, View, Document, StyleSheet, Link, Font, Image, Svg, Path } from '@react-pdf/renderer';
 import { ResumeData } from '@/store/useResumeStore';
@@ -414,7 +418,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
         // Experience Items (Scaled)
         expCompany: { fontWeight: 'bold', fontSize: 11 },
         expDate: { fontSize: 10, color: '#666' },
-        expRole: { fontSize: 10, color: '#6b7280', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 4 },
+        expRole: { fontSize: 10, color: '#6b7280', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 6 },
 
         headerBlock: { marginBottom: 24 },
         skillText: {
@@ -474,7 +478,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'baseline',
-            marginBottom: 3,
+            marginBottom: 4,
         },
         company: {
             fontSize: 12, // Reduced from 14
@@ -494,6 +498,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
             paddingLeft: 0,
             lineHeight: 1.5,
             color: '#4b5563',
+            marginTop: 2, // Gap after the company/role row
         },
         itemCity: { fontSize: 8.5, fontStyle: 'italic', marginBottom: 2 },
         skillPill: {
@@ -740,6 +745,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
             fontStyle: 'italic',
             fontSize: 10, // Reduced from 14
             color: customThemeColor,
+            marginBottom: 4, // Breathing room between role line and description
         },
 
         skillPill: {
@@ -769,6 +775,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
 
         const renderMinimalistSection = (id: string) => {
             const minimalistStyles = getMinimalistStyles(sectionScales?.[id] || 1);
+            const mnScale = (sectionScales?.[id] || 1) * (contentScale || 1);
             const customSection = data.customSections?.find(s => s.id === id);
             if (customSection) {
                 return (
@@ -841,13 +848,13 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                                 <View key={proj.id} style={minimalistStyles.itemGroup}>
                                     <Text style={minimalistStyles.company}>{proj.name}</Text>
                                     {proj.technologies && (
-                                        <View style={{ marginTop: 2, marginBottom: (6 * (data.sectionSpacing ?? 1)) }}>
-                                            <Text style={{ fontSize: 9, backgroundColor: '#f3f4f6', color: '#374151', padding: '1 3', borderRadius: 2, alignSelf: 'flex-start' }}>
+                                        <View style={{ marginTop: 2 * mnScale, marginBottom: (6 * mnScale * (data.sectionSpacing ?? 1)) }}>
+                                            <Text style={{ fontSize: 9 * mnScale, backgroundColor: '#f3f4f6', color: '#374151', padding: '1 3', borderRadius: 2, alignSelf: 'flex-start' }}>
                                                 {proj.technologies}
                                             </Text>
                                         </View>
                                     )}
-                                    <PdfFormattedText text={proj.description} style={{ ...minimalistStyles.description, marginBottom: (4 * (data.sectionSpacing ?? 1)) }} />
+                                    <PdfFormattedText text={proj.description} style={{ ...minimalistStyles.description, marginBottom: (4 * mnScale * (data.sectionSpacing ?? 1)) }} />
                                     {proj.link && (
                                         <Link src={normalizeUrl(proj.link)} style={{ fontSize: 9, marginTop: 4, fontStyle: 'italic', color: proj.linkColor || '#2563eb', textDecoration: 'none' }}>
                                             {proj.linkText || "View Project"}
@@ -908,6 +915,9 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
 
         const renderModernSection = (id: string, isSidebar: boolean) => {
             const modernStyles = getModernStyles(sectionScales?.[id] || 1);
+            // Inline styles below must follow the same scale as the section's
+            // stylesheet, or scaled sections cramp/overlap around fixed-size text
+            const mScale = (sectionScales?.[id] || 1) * (contentScale || 1);
             const customSection = data.customSections?.find(s => s.id === id);
             if (customSection) {
                 if (isSidebar) {
@@ -983,7 +993,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                                         <Text style={modernStyles.expDate}>{exp.startDate} - {exp.endDate}</Text>
                                     </View>
                                     <Text style={modernStyles.expRole}>{exp.role}</Text>
-                                    <PdfFormattedText text={exp.description} style={{ fontSize: 10, lineHeight: 1.4 }} />
+                                    <PdfFormattedText text={exp.description} style={{ fontSize: 10 * mScale, lineHeight: 1.4 }} />
                                 </View>
                             ))}
                         </View>
@@ -994,19 +1004,19 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             <Text style={modernStyles.sectionTitle}>{sectionTitles.projects || "Projects"}</Text>
                             {projects.map((proj: any) => (
                                 <View key={proj.id} style={modernStyles.projectCard}>
-                                    <View style={{ marginBottom: (10 * (data.sectionSpacing ?? 1)) }}>
-                                        <Text style={{ fontWeight: 'bold', fontSize: 11, color: '#111827' }}>{proj.name}</Text>
+                                    <View style={{ marginBottom: (10 * mScale * (data.sectionSpacing ?? 1)) }}>
+                                        <Text style={{ fontWeight: 'bold', fontSize: 11 * mScale, color: '#111827' }}>{proj.name}</Text>
                                         {proj.technologies && (
-                                            <View style={{ flexDirection: 'row', marginTop: (3 * (data.sectionSpacing ?? 1)) }}>
-                                                <Text style={{ fontSize: 9, backgroundColor: '#e5e7eb', color: '#4b5563', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
+                                            <View style={{ flexDirection: 'row', marginTop: (3 * mScale * (data.sectionSpacing ?? 1)) }}>
+                                                <Text style={{ fontSize: 9 * mScale, backgroundColor: '#e5e7eb', color: '#4b5563', paddingHorizontal: 8 * mScale, paddingVertical: 2, borderRadius: 10 }}>
                                                     {proj.technologies}
                                                 </Text>
                                             </View>
                                         )}
                                     </View>
-                                    <PdfFormattedText text={proj.description} style={{ fontSize: 10, lineHeight: 1.4, color: '#4b5563', marginBottom: (4 * (data.sectionSpacing ?? 1)) }} />
+                                    <PdfFormattedText text={proj.description} style={{ fontSize: 10 * mScale, lineHeight: 1.4, color: '#4b5563', marginBottom: (4 * mScale * (data.sectionSpacing ?? 1)) }} />
                                     {proj.link && (
-                                        <Link src={normalizeUrl(proj.link)} style={{ fontSize: 9, color: proj.linkColor || '#2563eb', fontWeight: 'bold', marginTop: 4, textDecoration: 'none' }}>
+                                        <Link src={normalizeUrl(proj.link)} style={{ fontSize: 9 * mScale, color: proj.linkColor || '#2563eb', fontWeight: 'bold', marginTop: 4 * mScale, textDecoration: 'none' }}>
                                             {proj.linkText || "View Project ->"}
                                         </Link>
                                     )}
@@ -1063,6 +1073,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
 
         const renderCreativeSection = (id: string) => {
             const creativeStyles = getCreativeStyles(sectionScales?.[id] || 1);
+            const crScale = (sectionScales?.[id] || 1) * (contentScale || 1);
             const customSection = data.customSections?.find(s => s.id === id);
             if (customSection) {
                 return (
@@ -1122,7 +1133,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                                     <View style={creativeStyles.bullet} />
                                     <View style={creativeStyles.expHeader}>
                                         <Text style={creativeStyles.companyName}>{exp.company}</Text>
-                                        <Text style={{ fontSize: 10, color: '#666' }}>{exp.startDate} - {exp.endDate}</Text>
+                                        <Text style={{ fontSize: 10 * crScale, color: '#666' }}>{exp.startDate} - {exp.endDate}</Text>
                                     </View>
                                     <Text style={creativeStyles.roleName}>{exp.role}</Text>
                                     <PdfFormattedText text={exp.description} style={creativeStyles.mainText} />
@@ -1142,8 +1153,8 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                                         </View>
                                     </View>
                                     {proj.technologies && (
-                                        <View style={{ marginBottom: (8 * (data.sectionSpacing ?? 1)), marginTop: (1 * (data.sectionSpacing ?? 1)) }}>
-                                            <Text style={{ fontSize: 9, color: '#6b7280', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#e5e7eb', padding: '1 3', borderRadius: 2, alignSelf: 'flex-start' }}>
+                                        <View style={{ marginBottom: (8 * crScale * (data.sectionSpacing ?? 1)), marginTop: (2 * crScale * (data.sectionSpacing ?? 1)) }}>
+                                            <Text style={{ fontSize: 9 * crScale, color: '#6b7280', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#e5e7eb', padding: '1 3', borderRadius: 2, alignSelf: 'flex-start' }}>
                                                 {proj.technologies}
                                             </Text>
                                         </View>
@@ -1213,6 +1224,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
     // --- CLASSIC TEMPLATE (Default) ---
     const renderClassicSection = (id: string) => {
         const classicStyles = getClassicStyles(sectionScales?.[id] || 1);
+        const clScale = (sectionScales?.[id] || 1) * (contentScale || 1);
         const customSection = data.customSections?.find(s => s.id === id);
         if (customSection) {
             return (
@@ -1296,7 +1308,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                                     )}
                                 </View>
                                 {proj.technologies && (
-                                    <Text style={{ fontSize: 9, color: '#4b5563', fontStyle: 'italic', marginBottom: (6 * (data.sectionSpacing ?? 1)) }}>
+                                    <Text style={{ fontSize: 9 * clScale, color: '#4b5563', fontStyle: 'italic', marginTop: 1 * clScale, marginBottom: (6 * clScale * (data.sectionSpacing ?? 1)) }}>
                                         {proj.technologies}
                                     </Text>
                                 )}
@@ -1327,7 +1339,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
             divider: { borderBottomWidth: 0.5, borderBottomColor: '#e5e7eb', marginBottom: 10 },
             itemGroup: { marginBottom: 9 },
             bold: { fontWeight: 'bold', fontSize: 9.5, color: '#111827' },
-            italic: { fontStyle: 'italic', fontSize: 8.5, color: accentColor, marginBottom: 2 },
+            italic: { fontStyle: 'italic', fontSize: 8.5, color: accentColor, marginBottom: 3.5 },
             text: { fontSize: 8.5, color: '#4b5563', lineHeight: 1.45 },
             date: { fontSize: 7.5, color: '#9ca3af' },
             row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 1 },

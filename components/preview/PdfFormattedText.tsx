@@ -44,8 +44,12 @@ export const PdfFormattedText = ({ text = '', style, children, supportsItalic = 
     const finalHtml = `<div>${cleanedContent}</div>`;
 
     return (
-        <Html 
-            style={{ 
+        <Html
+            style={{
+                // Bottom padding guards the last line's descenders from being
+                // clipped/merged into the next sibling (react-pdf-html measures
+                // the root height slightly short with unitless lineHeight).
+                paddingBottom: 3,
                 ...style,
                 // These are passed down so `<p>`, `<ul>`, etc inherit the base style
                 fontSize: style?.fontSize,
