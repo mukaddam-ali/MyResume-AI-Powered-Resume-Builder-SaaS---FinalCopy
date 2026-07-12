@@ -49,20 +49,31 @@ export interface WritingMetrics {
     avgBulletWords: number;
     longBulletCount: number;    // bullets over 32 words
     totalWords: number;
-    dateFormats: string[];      // distinct date styles found
-    dateConsistent: boolean;
+    dateFormats: string[];      // distinct date styles found (informational)
+    dateConsistent: boolean;    // consistent WITHIN each section (edu vs work may differ)
+    noYearDates: string[];      // dates missing a year — unparseable by ATS
 }
 
 const NUMBERISH = /(\d+[%+kKmM]?|\$\d|\d+x\b|percent)/;
 
+/**
+ * Classify a date string's format. Returns null for values that are
+ * conventional alongside any format ("Present", "Expected 2027") and
+ * 'no-year' for dates an ATS cannot anchor in time ("15 May").
+ */
 function classifyDate(d: string): string | null {
-    const s = (d || '').trim();
+    const s = (d || '').trim().replace(/[()]/g, '');
     if (!s) return null;
-    if (/^(present|current|now)$/i.test(s)) return null; // "Present" is fine with anything
+    if (/^(present|current|now|ongoing)$/i.test(s)) return null;
+    // "Expected 2027" / "Anticipated May 2027" — standard for in-progress degrees
+    if (/^(expected|anticipated|exp\.?|graduating)\b/i.test(s)) return null;
     if (/^\d{4}$/.test(s)) return 'YYYY';
     if (/^\d{1,2}\/\d{4}$/.test(s)) return 'MM/YYYY';
     if (/^[a-z]{3,9}\.?\s+\d{4}$/i.test(s)) return 'Month YYYY';
     if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(s)) return 'DD/MM/YYYY';
+    // Day + month (or month + day) with NO year — unparseable by ATS
+    if (/^\d{1,2}\s+[a-z]{3,9}\.?$/i.test(s) || /^[a-z]{3,9}\.?\s+\d{1,2}$/i.test(s)) return 'no-year';
+    if (/^[a-z]{3,9}\.?$/i.test(s)) return 'no-year'; // bare month name
     return 'other';
 }
 
@@ -89,13 +100,25 @@ export function computeWritingMetrics(data: ResumeData): WritingMetrics {
         if (FIRST_PERSON.test(b)) firstPerson++;
     }
 
-    const formats = new Set<string>();
-    for (const e of [...(data.experience || []), ...(data.education || [])]) {
-        for (const d of [e.startDate, e.endDate]) {
-            const f = classifyDate(d);
-            if (f) formats.add(f);
+    // Date consistency is judged PER SECTION: education using years-only while
+    // experience uses "Month YYYY" is a normal, accepted convention.
+    const noYearDates: string[] = [];
+    const allFormats = new Set<string>();
+    const sectionConsistent = (entries: { startDate: string; endDate: string }[]) => {
+        const formats = new Set<string>();
+        for (const e of entries) {
+            for (const d of [e.startDate, e.endDate]) {
+                const f = classifyDate(d);
+                if (!f) continue;
+                if (f === 'no-year') { noYearDates.push(d.trim()); continue; }
+                formats.add(f);
+                allFormats.add(f);
+            }
         }
-    }
+        return formats.size <= 1;
+    };
+    const expConsistent = sectionConsistent(data.experience || []);
+    const eduConsistent = sectionConsistent(data.education || []);
 
     return {
         bulletCount: bullets.length,
@@ -106,8 +129,9 @@ export function computeWritingMetrics(data: ResumeData): WritingMetrics {
         avgBulletWords: bullets.length ? Math.round(wordSum / bullets.length) : 0,
         longBulletCount: longBullets,
         totalWords,
-        dateFormats: [...formats],
-        dateConsistent: formats.size <= 1,
+        dateFormats: [...allFormats],
+        dateConsistent: expConsistent && eduConsistent,
+        noYearDates,
     };
 }
 
@@ -158,7 +182,8 @@ export function scoreCategories(w: WritingMetrics, s: StructureMetrics) {
     let style = 100;
     style -= Math.min(30, w.firstPersonCount * 6);
     style -= Math.min(30, w.weakOpenerCount * 6);
-    if (!w.dateConsistent) style -= 15;
+    if (!w.dateConsistent) style -= 8;                       // soft: mixed styles within a section
+    style -= Math.min(15, w.noYearDates.length * 5);         // hard: dates an ATS can't parse at all
     style = Math.max(0, Math.min(100, style));
 
     // Structure: essential sections present

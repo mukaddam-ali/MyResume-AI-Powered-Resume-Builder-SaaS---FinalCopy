@@ -91,7 +91,8 @@ export async function POST(req: Request) {
         }
         if (writing.firstPersonCount > 0) red_flags.push(`${writing.firstPersonCount} bullet(s) use first-person pronouns ("I", "my") — resume convention omits them.`);
         if (writing.weakOpenerCount > 0) feedback.push(`${writing.weakOpenerCount} bullet(s) open with weak phrasing ("responsible for", "helped") — lead with an action verb instead.`);
-        if (!writing.dateConsistent) red_flags.push(`Mixed date formats detected (${writing.dateFormats.join(' vs ')}) — pick one style for clean ATS date parsing.`);
+        if (writing.noYearDates.length > 0) red_flags.push(`Date(s) missing a year: ${writing.noYearDates.map(d => `"${d}"`).join(', ')} — an ATS can't place these on a timeline. Add the year (e.g. "May 2025").`);
+        if (!writing.dateConsistent) feedback.push(`Mixed date formats within the same section (${writing.dateFormats.join(' vs ')}) — using one style per section helps ATS date parsing. ("Present" and "Expected 2027" are always fine.)`);
         if (!structure.hasSummary) feedback.push('Add a professional summary — parsers and recruiters both key off it.');
         if (structure.skillCount < 5 && structure.skillCount > 0) feedback.push('Fewer than 5 skills listed — keyword matching is where ATS ranking happens.');
 
