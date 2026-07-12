@@ -51,3 +51,12 @@ z_ai_prompt.md
 
 # Local Netlify folder
 .netlify
+
+# personal test data & local logs — never commit
+*.pdf
+build_errors.txt
+build_output_new.txt
+test-pdf.js
+test_pdf.mjs
+deploy_instruction.md
+!public/**/*.pdf

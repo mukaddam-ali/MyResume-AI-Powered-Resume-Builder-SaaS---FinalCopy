@@ -32,6 +32,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return createBrowserClient();
     }, [supabaseConfigured]);
 
+    // Server is the source of truth for tier: /api/me reads public.profiles,
+    // which only the payment webhook / verified-payment route can change.
+    const refreshTierFromServer = async () => {
+        try {
+            const res = await fetch('/api/me');
+            if (!res.ok) return;
+            const { tier } = await res.json();
+            const store = (await import('@/store/useResumeStore')).useResumeStore;
+            store.getState().setUserTier(tier === 'pro' ? 'pro' : 'free');
+        } catch {
+            // Offline — keep the cached local tier
+        }
+    };
+
     useEffect(() => {
         let active = true;
         let unsubscribeStore: (() => void) | null = null;
@@ -62,6 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setSession(session);
                 setUser(session?.user ?? null);
                 setLoading(false);
+                if (session?.user) refreshTierFromServer();
             }).catch((err) => {
                 console.warn('Supabase getSession failed (server may be unreachable):', err);
                 setLoading(false);
@@ -74,6 +89,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setSession(session);
                 setUser(session?.user ?? null);
                 setLoading(false);
+                if (session?.user) {
+                    refreshTierFromServer();
+                } else if (_event === 'SIGNED_OUT') {
+                    // Tier is account-bound — never carry Pro across sign-out
+                    import('@/store/useResumeStore').then((m) =>
+                        m.useResumeStore.getState().setUserTier('free')
+                    );
+                }
             });
             subscription = sub;
         }, 100);

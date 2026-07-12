@@ -1,10 +1,18 @@
 import { createGroq } from "@ai-sdk/groq";
 import { generateText } from "ai";
 import { NextResponse } from "next/server";
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+    const limit = rateLimit(`ai-generate:${getClientIp(req)}`, 10, 60_000);
+    if (!limit.allowed) return rateLimitResponse(limit);
+
     try {
         const { type, title, context } = await req.json();
+
+        if (typeof title !== 'string' || title.length > 300 || (context && (typeof context !== 'string' || context.length > 2000))) {
+            return NextResponse.json({ error: "Invalid input" }, { status: 400 });
+        }
 
         if (!process.env.GROQ_API_KEY) {
             return NextResponse.json(

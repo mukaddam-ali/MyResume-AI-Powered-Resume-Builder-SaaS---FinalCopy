@@ -63,15 +63,10 @@ export async function middleware(request: NextRequest) {
         }
     });
 
-    // Refresh user session — wrapped in timeout so a slow/offline Supabase
-    // doesn't block every page load
+    // Refresh user session — the client's fetch wrapper above enforces a
+    // 2s timeout so a slow/offline Supabase doesn't block page loads
     try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 3000);
-
         await supabase.auth.getUser();
-
-        clearTimeout(timeout);
     } catch (error: any) {
         // Network errors or aborted fetches are expected in dev/offline mode
         if (error?.name !== 'AbortError') {

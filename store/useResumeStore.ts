@@ -77,6 +77,18 @@ export interface CustomSection {
     items: CustomSectionItem[];
 }
 
+export interface ResumeVariant {
+    id: string;
+    name: string; // e.g. "Frontend Dev", "PM Role"
+    hiddenItems: {
+        experience: string[]; // IDs of hidden experience entries
+        education: string[];  // IDs of hidden education entries
+        projects: string[];   // IDs of hidden projects
+        skills: string[];     // Skill strings to hide
+    };
+    createdAt: number;
+}
+
 export interface ResumeData {
     id: string;
     name: string;
@@ -99,6 +111,10 @@ export interface ResumeData {
     sectionScales?: Record<string, number>;
     isPublic?: boolean; // New: template visibility - defaults to false (private)
     hideBranding?: boolean; // Pro feature: hide "Powered by MyResume" branding
+
+    // Multi-Variant support
+    variants?: ResumeVariant[];
+    activeVariantId?: string | null; // null = "Master" (show all)
 }
 
 
@@ -142,8 +158,12 @@ interface ResumeState {
     //Multi-resume state
     resumes: Record<string, ResumeData>;
     activeResumeId: string | null;
-    userTier: UserTier; // Global user state
+    userTier: UserTier; // Cached from the server (/api/me); server is the source of truth
     setUserTier: (tier: UserTier) => void;
+
+    // Tombstones: resumes deleted locally that must not be resurrected by
+    // loadFromCloud's merge (e.g. delete happened while offline/logged out)
+    deletedResumeIds: string[];
 
     syncStatus: 'idle' | 'syncing' | 'synced' | 'error';
     lastSyncError: string | null;
@@ -206,7 +226,7 @@ interface ResumeState {
     resetResume: (id: string) => void;
 
     // Cloud Sync Actions
-    syncToCloud: (userId: string) => Promise<void>;
+    syncToCloud: (userId: string, resumeId?: string) => Promise<void>;
     loadFromCloud: (userId: string) => Promise<void>;
     setSyncStatus: (status: 'idle' | 'syncing' | 'synced' | 'error', error?: string) => void;
 
@@ -215,11 +235,23 @@ interface ResumeState {
     copyResumeTemplate: (sourceResumeId: string) => string | null;
     getPublicResumes: () => ResumeData[];
 
+    // Variant Management Actions
+    addVariant: (resumeId: string, name: string) => void;
+    removeVariant: (resumeId: string, variantId: string) => void;
+    setActiveVariant: (resumeId: string, variantId: string | null) => void;
+    toggleVariantItemVisibility: (resumeId: string, variantId: string, section: 'experience' | 'education' | 'projects' | 'skills', itemId: string) => void;
+    renameVariant: (resumeId: string, variantId: string, name: string) => void;
+
     // Dev/Test
     loadExampleData: () => void;
 }
 
-const generateId = () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+// Cryptographically random IDs — resume IDs become public portfolio URLs
+// (/p/{id}), so they must not be guessable.
+const generateId = () =>
+    typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 
 export const useResumeStore = create<ResumeState>()(
     persist(
@@ -227,6 +259,7 @@ export const useResumeStore = create<ResumeState>()(
             userTier: 'free', // Default to free
             resumes: {},
             activeResumeId: null,
+            deletedResumeIds: [],
             syncStatus: 'idle',
             lastSyncError: null,
             atsAnalysisCache: {},
@@ -712,7 +745,7 @@ export const useResumeStore = create<ResumeState>()(
 
             // --- Management Actions ---
             addResume: (name) => set((state) => {
-                const id = Math.random().toString(36).substring(2, 9);
+                const id = generateId();
                 const newResume: ResumeData = {
                     id,
                     name,
@@ -773,19 +806,10 @@ export const useResumeStore = create<ResumeState>()(
                 // If resume was public, unpublish it from database first
                 if (resume?.isPublic) {
                     try {
-                        let clientId = localStorage.getItem('client-id');
-                        if (!clientId) {
-                            clientId = crypto.randomUUID();
-                            localStorage.setItem('client-id', clientId);
-                        }
-
                         await fetch('/api/templates/unpublish', {
                             method: 'DELETE',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                resumeId: id,
-                                userId: clientId
-                            })
+                            body: JSON.stringify({ resumeId: id })
                         });
                     } catch (error) {
                         console.error('Error unpublishing template on delete:', error);
@@ -793,24 +817,26 @@ export const useResumeStore = create<ResumeState>()(
                     }
                 }
 
-                // Delete from cloud (Supabase) so it doesn't come back on next loadFromCloud
+                // Delete from cloud. If it fails (offline, logged out), keep a
+                // tombstone so loadFromCloud doesn't resurrect the resume later.
+                let cloudDeleted = false;
                 try {
-                    await fetch(`/api/resumes/${id}`, {
-                        method: 'DELETE',
-                    });
+                    const res = await fetch(`/api/resumes/${id}`, { method: 'DELETE' });
+                    cloudDeleted = res.ok;
                 } catch (error) {
                     console.error('Error deleting resume from cloud:', error);
-                    // Continue with local deletion even if cloud deletion fails
                 }
 
-                // Delete from local store
                 set((state) => {
                     const newResumes = { ...state.resumes };
                     delete newResumes[id];
                     const activeId = state.activeResumeId === id
                         ? (Object.keys(newResumes)[0] || null)
                         : state.activeResumeId;
-                    return { resumes: newResumes, activeResumeId: activeId };
+                    const tombstones = cloudDeleted
+                        ? state.deletedResumeIds.filter(t => t !== id)
+                        : Array.from(new Set([...state.deletedResumeIds, id]));
+                    return { resumes: newResumes, activeResumeId: activeId, deletedResumeIds: tombstones };
                 });
             },
 
@@ -880,13 +906,30 @@ export const useResumeStore = create<ResumeState>()(
             }),
 
             // --- Cloud Sync Actions ---
-            syncToCloud: async (userId: string) => {
+            syncToCloud: async (userId: string, resumeId?: string) => {
                 const state = get();
                 set({ syncStatus: 'syncing' });
 
                 try {
-                    // Sync all resumes to cloud
-                    const resumePromises = Object.values(state.resumes).map(async (resume) => {
+                    // Retry any pending tombstoned deletions first
+                    const tombstones = state.deletedResumeIds;
+                    for (const deletedId of tombstones) {
+                        try {
+                            const res = await fetch(`/api/resumes/${deletedId}`, { method: 'DELETE' });
+                            if (res.ok) {
+                                set((s) => ({ deletedResumeIds: s.deletedResumeIds.filter(t => t !== deletedId) }));
+                            }
+                        } catch {
+                            // Still offline — keep the tombstone for next time
+                        }
+                    }
+
+                    // Sync one resume (autosave) or all of them (login/full sync)
+                    const toSync = resumeId && state.resumes[resumeId]
+                        ? [state.resumes[resumeId]]
+                        : Object.values(state.resumes);
+
+                    const resumePromises = toSync.map(async (resume) => {
                         const response = await fetch(`/api/resumes/${resume.id}`, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
@@ -898,7 +941,7 @@ export const useResumeStore = create<ResumeState>()(
 
                         if (response.status === 404 || response.status === 406) {
                             // Resume truly doesn't exist in cloud yet — create it
-                            await fetch('/api/resumes', {
+                            const created = await fetch('/api/resumes', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
@@ -906,6 +949,13 @@ export const useResumeStore = create<ResumeState>()(
                                     data: resume,
                                 }),
                             });
+                            // 409 = row already exists (concurrent create) — fine
+                            if (!created.ok && created.status !== 409) {
+                                throw new Error('Failed to save resume to cloud');
+                            }
+                        } else if (!response.ok) {
+                            const body = await response.json().catch(() => null);
+                            throw new Error(body?.error || 'Failed to save resume to cloud');
                         }
                     });
 
@@ -929,8 +979,12 @@ export const useResumeStore = create<ResumeState>()(
                         // Build a de-duplicated map from cloud data:
                         // If multiple rows share the same data.id (old duplicate bug),
                         // keep only the one with the latest last_modified.
+                        const deletedIds = new Set(get().deletedResumeIds);
                         const cloudMap: Record<string, ResumeData> = {};
                         cloudResumes.forEach((r: any) => {
+                            // Skip resumes deleted locally but not yet deleted in
+                            // the cloud (tombstoned) — don't resurrect them
+                            if (deletedIds.has(r.data.id)) return;
                             const existing = cloudMap[r.data.id];
                             if (!existing || r.data.lastModified > existing.lastModified) {
                                 cloudMap[r.data.id] = r.data;
@@ -981,13 +1035,6 @@ export const useResumeStore = create<ResumeState>()(
 
                 const newIsPublic = !resume.isPublic;
 
-                // Generate or retrieve a client-side user ID (for API tracking)
-                let clientId = localStorage.getItem('client-id');
-                if (!clientId) {
-                    clientId = crypto.randomUUID();
-                    localStorage.setItem('client-id', clientId);
-                }
-
                 // Optimistically update local state
                 set((state) => ({
                     resumes: {
@@ -1009,11 +1056,13 @@ export const useResumeStore = create<ResumeState>()(
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 resumeId,
-                                resumeData: resume,
-                                userId: clientId
+                                resumeData: resume
                             })
                         });
 
+                        if (response.status === 401) {
+                            throw new Error('Sign in to publish your resume publicly.');
+                        }
                         if (!response.ok) {
                             throw new Error('Failed to publish template');
                         }
@@ -1022,10 +1071,7 @@ export const useResumeStore = create<ResumeState>()(
                         const response = await fetch('/api/templates/unpublish', {
                             method: 'DELETE',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                resumeId,
-                                userId: clientId
-                            })
+                            body: JSON.stringify({ resumeId })
                         });
 
                         if (!response.ok) {
@@ -1034,7 +1080,7 @@ export const useResumeStore = create<ResumeState>()(
                     }
                 } catch (error) {
                     console.error('Error syncing template visibility:', error);
-                    // Revert on error
+                    // Revert on error and tell the user why
                     set((state) => ({
                         resumes: {
                             ...state.resumes,
@@ -1045,6 +1091,9 @@ export const useResumeStore = create<ResumeState>()(
                             }
                         }
                     }));
+                    if (typeof window !== 'undefined') {
+                        alert((error as Error).message || 'Could not update visibility. Please try again.');
+                    }
                 }
             },
 
@@ -1079,6 +1128,97 @@ export const useResumeStore = create<ResumeState>()(
                 const state = get();
                 return Object.values(state.resumes).filter(resume => resume.isPublic === true);
             },
+
+            // --- Variant Management Actions ---
+            addVariant: (resumeId, name) => set((state) => {
+                const resume = state.resumes[resumeId];
+                if (!resume) return {};
+                const newVariant: ResumeVariant = {
+                    id: Math.random().toString(36).substring(2, 9),
+                    name,
+                    hiddenItems: { experience: [], education: [], projects: [], skills: [] },
+                    createdAt: Date.now(),
+                };
+                return {
+                    resumes: {
+                        ...state.resumes,
+                        [resumeId]: {
+                            ...resume,
+                            variants: [...(resume.variants || []), newVariant],
+                            activeVariantId: newVariant.id,
+                            lastModified: Date.now(),
+                        }
+                    }
+                };
+            }),
+
+            removeVariant: (resumeId, variantId) => set((state) => {
+                const resume = state.resumes[resumeId];
+                if (!resume) return {};
+                const remaining = (resume.variants || []).filter(v => v.id !== variantId);
+                return {
+                    resumes: {
+                        ...state.resumes,
+                        [resumeId]: {
+                            ...resume,
+                            variants: remaining,
+                            activeVariantId: resume.activeVariantId === variantId ? null : resume.activeVariantId,
+                            lastModified: Date.now(),
+                        }
+                    }
+                };
+            }),
+
+            setActiveVariant: (resumeId, variantId) => set((state) => {
+                const resume = state.resumes[resumeId];
+                if (!resume) return {};
+                return {
+                    resumes: {
+                        ...state.resumes,
+                        [resumeId]: { ...resume, activeVariantId: variantId, lastModified: Date.now() }
+                    }
+                };
+            }),
+
+            toggleVariantItemVisibility: (resumeId, variantId, section, itemId) => set((state) => {
+                const resume = state.resumes[resumeId];
+                if (!resume) return {};
+                const variants = (resume.variants || []).map(v => {
+                    if (v.id !== variantId) return v;
+                    const hiddenList = v.hiddenItems[section] || [];
+                    const isHidden = hiddenList.includes(itemId);
+                    return {
+                        ...v,
+                        hiddenItems: {
+                            ...v.hiddenItems,
+                            [section]: isHidden
+                                ? hiddenList.filter(id => id !== itemId)
+                                : [...hiddenList, itemId],
+                        }
+                    };
+                });
+                return {
+                    resumes: {
+                        ...state.resumes,
+                        [resumeId]: { ...resume, variants, lastModified: Date.now() }
+                    }
+                };
+            }),
+
+            renameVariant: (resumeId, variantId, name) => set((state) => {
+                const resume = state.resumes[resumeId];
+                if (!resume) return {};
+                return {
+                    resumes: {
+                        ...state.resumes,
+                        [resumeId]: {
+                            ...resume,
+                            variants: (resume.variants || []).map(v => v.id === variantId ? { ...v, name } : v),
+                            lastModified: Date.now(),
+                        }
+                    }
+                };
+            }),
 
             loadExampleData: () => set((state) => {
                 const activeId = state.activeResumeId;

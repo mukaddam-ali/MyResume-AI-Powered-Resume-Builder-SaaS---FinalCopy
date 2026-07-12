@@ -3,12 +3,16 @@ import { renderToBuffer } from '@react-pdf/renderer';
 import { ResumeDocument } from '@/components/preview/ResumeDocument';
 import { registerServerFonts } from '@/lib/fonts-server';
 import { normalizeResumeData } from '@/lib/normalizeResume';
+import { getUserAndTier } from '@/lib/entitlements-server';
+import { rateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
 
 export async function POST(req: NextRequest) {
+    const limit = rateLimit(`export-pdf:${getClientIp(req)}`, 20, 60_000);
+    if (!limit.allowed) return rateLimitResponse(limit);
+
     try {
         const data = await req.json();
 
-        // Validate data exists
         if (!data) {
             return NextResponse.json({
                 error: 'Invalid request',
@@ -19,12 +23,9 @@ export async function POST(req: NextRequest) {
         // Normalize data for React-PDF safety (prevents null.props crashes)
         const normalizedData = normalizeResumeData(data);
 
-        // Dev-only validation
-        if (process.env.NODE_ENV === 'development') {
-            if (!Array.isArray(normalizedData.skills)) {
-                throw new Error('Skills must be an array after normalization');
-            }
-        }
+        // Tier comes from the server-side profile, never from the request —
+        // it controls whether the branding footer can be hidden.
+        const { tier } = await getUserAndTier();
 
         // Register fonts before rendering
         try {
@@ -34,17 +35,7 @@ export async function POST(req: NextRequest) {
             // Continue anyway - we have Helvetica as absolute fallback
         }
 
-        console.log("PDF Export Request:");
-        console.log(" - Template:", normalizedData.selectedTemplate);
-        console.log(" - Font:", normalizedData.fontFamily);
-        console.log(" - Info:", normalizedData.personalInfo?.fullName);
-        console.log(" - Has Education:", Array.isArray(normalizedData.education), `(${normalizedData.education.length} items)`);
-        console.log(" - Has Experience:", Array.isArray(normalizedData.experience), `(${normalizedData.experience.length} items)`);
-        console.log(" - Has Projects:", Array.isArray(normalizedData.projects), `(${normalizedData.projects.length} items)`);
-        console.log(" - Skills:", Array.isArray(normalizedData.skills), `(${normalizedData.skills.length} items)`);
-
-        // Generate PDF on server with normalized data
-        const buffer = await renderToBuffer(<ResumeDocument data={normalizedData} userTier="pro" />);
+        const buffer = await renderToBuffer(<ResumeDocument data={normalizedData} userTier={tier} />);
 
         return new NextResponse(new Uint8Array(buffer), {
             headers: {
@@ -54,26 +45,11 @@ export async function POST(req: NextRequest) {
         });
     } catch (error) {
         const err = error as Error;
-        console.error("PDF Export Error:", err.message);
-        console.error("Error name:", err.name);
-        console.error("Error stack:", err.stack);
-
-        // Extract font information from the error if available
-        const errorMessage = err.message || 'Unknown error occurred during PDF generation';
-        const isFontError = errorMessage.toLowerCase().includes('font') ||
-            errorMessage.toLowerCase().includes('cannot read properties of null');
+        console.error("PDF Export Error:", err.message, err.stack);
 
         return NextResponse.json({
             error: 'Failed to generate PDF',
-            details: errorMessage,
-            name: err.name || 'Error',
-            isFontError,
-            stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
-            debug: {
-                cwd: process.cwd(),
-                fontsDirExists: require('fs').existsSync(require('path').join(process.cwd(), 'public', 'fonts')),
-                filesInFonts: require('fs').existsSync(require('path').join(process.cwd(), 'public', 'fonts')) ? require('fs').readdirSync(require('path').join(process.cwd(), 'public', 'fonts')).slice(0, 5) : []
-            }
+            details: process.env.NODE_ENV === 'development' ? err.message : 'PDF rendering failed. Please try again.',
         }, { status: 500 });
     }
 }

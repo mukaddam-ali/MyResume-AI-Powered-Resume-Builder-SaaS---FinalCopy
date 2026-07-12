@@ -2,11 +2,13 @@
 import React, { useState } from "react";
 import { useResumeStore } from "@/store/useResumeStore";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Sparkles, Loader2 } from "lucide-react";
+import { Plus, Trash2, Sparkles, Loader2, TrendingUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RichTextarea } from '@/components/ui/rich-textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MetricsUpgradeModal } from "@/components/editor/MetricsUpgradeModal";
+import { useAuth } from "@/lib/auth-context";
 
 import {
     DndContext,
@@ -36,6 +38,8 @@ export function ExperienceForm() {
     const updateExperience = useResumeStore((state) => state.updateExperience);
     const reorderItems = useResumeStore((state) => state.reorderItems);
     const [isGenerating, setIsGenerating] = useState<string | null>(null);
+    const [metricsModalExp, setMetricsModalExp] = useState<{ id: string; description: string } | null>(null);
+    const { isPremium } = useAuth();
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -181,22 +185,47 @@ export function ExperienceForm() {
                                             </div>
                                             <div className="space-y-2 md:col-span-2">
                                                 <div className="grid gap-2">
-                                                    <div className="flex justify-between items-center">
+                                                    <div className="flex justify-between items-center flex-wrap gap-1">
                                                         <Label htmlFor={`description-${exp.id}`}>Description</Label>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="h-6 text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-                                                            onClick={() => handleGenerateAI(exp.id, exp.role, exp.company)}
-                                                            disabled={isGenerating === exp.id}
-                                                        >
-                                                            {isGenerating === exp.id ? (
-                                                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                                            ) : (
-                                                                <Sparkles className="h-3 w-3 mr-1" />
-                                                            )}
-                                                            {isGenerating === exp.id ? "Writing..." : "Auto-Write with AI"}
-                                                        </Button>
+                                                        <div className="flex gap-1">
+                                                            {/* Upgrade Metrics (PRO) */}
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-6 text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/30 gap-1"
+                                                                onClick={() => {
+                                                                    if (!isPremium) {
+                                                                        alert("📊 AI Metrics Upgrader is a PRO feature. Upgrade to transform vague bullets into impact-driven achievements!");
+                                                                        return;
+                                                                    }
+                                                                    if (!exp.description.trim()) {
+                                                                        alert("Please add some description first before upgrading metrics.");
+                                                                        return;
+                                                                    }
+                                                                    setMetricsModalExp({ id: exp.id, description: exp.description });
+                                                                }}
+                                                                title={isPremium ? "AI Metrics Upgrader" : "PRO: AI Metrics Upgrader"}
+                                                            >
+                                                                <TrendingUp className="h-3 w-3" />
+                                                                Upgrade Metrics
+                                                                {!isPremium && <span className="text-[9px] px-1 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/50 font-bold">PRO</span>}
+                                                            </Button>
+                                                            {/* Auto-Write with AI */}
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-6 text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                                                                onClick={() => handleGenerateAI(exp.id, exp.role, exp.company)}
+                                                                disabled={isGenerating === exp.id}
+                                                            >
+                                                                {isGenerating === exp.id ? (
+                                                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                                                ) : (
+                                                                    <Sparkles className="h-3 w-3 mr-1" />
+                                                                )}
+                                                                {isGenerating === exp.id ? "Writing..." : "Auto-Write with AI"}
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                     <RichTextarea // Replaced Textarea with RichTextarea
                                                         id={`description-${exp.id}`}
@@ -215,6 +244,19 @@ export function ExperienceForm() {
                     </div>
                 </SortableContext>
             </DndContext>
+
+            {/* AI Metrics Upgrade Modal */}
+            {metricsModalExp && (
+                <MetricsUpgradeModal
+                    open={!!metricsModalExp}
+                    onClose={() => setMetricsModalExp(null)}
+                    description={metricsModalExp.description}
+                    onAccept={(upgraded) => {
+                        updateExperience(metricsModalExp.id, { description: upgraded });
+                        setMetricsModalExp(null);
+                    }}
+                />
+            )}
         </div>
     );
 }

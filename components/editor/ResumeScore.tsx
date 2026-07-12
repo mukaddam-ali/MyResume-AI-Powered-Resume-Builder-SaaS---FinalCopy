@@ -25,6 +25,8 @@ export function ResumeScore() {
     const activeResume = activeResumeId ? resumes[activeResumeId] : null;
     const [loading, setLoading] = React.useState(false);
     const [isExpanded, setIsExpanded] = React.useState(true);
+    const [jobDescription, setJobDescription] = React.useState('');
+    const [showJdInput, setShowJdInput] = React.useState(false);
 
     // Get analysis data directly from the active resume in the store
     // This ensures persistence across edits and reloads
@@ -114,8 +116,8 @@ export function ResumeScore() {
         if (isPremium) {
             // Premium: AI-powered analysis
             try {
-                // Generate hash for caching
-                const cacheKey = simpleHash(JSON.stringify(activeResume));
+                // Generate hash for caching (job description changes the result)
+                const cacheKey = simpleHash(JSON.stringify(activeResume) + jobDescription.trim());
 
                 // Check cache first
                 const cachedResult = getAnalysisCache(cacheKey);
@@ -142,7 +144,8 @@ export function ResumeScore() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        resumeData: filteredResume
+                        resumeData: filteredResume,
+                        jobDescription: jobDescription.trim() || undefined
                     })
                 });
                 const data = await response.json();
@@ -214,7 +217,29 @@ export function ResumeScore() {
                             : "Scan your resume to check completeness and section scores."}
                     </p>
 
-
+                    {/* Job description tailoring (premium) */}
+                    {isPremium && (
+                        <div className="space-y-2">
+                            <button
+                                onClick={() => setShowJdInput(!showJdInput)}
+                                className="text-xs font-medium text-primary hover:underline flex items-center gap-1"
+                                aria-expanded={showJdInput}
+                            >
+                                {showJdInput ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                {jobDescription.trim() ? "Tailoring to a job description ✓" : "Tailor to a specific job (paste description)"}
+                            </button>
+                            {showJdInput && (
+                                <textarea
+                                    value={jobDescription}
+                                    onChange={(e) => setJobDescription(e.target.value.slice(0, 5000))}
+                                    placeholder="Paste the job description here — the analysis will score keyword match and relevance against this specific role."
+                                    rows={5}
+                                    className="w-full text-sm p-3 rounded-md border bg-background resize-y focus:outline-none focus:ring-2 focus:ring-primary/40"
+                                    aria-label="Job description to tailor the analysis to"
+                                />
+                            )}
+                        </div>
+                    )}
 
                     {/* Universal ATS Analysis Button */}
                     <button

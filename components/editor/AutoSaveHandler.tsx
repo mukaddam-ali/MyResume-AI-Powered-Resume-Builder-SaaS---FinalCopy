@@ -37,10 +37,11 @@ export function AutoSaveHandler() {
             setSyncStatus('idle'); // Indicate changes are pending
         }
 
-        // Debounce sync
+        // Debounce sync — only the resume being edited, not the whole library
+        const resumeId = activeResume.id;
         timeoutRef.current = setTimeout(() => {
             pendingSyncRef.current = false;
-            syncToCloud(user.id);
+            syncToCloud(user.id, resumeId);
         }, AUTOSAVE_DELAY);
 
         return () => {
@@ -50,7 +51,7 @@ export function AutoSaveHandler() {
             // If there are unsaved changes when navigating away, sync immediately
             if (pendingSyncRef.current && user) {
                 pendingSyncRef.current = false;
-                syncToCloud(user.id);
+                syncToCloud(user.id, resumeId);
             }
         };
     }, [activeResume, user, syncToCloud, setSyncStatus]);

@@ -18,7 +18,36 @@ const PREMIUM_FONTS = ['nunito', 'merriweather', 'librebaskerville'];
 
 export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
     const { isPremium } = useAuth();
-    const { personalInfo, education, experience, projects, skills, selectedTemplate, themeColor: customThemeColor, contentScale = 1, fontFamily: fontId = 'roboto', sectionScales, sectionTitles = {} } = data;
+
+    // --- VARIANT FILTERING ---
+    // If an activeVariantId is set, filter items based on that variant's hiddenItems
+    const activeVariantId = data.activeVariantId ?? null;
+    const activeVariant = activeVariantId
+        ? (data.variants || []).find(v => v.id === activeVariantId) ?? null
+        : null;
+
+    const filteredExperience = activeVariant
+        ? (data.experience || []).filter(e => !activeVariant.hiddenItems.experience?.includes(e.id))
+        : (data.experience || []);
+
+    const filteredEducation = activeVariant
+        ? (data.education || []).filter(e => !activeVariant.hiddenItems.education?.includes(e.id))
+        : (data.education || []);
+
+    const filteredProjects = activeVariant
+        ? (data.projects || []).filter(p => !activeVariant.hiddenItems.projects?.includes(p.id))
+        : (data.projects || []);
+
+    const filteredSkills = activeVariant
+        ? (data.skills || []).filter(s => !activeVariant.hiddenItems.skills?.includes(s))
+        : (data.skills || []);
+
+    const { personalInfo, selectedTemplate, themeColor: customThemeColor, contentScale = 1, fontFamily: fontId = 'roboto', sectionScales, sectionTitles = {} } = data;
+    // Use filtered versions
+    const education = filteredEducation;
+    const experience = filteredExperience;
+    const projects = filteredProjects;
+    const skills = filteredSkills;
 
     // Map font IDs to CSS font family values
     const FONT_FAMILY_MAP: Record<string, string> = {
@@ -281,7 +310,7 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                                         <h4 className="font-bold">{proj.name}</h4>
                                     </div>
                                     {proj.technologies && (
-                                        <div className="mt-1 mb-1">
+                                        <div className="mt-1 mb-3">
                                             <span className="text-[10px] font-semibold bg-gray-100 px-1.5 py-0.5 rounded text-gray-700 inline-block">
                                                 {proj.technologies}
                                             </span>
@@ -303,7 +332,7 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                             <div className="grid grid-cols-1 gap-4">
                                 {projects.map(proj => (
                                     <div key={proj.id} className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                                        <div className="mb-2">
+                                        <div className="mb-4">
                                             <h4 className="font-bold text-gray-900">{proj.name}</h4>
                                             {proj.technologies && (
                                                 <div className="mt-1.5">
@@ -347,7 +376,7 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                                             <h4 className="font-bold text-gray-800">{proj.name}</h4>
                                         </div>
                                         {proj.technologies && (
-                                            <div className="mb-2 mt-0.5">
+                                            <div className="mb-4 mt-0.5">
                                                 <span className="text-[10px] bg-white border border-gray-200 px-2 py-0.5 rounded text-gray-500 inline-block">
                                                     {proj.technologies}
                                                 </span>
@@ -385,7 +414,7 @@ export default function LiveResume({ data, scale = 1 }: LiveResumeProps) {
                                         )}
                                     </div>
                                     {proj.technologies && (
-                                        <div className="text-xs text-gray-600 italic mb-1">
+                                        <div className="text-xs text-gray-600 italic mb-3">
                                             {proj.technologies}
                                         </div>
                                     )}

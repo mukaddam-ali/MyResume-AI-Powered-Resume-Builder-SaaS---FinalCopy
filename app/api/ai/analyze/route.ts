@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createGroq } from "@ai-sdk/groq";
 import { generateText } from "ai";
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
 
 /**
  * Optimize resume data to reduce token usage
@@ -24,6 +25,9 @@ function optimizeResumeData(data: any) {
 }
 
 export async function POST(req: Request) {
+    const limit = rateLimit(`ai-analyze:${getClientIp(req)}`, 6, 60_000);
+    if (!limit.allowed) return rateLimitResponse(limit);
+
     try {
         const apiKey = process.env.GROQ_API_KEY;
 

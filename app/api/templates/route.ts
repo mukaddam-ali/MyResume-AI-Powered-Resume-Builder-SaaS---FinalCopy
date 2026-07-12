@@ -1,48 +1,82 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/lib/supabase';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-export async function GET() {
-    // Return empty list gracefully if Supabase is not configured
+const DEFAULT_PAGE_SIZE = 24;
+const MAX_PAGE_SIZE = 50;
+
+/**
+ * Strip anything personal from gallery listings. Published rows are already
+ * sanitized at publish time, but old rows may predate that fix — never trust
+ * stored data to be clean.
+ */
+function sanitizeGalleryData(resumeData: any) {
+    if (!resumeData || typeof resumeData !== 'object') return resumeData;
+    return {
+        ...resumeData,
+        analysisResult: null,
+        variants: undefined,
+        personalInfo: {
+            ...(resumeData.personalInfo || {}),
+            email: '',
+            phone: '',
+            linkedin: '',
+            website: '',
+            github: '',
+            location: resumeData.personalInfo?.location || '',
+            photo: undefined,
+            photoFilters: undefined,
+            socialMedia: undefined,
+        },
+    };
+}
+
+export async function GET(request: NextRequest) {
     if (!supabaseUrl || !supabaseKey) {
         return NextResponse.json({ templates: [] });
     }
 
+    const { searchParams } = new URL(request.url);
+    const page = Math.max(0, parseInt(searchParams.get('page') || '0', 10) || 0);
+    const pageSize = Math.min(
+        MAX_PAGE_SIZE,
+        Math.max(1, parseInt(searchParams.get('limit') || String(DEFAULT_PAGE_SIZE), 10) || DEFAULT_PAGE_SIZE)
+    );
+
     try {
         const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
-        // Fetch all public templates (RLS policy allows everyone to read)
-        const { data: rawData, error } = await supabase
+        const from = page * pageSize;
+        const { data: rawData, error, count } = await supabase
             .from('public_templates')
-            .select('*')
-            .order('created_at', { ascending: false });
+            .select('*', { count: 'exact' })
+            .order('created_at', { ascending: false })
+            .range(from, from + pageSize - 1);
 
         const data = rawData as any[] | null;
 
         if (error) {
-            console.warn('Error fetching templates (Supabase may be unavailable):', error);
+            console.warn('Error fetching templates:', error.message);
             return NextResponse.json({ templates: [] });
         }
 
-        // Transform to match expected format
         const templates = (data || []).map(row => ({
             id: row.id,
             resumeId: row.resume_id,
-            userId: row.user_id,
-            resumeData: row.resume_data,
+            resumeData: sanitizeGalleryData(row.resume_data),
             resumeName: row.resume_name,
             templateType: row.template_type,
             jobTitle: row.job_title,
             createdAt: row.created_at,
-            updatedAt: row.updated_at
+            updatedAt: row.updated_at,
         }));
 
-        return NextResponse.json({ templates });
+        return NextResponse.json({ templates, total: count ?? templates.length, page, pageSize });
     } catch (error) {
-        console.warn('Error in templates route (Supabase may be unreachable):', error);
+        console.warn('Error in templates route:', error);
         return NextResponse.json({ templates: [] });
     }
 }

@@ -130,9 +130,15 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 GEMINI_API_KEY=your-gemini-api-key
 GROQ_API_KEY=your-groq-api-key
 
-# Stripe
+# Stripe (test mode works — use pk_test_/sk_test_ keys)
 STRIPE_SECRET_KEY=sk_test_...
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+# Required for webhook-driven Pro upgrades (Stripe dashboard -> Webhooks)
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Supabase service role (server-only!) — required to grant Pro after payment.
+# Found in Supabase dashboard -> Settings -> API. NEVER expose to the client.
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
 ### 4. Set Up the Database
@@ -140,29 +146,21 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 Run the SQL migrations in your Supabase SQL editor:
 
 ```bash
-# Found in /supabase/migrations/
+# Found in /supabase/migrations/ — run them in order:
 001_create_public_templates.sql
 20240523000000_feedback_schema.sql
+002_entitlements_and_fixes.sql   # profiles (tier), resumes table, RLS fixes
 ```
 
-Also create a `resumes` table:
+`002_entitlements_and_fixes.sql` creates the `resumes` table, the `profiles`
+table (server-side source of truth for free/pro tier), and fixes the feedback
+admin policies — no manual SQL needed beyond running the migrations.
 
-```sql
-CREATE TABLE resumes (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  name TEXT NOT NULL,
-  data JSONB NOT NULL,
-  last_modified TIMESTAMPTZ DEFAULT NOW(),
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-ALTER TABLE resumes ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can manage their own resumes"
-  ON resumes FOR ALL
-  USING (auth.uid() = user_id);
-```
+To receive Pro upgrades automatically, add a Stripe webhook (test mode is fine)
+pointing to `https://your-domain/api/stripe/webhook` for the
+`payment_intent.succeeded` event, and put its signing secret in
+`STRIPE_WEBHOOK_SECRET`. The app also verifies payments synchronously via
+`/api/stripe/verify-payment`, so upgrades work even before the webhook is set up.
 
 ### 5. Configure Supabase Auth
 

@@ -14,8 +14,14 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import CheckoutForm from "./CheckoutForm";
 import { Badge } from "@/components/ui/badge";
-import { Check, Zap, Shield, Sparkles } from "lucide-react";
+import { Check, Zap, Shield, Sparkles, LogIn } from "lucide-react";
 import { useResumeStore } from "@/store/useResumeStore";
+import { useAuth } from "@/lib/auth-context";
+
+// The local "instant upgrade" shortcut only exists in dev builds — in
+// production the only way to Pro is a server-verified payment.
+const IS_DEV = process.env.NODE_ENV === "development";
+const IS_STRIPE_TEST_MODE = (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "").startsWith("pk_test_");
 
 // NOTE: stripePromise is intentionally NOT initialized at module level.
 // Stripe.js (236 KiB) is deferred and only loaded when the user opens the
@@ -38,7 +44,9 @@ export default function UpgradeButton({
 }: UpgradeButtonProps) {
     const [open, setOpen] = useState(false);
     const [clientSecret, setClientSecret] = useState("");
+    const [intentError, setIntentError] = useState<string | null>(null);
     const { userTier, setUserTier } = useResumeStore();
+    const { user, signInWithGoogle } = useAuth();
 
     // Lazy Stripe: ref holds the promise once loaded; null until dialog first opens.
     const stripePromiseRef = useRef<ReturnType<typeof loadStripe> | null>(null);
@@ -58,17 +66,25 @@ export default function UpgradeButton({
             setStripeReady(true);
         }
 
-        // Fetch payment intent only if Stripe is configured
-        if (stripePromiseRef.current && userTier === 'free') {
+        // Fetch payment intent only if Stripe is configured and the user is
+        // signed in (purchases are linked to accounts server-side)
+        if (stripePromiseRef.current && userTier === 'free' && user) {
+            setIntentError(null);
             fetch("/api/create-payment-intent", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
             })
-                .then((res) => res.json())
-                .then((data) => setClientSecret(data.clientSecret))
-                .catch((error) => console.error("Error fetching payment intent:", error));
+                .then(async (res) => {
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || "Could not start checkout.");
+                    setClientSecret(data.clientSecret);
+                })
+                .catch((error) => {
+                    console.error("Error fetching payment intent:", error);
+                    setIntentError(error.message || "Could not start checkout.");
+                });
         }
-    }, [open, userTier]);
+    }, [open, userTier, user]);
 
     const stripePromise = stripeReady ? stripePromiseRef.current : null;
 
@@ -98,11 +114,12 @@ export default function UpgradeButton({
             <Button
                 variant={variant}
                 size={size}
-                className={`gap-2 shadow-lg hover:shadow-xl transition-shadow ${fullWidth ? 'w-full' : ''} ${className}`}
+                className={`gap-1 sm:gap-2 shadow-lg hover:shadow-xl transition-shadow ${fullWidth ? 'w-full' : ''} ${className}`}
                 onClick={() => setOpen(true)}
+                aria-label="Upgrade to Pro"
             >
-                <Star className="h-4 w-4 fill-current" />
-                {children || "Upgrade to Pro"}
+                <Star className="h-4 w-4 fill-current" aria-hidden="true" />
+                <span className="hidden sm:inline">{children || "Upgrade to Pro"}</span>
             </Button>
 
             <Dialog open={open} onOpenChange={setOpen}>
@@ -156,38 +173,70 @@ export default function UpgradeButton({
 
                         {/* Payment Section */}
                         <div className="border-t pt-6">
-                            {clientSecret && stripePromise ? (
+                            {!user && stripePromise ? (
+                                <div className="space-y-4">
+                                    <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                                        <p className="text-sm text-blue-800 dark:text-blue-200 text-center">
+                                            <Shield className="h-4 w-4 inline mr-1" />
+                                            Sign in first so Pro is saved to your account and works on all your devices.
+                                        </p>
+                                    </div>
+                                    <Button
+                                        onClick={() => signInWithGoogle()}
+                                        className="w-full"
+                                        size="lg"
+                                        variant="outline"
+                                    >
+                                        <LogIn className="h-4 w-4 mr-2" />
+                                        Sign in with Google to continue
+                                    </Button>
+                                </div>
+                            ) : clientSecret && stripePromise ? (
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                         <Shield className="h-4 w-4 text-green-600" />
-                                        <span>Secured by Stripe • Test Mode</span>
+                                        <span>Secured by Stripe{IS_STRIPE_TEST_MODE ? " • Test Mode" : ""}</span>
                                     </div>
                                     <Elements options={options} stripe={stripePromise}>
                                         <CheckoutForm onSuccess={() => setOpen(false)} />
                                     </Elements>
-                                    <p className="text-xs text-center text-muted-foreground">
-                                        Test card: 4242 4242 4242 4242 • Any future date • Any CVC
-                                    </p>
+                                    {IS_STRIPE_TEST_MODE && (
+                                        <p className="text-xs text-center text-muted-foreground">
+                                            Test card: 4242 4242 4242 4242 • Any future date • Any CVC
+                                        </p>
+                                    )}
                                 </div>
                             ) : !stripePromise ? (
-                                <div className="space-y-4">
-                                    <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-                                        <p className="text-sm text-amber-800 dark:text-amber-200 text-center mb-3">
-                                            <Shield className="h-4 w-4 inline mr-1" />
-                                            Payment system not configured. Use instant upgrade below.
+                                IS_DEV ? (
+                                    <div className="space-y-4">
+                                        <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                                            <p className="text-sm text-amber-800 dark:text-amber-200 text-center mb-3">
+                                                <Shield className="h-4 w-4 inline mr-1" />
+                                                Stripe not configured — dev-only instant upgrade below.
+                                            </p>
+                                        </div>
+                                        <Button
+                                            onClick={() => {
+                                                setUserTier('pro');
+                                                setOpen(false);
+                                            }}
+                                            className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700"
+                                            size="lg"
+                                        >
+                                            <Zap className="h-4 w-4 mr-2" />
+                                            Instant Upgrade (Dev Only)
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="bg-muted border rounded-lg p-4">
+                                        <p className="text-sm text-muted-foreground text-center">
+                                            Payments are temporarily unavailable. Please check back soon.
                                         </p>
                                     </div>
-                                    <Button
-                                        onClick={() => {
-                                            setUserTier('pro');
-                                            setOpen(false);
-                                        }}
-                                        className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700"
-                                        size="lg"
-                                    >
-                                        <Zap className="h-4 w-4 mr-2" />
-                                        Instant Upgrade (Test Mode)
-                                    </Button>
+                                )
+                            ) : intentError ? (
+                                <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                                    <p className="text-sm text-red-700 dark:text-red-300 text-center">{intentError}</p>
                                 </div>
                             ) : (
                                 <div className="flex justify-center py-8">

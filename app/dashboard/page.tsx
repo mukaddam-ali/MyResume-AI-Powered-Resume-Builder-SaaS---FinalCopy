@@ -11,7 +11,7 @@ import { motion } from "framer-motion";
 
 export default function DashboardPage() {
     const { resumes, addResume, deleteResume, duplicateResume, setActiveResume, loadFromCloud } = useResumeStore();
-    const { user, loading } = useAuth();
+    const { user, loading, isPremium } = useAuth();
     const router = useRouter();
     const [isLoadingData, setIsLoadingData] = useState(false);
 
@@ -76,8 +76,10 @@ export default function DashboardPage() {
                             <h2 className="text-2xl font-bold text-foreground">
                                 {user.user_metadata?.full_name || 'Guest User'}
                             </h2>
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
-                                Pro Plan
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isPremium
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                                : 'bg-muted text-muted-foreground'}`}>
+                                {isPremium ? 'Pro Plan' : 'Free Plan'}
                             </span>
                         </div>
                         <p className="text-muted-foreground">{user.email}</p>

@@ -2,13 +2,15 @@
 
 import { useResumeStore } from "@/store/useResumeStore";
 import { Button } from "@/components/ui/button";
-import { Loader2, Lock, AlertTriangle, ZoomIn, ZoomOut, Maximize2, Minus, Plus, RotateCcw, X } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { Loader2, AlertTriangle, Maximize2, Minus, Plus, RotateCcw, X, Flame } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Slider } from "@/components/ui/slider";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { DownloadResumeButton } from "./DownloadResumeButton";
+import { HeatmapOverlay } from "./HeatmapOverlay";
+import { useAuth } from "@/lib/auth-context";
 
 // Load UniversalPDFPreview - automatically detects browser and uses optimal renderer
 const UniversalPDFPreview = dynamic(() => import("./UniversalPDFPreview"), {
@@ -21,17 +23,14 @@ const UniversalPDFPreview = dynamic(() => import("./UniversalPDFPreview"), {
 });
 
 // Wrapper to handle SearchParams without Suspense boundary issues
-const URLParamsHandler = ({ setHasPaid, setShowCaution }: { setHasPaid: (val: boolean) => void, setShowCaution: (val: boolean) => void }) => {
+const URLParamsHandler = ({ setShowCaution }: { setShowCaution: (val: boolean) => void }) => {
     const searchParams = useSearchParams();
 
     useEffect(() => {
-        if (searchParams.get("success") === "true") {
-            setHasPaid(true);
-        }
         if (searchParams.get("imported") === "true") {
             setShowCaution(true);
         }
-    }, [searchParams, setHasPaid, setShowCaution]);
+    }, [searchParams, setShowCaution]);
 
     return null;
 }
@@ -41,13 +40,14 @@ export function PreviewPanel() {
     const activeResume = useResumeStore(state => state.activeResumeId ? state.resumes[state.activeResumeId] : null);
     const setContentScale = useResumeStore(state => state.setContentScale);
     const setSectionSpacing = useResumeStore(state => state.setSectionSpacing);
+    const { isPremium } = useAuth();
 
     const [client, setClient] = useState(false);
-    const [hasPaid, setHasPaid] = useState(true);
     const [showCaution, setShowCaution] = useState(false);
-    const [loading, setLoading] = useState(false);
     const [zoom, setZoom] = useState(100);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [heatmapActive, setHeatmapActive] = useState(false);
+    const previewContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -67,28 +67,6 @@ export function PreviewPanel() {
         setClient(true);
     }, []);
 
-    const handleUnlock = async () => {
-        setLoading(true);
-        try {
-            // Call Stripe API
-            const response = await fetch("/api/stripe/checkout_session", {
-                method: "POST",
-            });
-            const data = await response.json();
-
-            if (data.url) {
-                window.location.href = data.url;
-            } else {
-                alert("Payment initialization failed.");
-            }
-        } catch (error) {
-            console.error("Payment error:", error);
-            alert("Something went wrong with the payment mechanism.");
-        } finally {
-            setLoading(false);
-        }
-    };
-
     if (!client) return null;
 
     if (!activeResume) {
@@ -106,35 +84,46 @@ export function PreviewPanel() {
         <div className="h-full flex flex-col relative border-t dark:border-transparent bg-slate-50 dark:bg-background z-0">
             {/* Search Params Listener */}
             <React.Suspense fallback={null}>
-                <URLParamsHandler setHasPaid={setHasPaid} setShowCaution={setShowCaution} />
+                <URLParamsHandler setShowCaution={setShowCaution} />
             </React.Suspense>
 
             {/* Header */}
             <div className="py-4 pl-4 sm:pl-8 lg:pl-12 pr-4 border-b dark:border-border shrink-0 z-10 bg-white/50 dark:bg-transparent backdrop-blur-sm">
                 <div className="flex flex-col gap-4">
-                    <div className="w-full flex justify-between items-center">
-                        <div className="flex items-center gap-4">
+                    <div className="w-full flex justify-between items-center gap-2 flex-wrap">
+                        <div className="flex items-center gap-3">
                             <h2 className="font-semibold text-slate-700 dark:text-slate-200">Real PDF Preview</h2>
-                        </div>
-                        {!hasPaid ? (
+                            {/* Heatmap Toggle */}
                             <Button
+                                variant={heatmapActive ? "default" : "outline"}
                                 size="sm"
-                                onClick={handleUnlock}
-                                disabled={loading}
-                                className="bg-texastech-red hover:bg-texastech-red/90 text-white gap-2 shadow-sm"
+                                onClick={() => {
+                                    if (!isPremium) {
+                                        alert("🔥 Recruiter Heatmap is a PRO feature. Upgrade to visualize where recruiters' eyes go on your resume!");
+                                        return;
+                                    }
+                                    setHeatmapActive(prev => !prev);
+                                }}
+                                className={`gap-1.5 text-xs h-8 transition-all ${
+                                    heatmapActive
+                                        ? "bg-gradient-to-r from-orange-500 to-red-500 text-white border-transparent hover:from-orange-600 hover:to-red-600 shadow-md shadow-orange-500/30"
+                                        : "border-orange-300 text-orange-600 dark:text-orange-400 dark:border-orange-800 hover:bg-orange-50 dark:hover:bg-orange-950/30"
+                                }`}
+                                title={isPremium ? "Toggle Recruiter Eye-Tracking Heatmap" : "PRO: Recruiter Heatmap"}
+                                aria-label="Toggle recruiter heatmap overlay"
                             >
-                                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
-                                Unlock Download ($9)
+                                <Flame className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">{heatmapActive ? "Heatmap ON" : "Heatmap"}</span>
+                                {!isPremium && <span className="text-[9px] px-1 py-0.5 rounded bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 font-bold ml-0.5">PRO</span>}
                             </Button>
-                        ) : (
-                            <div className="flex gap-2">
-                                <DownloadResumeButton
-                                    key={activeResume.lastModified}
-                                    fileName={`${activeResume.personalInfo.fullName.replace(/\s+/g, '_')}_Resume.pdf`}
-                                    data={activeResume}
-                                />
-                            </div>
-                        )}
+                        </div>
+                        <div className="flex gap-2">
+                            <DownloadResumeButton
+                                key={activeResume.lastModified}
+                                fileName={`${activeResume.personalInfo.fullName.replace(/\s+/g, '_')}_Resume.pdf`}
+                                data={activeResume}
+                            />
+                        </div>
                     </div>
                     {showCaution && (
                         <div className="flex items-start gap-2.5 bg-amber-50/80 dark:bg-amber-500/10 p-3 rounded-xl border border-amber-200/60 dark:border-amber-500/20">
@@ -147,12 +136,17 @@ export function PreviewPanel() {
                 </div>
             </div>
 
-            <div id="preview-container" className="flex-1 overflow-hidden relative bg-gray-200 dark:bg-zinc-950">
+            <div id="preview-container" ref={previewContainerRef} className="flex-1 overflow-hidden relative bg-gray-200 dark:bg-zinc-950">
                 {/* Universal PDF Preview - Auto-detects browser for optimal rendering */}
                 <UniversalPDFPreview
                     data={activeResume}
                     className="h-full w-full"
                 />
+
+                {/* Heatmap Overlay */}
+                {heatmapActive && isPremium && (
+                    <HeatmapOverlay resumeData={activeResume} containerRef={previewContainerRef} />
+                )}
 
                 {/* Fullscreen Toggle Button */}
                 <button

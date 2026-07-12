@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, AlertTriangle, XCircle, Search, Target, Zap, Layout, Type, Sparkles } from 'lucide-react';
+import { CheckCircle, AlertTriangle, XCircle, Search, Target, Zap, Layout, Type, Sparkles, Plus } from 'lucide-react';
+import { useResumeStore } from '@/store/useResumeStore';
 
 interface ATSResultsProps {
     data: {
@@ -41,6 +42,17 @@ interface ATSResultsProps {
 }
 
 export function ATSResults({ data, loading }: ATSResultsProps) {
+    const { resumes, activeResumeId, setSkills } = useResumeStore();
+    const activeResume = activeResumeId ? resumes[activeResumeId] : null;
+
+    // One-click JD tailoring: move a missing keyword straight into Skills
+    const addKeywordToSkills = (keyword: string) => {
+        if (!activeResume) return;
+        const current = Array.isArray(activeResume.skills) ? activeResume.skills : [];
+        if (current.some(s => s.toLowerCase() === keyword.toLowerCase())) return;
+        setSkills([...current, keyword]);
+    };
+
     if (loading) {
         return (
             <Card className="mt-6 border-2 border-primary/20">
@@ -274,15 +286,37 @@ export function ATSResults({ data, loading }: ATSResultsProps) {
                                     </h4>
                                     <div className="flex flex-wrap gap-2">
                                         {premiumData.keywords.missing.length > 0 ? (
-                                            premiumData.keywords.missing.map((k, i) => (
-                                                <Badge key={i} variant="outline" className="border-red-200 bg-red-50 text-red-700 hover:bg-red-100">
-                                                    {k}
-                                                </Badge>
-                                            ))
+                                            premiumData.keywords.missing.map((k, i) => {
+                                                const alreadyAdded = activeResume?.skills?.some(
+                                                    s => s.toLowerCase() === k.toLowerCase()
+                                                );
+                                                return (
+                                                    <button
+                                                        key={i}
+                                                        onClick={() => addKeywordToSkills(k)}
+                                                        disabled={alreadyAdded}
+                                                        title={alreadyAdded ? 'Already in your skills' : `Add "${k}" to your Skills section`}
+                                                        className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full"
+                                                    >
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={alreadyAdded
+                                                                ? 'border-green-200 bg-green-50 text-green-700'
+                                                                : 'border-red-200 bg-red-50 text-red-700 hover:bg-green-50 hover:text-green-700 hover:border-green-300 cursor-pointer transition-colors gap-1'}
+                                                        >
+                                                            {k}
+                                                            {alreadyAdded ? <CheckCircle className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                                                        </Badge>
+                                                    </button>
+                                                );
+                                            })
                                         ) : (
                                             <p className="text-sm text-muted-foreground italic">No critical keywords missing.</p>
                                         )}
                                     </div>
+                                    {premiumData.keywords.missing.length > 0 && (
+                                        <p className="text-xs text-muted-foreground mt-2">Tip: click a keyword to add it to your Skills section.</p>
+                                    )}
                                 </div>
                                 <div>
                                     <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">

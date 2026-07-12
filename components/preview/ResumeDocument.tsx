@@ -67,10 +67,6 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
     // skills is guaranteed to be string[]
     const {
         personalInfo,
-        education,
-        experience,
-        projects,
-        skills, // Now guaranteed to be string[] from normalization
         selectedTemplate,
         themeColor,
         contentScale,
@@ -80,6 +76,28 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
         sectionTitles,
         hideBranding,
     } = data;
+
+    // --- VARIANT FILTERING ---
+    const activeVariantId = data.activeVariantId ?? null;
+    const activeVariant = activeVariantId
+        ? (data.variants || []).find(v => v.id === activeVariantId) ?? null
+        : null;
+
+    const experience = activeVariant
+        ? (data.experience || []).filter((e: any) => !activeVariant.hiddenItems.experience?.includes(e.id))
+        : (data.experience || []);
+
+    const education = activeVariant
+        ? (data.education || []).filter((e: any) => !activeVariant.hiddenItems.education?.includes(e.id))
+        : (data.education || []);
+
+    const projects = activeVariant
+        ? (data.projects || []).filter((p: any) => !activeVariant.hiddenItems.projects?.includes(p.id))
+        : (data.projects || []);
+
+    const skills = activeVariant
+        ? (data.skills || []).filter((s: string) => !activeVariant.hiddenItems.skills?.includes(s))
+        : (data.skills || []);
 
     // Show branding unless the user is pro AND has explicitly hidden it
     const showBranding = !(userTier === 'pro' && hideBranding);
@@ -110,7 +128,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
         if (globalScale === 1 && extraScale === 1 && spacingScale === 1) return StyleSheet.create(styles);
         
         const scale = globalScale * extraScale;
-        const noScaleProps = new Set(['flexGrow', 'flexShrink', 'zIndex', 'opacity', 'fontWeight', 'lineHeight', 'flex', 'top', 'bottom', 'left', 'right']);
+        const noScaleProps = new Set(['flexGrow', 'flexShrink', 'zIndex', 'opacity', 'fontWeight', 'lineHeight', 'flex', 'top', 'bottom', 'left', 'right', 'paddingBottom']);
         const spacingProps = new Set(['marginBottom', 'marginTop', 'paddingBottom', 'paddingTop', 'margin', 'padding', 'marginVertical', 'paddingVertical']);
 
         const mapStyles = (obj: any): any => {
@@ -184,7 +202,8 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
         page: {
             flexDirection: 'column',
             backgroundColor: '#FFFFFF',
-            paddingVertical: 30,
+            paddingTop: 30,
+            paddingBottom: 35,
             paddingHorizontal: 50,
             fontSize: 10,
             lineHeight: 1.5,
@@ -257,20 +276,22 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
         container: {
             flexDirection: 'row',
             width: '100%',
-            minHeight: '100%',
+            height: '100%',
+            overflow: 'hidden',
         },
         sidebar: {
             width: '32%',
             backgroundColor: accentColor,
-            paddingVertical: 24, // Reduced from 32
+            paddingTop: 24,
+            paddingBottom: 35,
             paddingHorizontal: 30, // Reduced from 40
             color: '#FFFFFF',
         },
         main: {
             width: '68%',
-            paddingVertical: 24, // Reduced from 32
-            paddingHorizontal: 36, // Reduced from 48
             paddingTop: 36, // Reduced from 48
+            paddingBottom: 35,
+            paddingHorizontal: 36, // Reduced from 48
         },
         sidebarSection: {
             marginBottom: 24, // Reduced from 32
@@ -409,7 +430,8 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
         page: {
             flexDirection: 'column',
             backgroundColor: '#FFFFFF',
-            paddingVertical: 36, // Reduced from 48
+            paddingTop: 36,
+            paddingBottom: 35,
             paddingHorizontal: 48, // Reduced from 64
             fontSize: 9, // Reduced base
             fontFamily: pdfFontFamily,
@@ -508,20 +530,22 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
         container: {
             flexDirection: 'row',
             width: '100%',
-            minHeight: '100%',
+            height: '100%',
+            overflow: 'hidden',
         },
         sidebar: {
             width: '35%',
             backgroundColor: accentColor,
-            paddingVertical: 32,
+            paddingTop: 32,
+            paddingBottom: 35,
             paddingHorizontal: 24, // Reduced from 40 for more space
             color: '#FFFFFF',
         },
         main: {
             width: '65%',
-            paddingVertical: 30, // Reduced from 40
-            paddingHorizontal: 40, // Reduced from 56
             paddingTop: 48, // Reduced from 64
+            paddingBottom: 35,
+            paddingHorizontal: 40, // Reduced from 56
         },
         name: {
             fontSize: 24, // Reduced from 28
@@ -817,7 +841,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                                 <View key={proj.id} style={minimalistStyles.itemGroup}>
                                     <Text style={minimalistStyles.company}>{proj.name}</Text>
                                     {proj.technologies && (
-                                        <View style={{ marginTop: 2, marginBottom: (2 * (data.sectionSpacing ?? 1)) }}>
+                                        <View style={{ marginTop: 2, marginBottom: (6 * (data.sectionSpacing ?? 1)) }}>
                                             <Text style={{ fontSize: 9, backgroundColor: '#f3f4f6', color: '#374151', padding: '1 3', borderRadius: 2, alignSelf: 'flex-start' }}>
                                                 {proj.technologies}
                                             </Text>
@@ -839,8 +863,8 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
 
         return (
             <Document>
-                <Page size="A4" style={minimalistStyles.page}>
-                    <View style={{ width: '100%', height: '100%' }} wrap={false}>
+                <Page size="A4" style={minimalistStyles.page} wrap={false}>
+                    <View style={{ width: '100%', height: '100%', overflow: 'hidden' }} wrap={false}>
                         <View style={minimalistStyles.header}>
                             <Text style={minimalistStyles.name}>{personalInfo.fullName}</Text>
                             {personalInfo.jobTitle && <Text style={{ fontSize: 14, color: '#9ca3af', marginBottom: (16 * (data.sectionSpacing ?? 1)), fontFamily: 'Times-Roman', textTransform: 'uppercase', letterSpacing: 2 }}>{personalInfo.jobTitle}</Text>}
@@ -970,7 +994,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                             <Text style={modernStyles.sectionTitle}>{sectionTitles.projects || "Projects"}</Text>
                             {projects.map((proj: any) => (
                                 <View key={proj.id} style={modernStyles.projectCard}>
-                                    <View style={{ marginBottom: (6 * (data.sectionSpacing ?? 1)) }}>
+                                    <View style={{ marginBottom: (10 * (data.sectionSpacing ?? 1)) }}>
                                         <Text style={{ fontWeight: 'bold', fontSize: 11, color: '#111827' }}>{proj.name}</Text>
                                         {proj.technologies && (
                                             <View style={{ flexDirection: 'row', marginTop: (3 * (data.sectionSpacing ?? 1)) }}>
@@ -996,7 +1020,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
 
         return (
             <Document>
-                <Page size="A4" style={modernStyles.page}>
+                <Page size="A4" style={modernStyles.page} wrap={false}>
                     <View style={modernStyles.container} wrap={false}>
                         <View style={modernStyles.sidebar}>
                             {/* Contact */}
@@ -1118,7 +1142,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                                         </View>
                                     </View>
                                     {proj.technologies && (
-                                        <View style={{ marginBottom: (4 * (data.sectionSpacing ?? 1)), marginTop: (1 * (data.sectionSpacing ?? 1)) }}>
+                                        <View style={{ marginBottom: (8 * (data.sectionSpacing ?? 1)), marginTop: (1 * (data.sectionSpacing ?? 1)) }}>
                                             <Text style={{ fontSize: 9, color: '#6b7280', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#e5e7eb', padding: '1 3', borderRadius: 2, alignSelf: 'flex-start' }}>
                                                 {proj.technologies}
                                             </Text>
@@ -1135,7 +1159,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
 
         return (
             <Document>
-                <Page size="A4" style={creativeStyles.page}>
+                <Page size="A4" style={creativeStyles.page} wrap={false}>
                     <View style={creativeStyles.container} wrap={false}>
                         {/* Sidebar */}
                         <View style={creativeStyles.sidebar}>
@@ -1272,7 +1296,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                                     )}
                                 </View>
                                 {proj.technologies && (
-                                    <Text style={{ fontSize: 9, color: '#4b5563', fontStyle: 'italic', marginBottom: (2 * (data.sectionSpacing ?? 1)) }}>
+                                    <Text style={{ fontSize: 9, color: '#4b5563', fontStyle: 'italic', marginBottom: (6 * (data.sectionSpacing ?? 1)) }}>
                                         {proj.technologies}
                                     </Text>
                                 )}
@@ -1291,7 +1315,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
     // ——————————————————————————————————————————— VELVET TEMPLATE ———————————————————————————————————————————————————————————————————
     if (selectedTemplate === 'velvet') {
         const vStyles = createScaledStyles({
-            page: { flexDirection: 'column', backgroundColor: '#FFFFFF', fontFamily: pdfFontFamily, fontSize: 10, paddingHorizontal: 52, paddingVertical: 44 },
+            page: { flexDirection: 'column', backgroundColor: '#FFFFFF', fontFamily: pdfFontFamily, fontSize: 10, paddingHorizontal: 52, paddingTop: 44, paddingBottom: 35, overflow: 'hidden' },
             name: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', color: '#111827', letterSpacing: -0.5, marginBottom: 3 },
             jobTitle: { fontSize: 9, textAlign: 'center', color: '#6b7280', textTransform: 'uppercase', letterSpacing: 2.5, marginBottom: 8 },
             rule: { borderBottomWidth: 0.5, borderBottomColor: '#d1d5db', marginBottom: 2 },
@@ -1372,7 +1396,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
                                     <Text style={vStyles.bold}>{proj.name}</Text>
                                     {proj.link && <Link src={normalizeUrl(proj.link)} style={{ fontSize: 7.5, color: proj.linkColor || accentColor }}>{proj.linkText || 'View'}</Link>}
                                 </View>
-                                {proj.technologies && <Text style={{ fontSize: 7.5, fontStyle: 'italic', color: '#9ca3af', marginBottom: (2 * (data.sectionSpacing ?? 1)) }}>{proj.technologies}</Text>}
+                                {proj.technologies && <Text style={{ fontSize: 7.5, fontStyle: 'italic', color: '#9ca3af', marginBottom: (6 * (data.sectionSpacing ?? 1)) }}>{proj.technologies}</Text>}
                                 <PdfFormattedText text={proj.description} style={vStyles.text} />
                             </View>
                         ))}
@@ -1390,7 +1414,7 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
 
         return (
             <Document>
-                <Page size="A4" style={vStyles.page}>
+                <Page size="A4" style={vStyles.page} wrap={false}>
                     {/* Centered header */}
                     <Text style={vStyles.name}>{personalInfo.fullName}</Text>
                     {personalInfo.jobTitle && <Text style={vStyles.jobTitle}>{personalInfo.jobTitle}</Text>}
@@ -1418,8 +1442,8 @@ export const ResumeDocument = ({ data, userTier = 'free' }: { data: ResumeData, 
     // ─── CLASSIC TEMPLATE (Default fallback) ─────────────────────────────────────────
     return (
         <Document>
-            <Page size="A4" style={classicStyles.page}>
-                <View style={{ width: '100%', height: '100%' }} wrap={false}>
+            <Page size="A4" style={classicStyles.page} wrap={false}>
+                <View style={{ width: '100%', height: '100%', overflow: 'hidden' }} wrap={false}>
                     <View style={classicStyles.header}>
                         <Text style={personalStyles.name}>{personalInfo.fullName}</Text>
                         {personalInfo.jobTitle && <Text style={{ fontSize: 14, color: '#4b5563', marginBottom: (8 * (data.sectionSpacing ?? 1)), textTransform: 'uppercase' }}>{personalInfo.jobTitle}</Text>}

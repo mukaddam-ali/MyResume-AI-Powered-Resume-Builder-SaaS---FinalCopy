@@ -53,6 +53,8 @@ import { CustomSectionForm } from "./forms/CustomSectionForm";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PublicToggle } from "./PublicToggle";
+import { VariantManager } from "./VariantManager";
+import { CoverLetterGenerator } from "./CoverLetterGenerator";
 
 // Update SECTION_LABELS to be a helper function or fallback
 const getSectionLabel = (id: string, customSections: any[], sectionTitles: Record<string, string> = {}) => {
@@ -313,8 +315,11 @@ export function EditorPanel() {
             </div>
             <div className="flex-1">
                 <div className="py-6 px-3 overflow-x-hidden max-w-full">
+                    <div className="mb-4 flex justify-end">
+                        <CoverLetterGenerator />
+                    </div>
                     <ResumeScore />
-                    
+
                     {/* Scale Controls */}
                     <div className="mb-6 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col gap-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -388,6 +393,11 @@ export function EditorPanel() {
                     </div>
 
                     <TemplateSelector />
+
+                    {/* Variant Manager */}
+                    <div className="mb-6">
+                        <VariantManager />
+                    </div>
 
                     <Tabs defaultValue="personal" className="w-full">
                         <DndContext

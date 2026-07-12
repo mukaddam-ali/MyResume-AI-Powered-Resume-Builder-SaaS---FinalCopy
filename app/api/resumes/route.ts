@@ -40,13 +40,22 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
+    let body: { name?: unknown; data?: unknown };
+    try {
+        body = await request.json();
+    } catch {
+        return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
     const { name, data } = body;
 
-    if (!name || !data) {
+    if (!name || typeof name !== 'string' || !data || typeof data !== 'object') {
         return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+    if (JSON.stringify(data).length > 1024 * 1024) {
+        return NextResponse.json({ error: 'Resume too large (max 1 MB). Try a smaller photo.' }, { status: 413 });
+    }
 
+    // Upsert on (user_id, data->>id): a retried create must not duplicate rows
     const { data: resume, error } = await supabase
         .from('resumes')
         .insert({
@@ -58,7 +67,12 @@ export async function POST(request: Request) {
         .single();
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        // 23505 = unique violation on (user_id, data->>id) — row already exists
+        if (error.code === '23505') {
+            return NextResponse.json({ error: 'Resume already exists' }, { status: 409 });
+        }
+        console.error('Resume create error:', error.message);
+        return NextResponse.json({ error: 'Failed to create resume' }, { status: 500 });
     }
 
     return NextResponse.json({ resume });

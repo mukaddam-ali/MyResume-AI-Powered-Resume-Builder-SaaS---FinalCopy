@@ -14,9 +14,10 @@ const UserMenu = dynamic(() => import("@/components/auth/UserMenu").then((m) => 
     loading: () => <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />,
 });
 
-const DebugTierToggle = dynamic(() => import("./DebugTierToggle").then((m) => m.DebugTierToggle), {
-    ssr: false,
-});
+// Dev-only tier toggle — never shipped to production users
+const DebugTierToggle = process.env.NODE_ENV === "development"
+    ? dynamic(() => import("./DebugTierToggle").then((m) => m.DebugTierToggle), { ssr: false })
+    : () => null;
 
 export function Navbar() {
     return (

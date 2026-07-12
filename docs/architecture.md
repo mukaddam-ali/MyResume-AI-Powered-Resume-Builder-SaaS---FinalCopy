@@ -1,0 +1,1 @@
+C:\Users\alial\OneDrive\Desktop\LoneStar - Copy\docs\architecture.md bu uygulamayi frontend ve backend ayirmak istiyorum. backend ddd typescript nestjs olsun. 

@@ -209,7 +209,7 @@ export function ProjectsForm() {
                                                 />
                                             </div>
                                             <div className="grid gap-2">
-                                                <Label htmlFor={`proj-tech-${proj.id}`}>Technologies</Label>
+                                                <Label htmlFor={`proj-tech-${proj.id}`}>Technologies/other</Label>
                                                 <Input
                                                     id={`proj-tech-${proj.id}`}
                                                     value={proj.technologies}

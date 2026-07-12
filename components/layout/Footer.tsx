@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function Footer() {
     return (
         <footer className="w-full bg-background/80 backdrop-blur-sm border-t py-2 md:py-0">
@@ -5,6 +7,10 @@ export function Footer() {
                 <p className="text-balance text-center text-sm leading-loose text-muted-foreground md:text-left">
                     Built for CS Students. © 2026 MyResume.
                 </p>
+                <nav className="flex items-center gap-6 text-sm text-muted-foreground">
+                    <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+                    <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+                </nav>
             </div>
         </footer>
     );

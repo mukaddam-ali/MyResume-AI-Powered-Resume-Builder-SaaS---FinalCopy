@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createGroq } from "@ai-sdk/groq";
 import { generateText } from "ai";
 import { createRequire } from "module";
+import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
 
 // Give this route up to 120 seconds (Next.js default is 60s)
 export const maxDuration = 120;
@@ -73,6 +74,10 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
 // ─── Route Handler ──────────────────────────────────────────────────────────
 
 export async function POST(req: Request) {
+    // Parsing is the most expensive AI call (large prompt, long timeout)
+    const limit = rateLimit(`ai-parse:${getClientIp(req)}`, 5, 10 * 60_000);
+    if (!limit.allowed) return rateLimitResponse(limit);
+
     try {
         const groqKey = process.env.GROQ_API_KEY;
         if (!groqKey) {

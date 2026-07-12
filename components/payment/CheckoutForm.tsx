@@ -43,13 +43,30 @@ export default function CheckoutForm({ onSuccess }: CheckoutFormProps) {
             setMessage(error.message ?? "An unexpected error occurred.");
             setMessageType('error');
         } else if (paymentIntent && paymentIntent.status === "succeeded") {
-            setMessage("Payment succeeded! Upgrading your account...");
+            // The server verifies the PaymentIntent with Stripe and upgrades
+            // the account — the client never grants itself Pro.
+            setMessage("Payment succeeded! Activating Pro on your account...");
             setMessageType('success');
-            setUserTier("pro");
-            setTimeout(() => {
-                onSuccess();
-            }, 1500);
-            return;
+            try {
+                const res = await fetch("/api/stripe/verify-payment", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ paymentIntentId: paymentIntent.id }),
+                });
+                const data = await res.json();
+                if (res.ok && data.tier === "pro") {
+                    setUserTier("pro");
+                    setTimeout(() => {
+                        onSuccess();
+                    }, 1500);
+                    return;
+                }
+                setMessage(data.error || "Payment received but activation failed. Contact support with reference " + paymentIntent.id);
+                setMessageType('error');
+            } catch {
+                setMessage("Payment received but activation failed. Contact support with reference " + paymentIntent.id);
+                setMessageType('error');
+            }
         } else {
             setMessage("An unexpected error occurred.");
             setMessageType('error');
