@@ -10,7 +10,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { loadStripe } from "@stripe/stripe-js";
+// "/pure" entrypoint: the default import injects the Stripe.js <script> (and
+// its m.stripe.com fraud-beacon cookie) as a side effect on EVERY page that
+// bundles this component. /pure only loads Stripe when loadStripe() is called
+// — i.e. when the upgrade dialog actually opens.
+import { loadStripe } from "@stripe/stripe-js/pure";
 import { Elements } from "@stripe/react-stripe-js";
 import CheckoutForm from "./CheckoutForm";
 import { Badge } from "@/components/ui/badge";
