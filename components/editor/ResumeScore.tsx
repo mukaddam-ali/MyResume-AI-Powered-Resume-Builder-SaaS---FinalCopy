@@ -113,91 +113,80 @@ export function ResumeScore() {
         setError(null);
         setIsExpanded(true);
 
-        if (isPremium) {
-            // Premium: AI-powered analysis
-            try {
-                // Generate hash for caching (job description changes the result)
-                const cacheKey = simpleHash(JSON.stringify(activeResume) + jobDescription.trim());
+        try {
+            // Deterministic scan — cache key includes JD since it changes the result
+            const jd = isPremium ? jobDescription.trim() : '';
+            const cacheKey = simpleHash(JSON.stringify(activeResume) + jd + (isPremium ? 'pro' : 'free'));
+            const cachedResult = getAnalysisCache(cacheKey);
+            if (cachedResult) {
+                setAnalysisResult(cachedResult);
+                setLoading(false);
+                return;
+            }
 
-                // Check cache first
-                const cachedResult = getAnalysisCache(cacheKey);
-                if (cachedResult) {
-                    setAnalysisResult(cachedResult);
-                    setLoading(false);
-                    return;
-                }
+            // Prepare filtered data (only visible sections)
+            const visibleSections = activeResume.sectionOrder || [];
+            const filteredResume = {
+                ...activeResume,
+                experience: visibleSections.includes('experience') ? activeResume.experience : [],
+                education: visibleSections.includes('education') ? activeResume.education : [],
+                projects: visibleSections.includes('projects') ? activeResume.projects : [],
+                skills: visibleSections.includes('skills') ? activeResume.skills : [],
+                customSections: (activeResume.customSections || []).filter(s => visibleSections.includes(s.id))
+            };
 
-                // Prepare filtered data (only visible sections)
-                const visibleSections = activeResume.sectionOrder || [];
-                const filteredResume = {
-                    ...activeResume,
-                    // Only include standard sections if they are in the order list
-                    experience: visibleSections.includes('experience') ? activeResume.experience : [],
-                    education: visibleSections.includes('education') ? activeResume.education : [],
-                    projects: visibleSections.includes('projects') ? activeResume.projects : [],
-                    skills: visibleSections.includes('skills') ? activeResume.skills : [],
-                    // Only include custom sections that are in the order list
-                    customSections: (activeResume.customSections || []).filter(s => visibleSections.includes(s.id))
-                };
+            // The real ATS scan: renders the actual PDF server-side and re-parses
+            // it. Runs for free AND pro users (it's deterministic, no AI cost).
+            const scanPromise = fetch('/api/ats/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    resumeData: filteredResume,
+                    jobDescription: jd || undefined,
+                }),
+            }).then(r => r.json());
 
-                const response = await fetch('/api/ai/analyze', {
+            // Pro: AI rewrite suggestions in parallel (advice only — the score
+            // comes from the deterministic scan)
+            const aiPromise = isPremium
+                ? fetch('/api/ai/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         resumeData: filteredResume,
-                        jobDescription: jobDescription.trim() || undefined
-                    })
-                });
-                const data = await response.json();
+                        jobDescription: jd || undefined,
+                    }),
+                }).then(r => r.json()).catch(() => null)
+                : Promise.resolve(null);
 
-                // Enhanced error handling with debug information
-                if (data.error) {
-                    console.error("API Error Details:", data);
+            const [scan, ai] = await Promise.all([scanPromise, aiPromise]);
 
-                    // Construct detailed error message
-                    let errorMsg = data.error;
-                    if (data.solution) {
-                        errorMsg += ` - ${data.solution}`;
-                    }
-                    if (data.details) {
-                        console.warn("Error Details:", data.details);
-                    }
-
-                    throw new Error(errorMsg);
-                }
-
-                // Cache the result
-                setAnalysisCache(cacheKey, data);
-                setAnalysisResult(data);
-            } catch (error: any) {
-                console.error("ATS Scan Error:", error);
-                const errorMessage = error.message || "AI Service Unavailable";
-
-                // Set specific user-friendly messages for common errors
-                if (errorMessage.includes("Invalid API Key")) {
-                    setError("API Configuration Issue. Try restarting the dev server and clearing browser cache (Ctrl+Shift+R).");
-                } else if (errorMessage.includes("Quota exceeded") || errorMessage.includes("429")) {
-                    setError("AI Usage Limit Reached. Please wait a moment and try again.");
-                } else {
-                    setError("AI Service Unavailable. Showing Basic Scan instead.");
-                }
-
-                // Fallback to free analysis on error
-                const freeAnalysis = generateFreeAnalysis();
-                if (freeAnalysis) {
-                    setAnalysisResult(freeAnalysis);
-                }
-            } finally {
-                setLoading(false);
+            if (scan.error) {
+                throw new Error(scan.error);
             }
-        } else {
-            // Free: Basic percentage analysis (no AI)
-            setTimeout(() => {
-                const freeAnalysis = generateFreeAnalysis();
+
+            // Merge: deterministic scores + parse test are authoritative; AI
+            // contributes qualitative rewrite suggestions when available.
+            const merged = {
+                ...scan,
+                suggested_edits: ai && !ai.error && Array.isArray(ai.suggested_edits) ? ai.suggested_edits : [],
+            };
+
+            setAnalysisCache(cacheKey, merged);
+            setAnalysisResult(merged);
+        } catch (error: any) {
+            console.error("ATS Scan Error:", error);
+            setError(error.message?.includes('Too many')
+                ? "Too many scans — wait a moment and try again."
+                : "Scan service unavailable. Showing basic completeness check instead.");
+
+            // Offline fallback: local completeness check
+            const freeAnalysis = generateFreeAnalysis();
+            if (freeAnalysis) {
                 setAnalysisResult(freeAnalysis);
-                setLoading(false);
-                setIsExpanded(true);
-            }, 800); // Simulate brief processing
+            }
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -213,8 +202,8 @@ export function ResumeScore() {
                 <CardContent className="px-4 pb-4 space-y-4">
                     <p className="text-sm text-muted-foreground">
                         {isPremium
-                            ? "Run a deep AI analysis to check your resume against ATS filters and job descriptions."
-                            : "Scan your resume to check completeness and section scores."}
+                            ? "We render your real PDF, re-parse it like an ATS does, match it against the job description, and add AI suggestions."
+                            : "We render your real PDF and re-parse it exactly like an ATS does — a measured score, not a guess."}
                     </p>
 
                     {/* Job description tailoring (premium) */}

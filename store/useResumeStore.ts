@@ -120,6 +120,20 @@ export interface ResumeData {
 
 export type UserTier = 'free' | 'pro';
 
+export interface ATSParseTestResult {
+    ok: boolean;
+    extractionRate: number;
+    emailFound: boolean;
+    phoneFound: boolean;
+    linkedinFound: boolean;
+    headingsFound: string[];
+    headingsMissing: string[];
+    headingOrder: string[];
+    twoColumnLayout: boolean;
+    pageCount: number;
+    extractedText: string;
+}
+
 export interface ATSAnalysisResult {
     score: number;
     category_scores: {
@@ -135,6 +149,20 @@ export interface ATSAnalysisResult {
     feedback: string[];
     red_flags: string[];
     summary: string;
+    // Deterministic scan extras (new engine)
+    deterministic?: boolean;
+    parse_score?: number;
+    match_rate?: number | null;
+    jd_skill_count?: number | null;
+    parse?: ATSParseTestResult;
+    metrics?: {
+        bulletCount: number;
+        quantifiedPct: number;
+        actionVerbPct: number;
+        avgBulletWords: number;
+        totalWords: number;
+    };
+    suggested_edits?: Array<{ section: string; suggestion: string; reason: string }>;
 }
 
 export interface FreeAnalysisResult {

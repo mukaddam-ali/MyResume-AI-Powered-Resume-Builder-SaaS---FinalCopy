@@ -37,8 +37,49 @@ interface ATSResultsProps {
             suggestion: string;
             reason: string;
         }>;
+        // Deterministic scan extras
+        deterministic?: boolean;
+        parse_score?: number;
+        match_rate?: number | null;
+        jd_skill_count?: number | null;
+        parse?: {
+            ok: boolean;
+            extractionRate: number;
+            emailFound: boolean;
+            phoneFound: boolean;
+            linkedinFound: boolean;
+            headingsFound: string[];
+            headingsMissing: string[];
+            headingOrder: string[];
+            twoColumnLayout: boolean;
+            pageCount: number;
+            extractedText: string;
+        };
+        metrics?: {
+            bulletCount: number;
+            quantifiedPct: number;
+            actionVerbPct: number;
+            avgBulletWords: number;
+            totalWords: number;
+        };
     } | null;
     loading: boolean;
+}
+
+function CheckRow({ ok, label, detail }: { ok: boolean; label: string; detail?: string }) {
+    return (
+        <div className="flex items-start gap-2 text-sm">
+            {ok ? (
+                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+            ) : (
+                <XCircle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+            )}
+            <span>
+                {label}
+                {detail && <span className="text-muted-foreground"> — {detail}</span>}
+            </span>
+        </div>
+    );
 }
 
 export function ATSResults({ data, loading }: ATSResultsProps) {
@@ -234,6 +275,14 @@ export function ATSResults({ data, loading }: ATSResultsProps) {
                             Fixes Needed
                             {premiumData.red_flags.length > 0 && <Badge variant="destructive" className="ml-2 h-5 px-1.5 text-[10px]">{premiumData.red_flags.length}</Badge>}
                         </TabsTrigger>
+                        {premiumData.parse && (
+                            <TabsTrigger value="atsview" className="data-[state=active]:bg-primary/5">
+                                ATS View
+                                <Badge variant="secondary" className={`ml-2 h-5 px-1.5 text-[10px] ${premiumData.parse.extractionRate >= 90 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                                    {premiumData.parse.extractionRate}%
+                                </Badge>
+                            </TabsTrigger>
+                        )}
                     </TabsList>
 
                     <div className="p-6">
@@ -279,6 +328,17 @@ export function ATSResults({ data, loading }: ATSResultsProps) {
 
                         <TabsContent value="keywords" className="mt-0">
                             <div className="space-y-6">
+                                {typeof premiumData.match_rate === 'number' && (
+                                    <div className="flex items-center justify-between bg-muted/40 border rounded-lg p-3">
+                                        <span className="text-sm font-medium">Job description match</span>
+                                        <span className={`text-lg font-bold ${premiumData.match_rate >= 70 ? 'text-green-600' : premiumData.match_rate >= 40 ? 'text-yellow-600' : 'text-red-600'}`}>
+                                            {premiumData.match_rate}%
+                                            <span className="text-xs font-normal text-muted-foreground ml-1.5">
+                                                of {premiumData.jd_skill_count} skills the job asks for
+                                            </span>
+                                        </span>
+                                    </div>
+                                )}
                                 <div>
                                     <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
                                         <XCircle className="h-4 w-4 text-red-500" />
@@ -337,6 +397,50 @@ export function ATSResults({ data, loading }: ATSResultsProps) {
                                 </div>
                             </div>
                         </TabsContent>
+
+                        {premiumData.parse && (
+                            <TabsContent value="atsview" className="mt-0 space-y-5">
+                                <p className="text-sm text-muted-foreground">
+                                    We rendered your actual PDF and re-parsed it with a real text extractor —
+                                    the same operation an ATS performs when you upload your resume.
+                                </p>
+
+                                <div className="grid sm:grid-cols-2 gap-2">
+                                    <CheckRow
+                                        ok={premiumData.parse.extractionRate >= 85}
+                                        label={`${premiumData.parse.extractionRate}% of content extracted`}
+                                        detail={premiumData.parse.extractionRate >= 85 ? 'excellent' : 'some content may be lost'}
+                                    />
+                                    <CheckRow ok={premiumData.parse.emailFound} label="Email detected in parsed text" />
+                                    <CheckRow ok={premiumData.parse.phoneFound} label="Phone number detected" />
+                                    <CheckRow ok={premiumData.parse.linkedinFound} label="LinkedIn detected" />
+                                    <CheckRow
+                                        ok={premiumData.parse.headingsMissing.length === 0}
+                                        label="Section headings parseable"
+                                        detail={premiumData.parse.headingsMissing.length > 0 ? `missing: ${premiumData.parse.headingsMissing.join(', ')}` : undefined}
+                                    />
+                                    <CheckRow
+                                        ok={premiumData.parse.pageCount <= 2}
+                                        label={`${premiumData.parse.pageCount} page${premiumData.parse.pageCount === 1 ? '' : 's'}`}
+                                    />
+                                </div>
+
+                                {premiumData.parse.headingOrder.length > 0 && (
+                                    <div className="text-sm">
+                                        <span className="font-semibold">Reading order</span>
+                                        <span className="text-muted-foreground"> (how a parser encounters your sections{premiumData.parse.twoColumnLayout ? ' — two-column layout' : ''}): </span>
+                                        <span className="text-muted-foreground">{premiumData.parse.headingOrder.join(' → ')}</span>
+                                    </div>
+                                )}
+
+                                <div>
+                                    <h4 className="text-sm font-semibold mb-2">What the ATS sees</h4>
+                                    <pre className="text-[10px] leading-relaxed bg-muted/40 border rounded-lg p-3 max-h-64 overflow-auto whitespace-pre-wrap font-mono text-muted-foreground">
+                                        {premiumData.parse.extractedText || '(no text could be extracted)'}
+                                    </pre>
+                                </div>
+                            </TabsContent>
+                        )}
 
                         <TabsContent value="issues" className="mt-0">
                             <div className="space-y-3">
