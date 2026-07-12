@@ -17,7 +17,8 @@ const nextConfig: NextConfig = {
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://js.stripe.com https://m.stripe.network",
-      "frame-src https://js.stripe.com https://hooks.stripe.com",
+      // 'self' + blob: — the live PDF preview renders into a blob-URL iframe
+      "frame-src 'self' blob: https://js.stripe.com https://hooks.stripe.com",
       "worker-src 'self' blob:",
       "object-src 'none'",
       "base-uri 'self'",

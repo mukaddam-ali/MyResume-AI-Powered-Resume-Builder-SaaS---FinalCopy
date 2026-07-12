@@ -22,9 +22,6 @@ import { Check, Zap, Shield, Sparkles, LogIn } from "lucide-react";
 import { useResumeStore } from "@/store/useResumeStore";
 import { useAuth } from "@/lib/auth-context";
 
-// The local "instant upgrade" shortcut only exists in dev builds — in
-// production the only way to Pro is a server-verified payment.
-const IS_DEV = process.env.NODE_ENV === "development";
 const IS_STRIPE_TEST_MODE = (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "").startsWith("pk_test_");
 
 // NOTE: stripePromise is intentionally NOT initialized at module level.
@@ -49,8 +46,35 @@ export default function UpgradeButton({
     const [open, setOpen] = useState(false);
     const [clientSecret, setClientSecret] = useState("");
     const [intentError, setIntentError] = useState<string | null>(null);
+    const [upgrading, setUpgrading] = useState(false);
     const { userTier, setUserTier } = useResumeStore();
     const { user, signInWithGoogle } = useAuth();
+
+    // Test-mode upgrade: while Stripe isn't configured, the /api/dev/upgrade
+    // endpoint grants Pro on the server (it disables itself once payment keys
+    // exist). Anonymous users get a local-only upgrade.
+    const handleInstantUpgrade = async () => {
+        setUpgrading(true);
+        try {
+            if (user) {
+                const res = await fetch("/api/dev/upgrade", { method: "POST" });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert(data.error || "Upgrade failed. Please try again.");
+                    return;
+                }
+                if (data.warning) console.warn(data.warning);
+            }
+            setUserTier("pro");
+            setOpen(false);
+        } catch {
+            // Offline — still upgrade locally
+            setUserTier("pro");
+            setOpen(false);
+        } finally {
+            setUpgrading(false);
+        }
+    };
 
     // Lazy Stripe: ref holds the promise once loaded; null until dialog first opens.
     const stripePromiseRef = useRef<ReturnType<typeof loadStripe> | null>(null);
@@ -211,33 +235,24 @@ export default function UpgradeButton({
                                     )}
                                 </div>
                             ) : !stripePromise ? (
-                                IS_DEV ? (
-                                    <div className="space-y-4">
-                                        <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-                                            <p className="text-sm text-amber-800 dark:text-amber-200 text-center mb-3">
-                                                <Shield className="h-4 w-4 inline mr-1" />
-                                                Stripe not configured — dev-only instant upgrade below.
-                                            </p>
-                                        </div>
-                                        <Button
-                                            onClick={() => {
-                                                setUserTier('pro');
-                                                setOpen(false);
-                                            }}
-                                            className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700"
-                                            size="lg"
-                                        >
-                                            <Zap className="h-4 w-4 mr-2" />
-                                            Instant Upgrade (Dev Only)
-                                        </Button>
-                                    </div>
-                                ) : (
-                                    <div className="bg-muted border rounded-lg p-4">
-                                        <p className="text-sm text-muted-foreground text-center">
-                                            Payments are temporarily unavailable. Please check back soon.
+                                <div className="space-y-4">
+                                    <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                                        <p className="text-sm text-amber-800 dark:text-amber-200 text-center">
+                                            <Shield className="h-4 w-4 inline mr-1" />
+                                            Pro is free while we're in test mode — enjoy!
+                                            {!user && " Sign in first if you want it saved to your account."}
                                         </p>
                                     </div>
-                                )
+                                    <Button
+                                        onClick={handleInstantUpgrade}
+                                        disabled={upgrading}
+                                        className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700"
+                                        size="lg"
+                                    >
+                                        <Zap className="h-4 w-4 mr-2" />
+                                        {upgrading ? "Upgrading..." : "Get Pro Free (Test Mode)"}
+                                    </Button>
+                                </div>
                             ) : intentError ? (
                                 <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4">
                                     <p className="text-sm text-red-700 dark:text-red-300 text-center">{intentError}</p>
