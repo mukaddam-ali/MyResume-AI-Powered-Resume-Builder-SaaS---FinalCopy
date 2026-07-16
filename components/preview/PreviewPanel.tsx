@@ -2,15 +2,13 @@
 
 import { useResumeStore } from "@/store/useResumeStore";
 import { Button } from "@/components/ui/button";
-import { Loader2, AlertTriangle, Maximize2, Minus, Plus, RotateCcw, X, Flame } from "lucide-react";
+import { Loader2, AlertTriangle, Maximize2, Minus, Plus, RotateCcw, X } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Slider } from "@/components/ui/slider";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { DownloadResumeButton } from "./DownloadResumeButton";
-import { HeatmapOverlay } from "./HeatmapOverlay";
-import { useAuth } from "@/lib/auth-context";
 
 // Load UniversalPDFPreview - automatically detects browser and uses optimal renderer
 const UniversalPDFPreview = dynamic(() => import("./UniversalPDFPreview"), {
@@ -40,13 +38,11 @@ export function PreviewPanel() {
     const activeResume = useResumeStore(state => state.activeResumeId ? state.resumes[state.activeResumeId] : null);
     const setContentScale = useResumeStore(state => state.setContentScale);
     const setSectionSpacing = useResumeStore(state => state.setSectionSpacing);
-    const { isPremium } = useAuth();
 
     const [client, setClient] = useState(false);
     const [showCaution, setShowCaution] = useState(false);
     const [zoom, setZoom] = useState(100);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [heatmapActive, setHeatmapActive] = useState(false);
     const previewContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -93,29 +89,6 @@ export function PreviewPanel() {
                     <div className="w-full flex justify-between items-center gap-2 flex-wrap">
                         <div className="flex items-center gap-3">
                             <h2 className="font-semibold text-slate-700 dark:text-slate-200">Real PDF Preview</h2>
-                            {/* Heatmap Toggle */}
-                            <Button
-                                variant={heatmapActive ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => {
-                                    if (!isPremium) {
-                                        alert("🔥 Recruiter Heatmap is a PRO feature. Upgrade to visualize where recruiters' eyes go on your resume!");
-                                        return;
-                                    }
-                                    setHeatmapActive(prev => !prev);
-                                }}
-                                className={`gap-1.5 text-xs h-8 transition-all ${
-                                    heatmapActive
-                                        ? "bg-gradient-to-r from-orange-500 to-red-500 text-white border-transparent hover:from-orange-600 hover:to-red-600 shadow-md shadow-orange-500/30"
-                                        : "border-orange-300 text-orange-600 dark:text-orange-400 dark:border-orange-800 hover:bg-orange-50 dark:hover:bg-orange-950/30"
-                                }`}
-                                title={isPremium ? "Toggle Recruiter Eye-Tracking Heatmap" : "PRO: Recruiter Heatmap"}
-                                aria-label="Toggle recruiter heatmap overlay"
-                            >
-                                <Flame className="h-3.5 w-3.5" />
-                                <span className="hidden sm:inline">{heatmapActive ? "Heatmap ON" : "Heatmap"}</span>
-                                {!isPremium && <span className="text-[9px] px-1 py-0.5 rounded bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 font-bold ml-0.5">PRO</span>}
-                            </Button>
                         </div>
                         <div className="flex gap-2">
                             <DownloadResumeButton
@@ -142,11 +115,6 @@ export function PreviewPanel() {
                     data={activeResume}
                     className="h-full w-full"
                 />
-
-                {/* Heatmap Overlay */}
-                {heatmapActive && isPremium && (
-                    <HeatmapOverlay resumeData={activeResume} containerRef={previewContainerRef} />
-                )}
 
                 {/* Fullscreen Toggle Button */}
                 <button

@@ -71,14 +71,14 @@ export function PublicToggle() {
                             {isPublic ? (
                                 <>
                                     <strong>Public Portfolio:</strong> Your resume is live and shareable.
-                                    Anyone with the link can view it. Your email, phone, and photo are
-                                    never included in the public version.
+                                    Anyone with the link can view it, including your contact details.
+                                    In the community template gallery your contact info is always hidden.
                                 </>
                             ) : (
                                 <>
                                     <strong>Private Resume:</strong> Only you can see this.
-                                    Enable to get a shareable portfolio link (requires sign-in;
-                                    contact details are stripped from the public version).
+                                    Enable to get a shareable portfolio link (requires sign-in).
+                                    Contact details appear on your portfolio but never in the template gallery.
                                 </>
                             )}
                         </p>

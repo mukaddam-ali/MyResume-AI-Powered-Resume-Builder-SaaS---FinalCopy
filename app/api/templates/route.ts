@@ -19,6 +19,10 @@ function sanitizeGalleryData(resumeData: any) {
         ...resumeData,
         analysisResult: null,
         variants: undefined,
+        // Project images are for the portfolio page — too heavy for gallery listings
+        projects: Array.isArray(resumeData.projects)
+            ? resumeData.projects.map((p: any) => ({ ...p, image: undefined }))
+            : resumeData.projects,
         personalInfo: {
             ...(resumeData.personalInfo || {}),
             email: '',

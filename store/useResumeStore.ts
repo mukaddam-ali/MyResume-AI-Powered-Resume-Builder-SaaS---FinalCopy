@@ -28,6 +28,8 @@ export interface Project {
     link: string;
     linkText?: string; // Custom text to display for the link (e.g., "View Project", "GitHub")
     linkColor?: string; // Custom color for the link text (e.g., "#2563eb")
+    image?: string;    // Card image for the portfolio page (compressed data URL)
+    category?: string; // Portfolio filter chip (e.g. "Full Stack", "Frontend")
 }
 
 export interface SocialMedia {

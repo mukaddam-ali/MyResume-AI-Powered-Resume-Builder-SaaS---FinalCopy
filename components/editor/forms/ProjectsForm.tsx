@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RichTextarea } from "@/components/ui/rich-textarea";
-import { Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
+import { Loader2, Plus, Sparkles, Trash2, ImagePlus, X } from "lucide-react";
 import {
     Card,
     CardContent,
@@ -32,6 +32,36 @@ import {
 import { SortableItem } from "../SortableItem";
 
 import { SectionScaleControl } from "../SectionScaleControl";
+
+/**
+ * Compress an uploaded image to a small JPEG data URL (max 800px wide) so
+ * project cards stay light enough to store inside the resume JSON.
+ */
+function compressImage(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const img = new window.Image();
+            img.onload = () => {
+                const maxW = 800;
+                const scale = Math.min(1, maxW / img.width);
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.round(img.width * scale);
+                canvas.height = Math.round(img.height * scale);
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return reject(new Error('Canvas unavailable'));
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL('image/jpeg', 0.8));
+            };
+            img.onerror = () => reject(new Error('Invalid image'));
+            img.src = reader.result as string;
+        };
+        reader.onerror = () => reject(new Error('Could not read file'));
+        reader.readAsDataURL(file);
+    });
+}
+
+const PROJECT_CATEGORIES = ["Full Stack", "Frontend", "Backend", "Mobile", "AI/ML", "Other"];
 
 function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {
     let timeout: NodeJS.Timeout | null = null;
@@ -243,6 +273,64 @@ export function ProjectsForm() {
                                                             onChange={(color) => updateProject(proj.id, { linkColor: color })}
                                                         />
                                                     </div>
+                                                </div>
+                                            </div>
+                                            {/* Portfolio card extras: image + category (used on the public portfolio page) */}
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="grid gap-2">
+                                                    <Label htmlFor={`proj-image-${proj.id}`}>Card Image <span className="text-muted-foreground font-normal">(portfolio)</span></Label>
+                                                    {proj.image ? (
+                                                        <div className="relative w-full aspect-video rounded-md overflow-hidden border">
+                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                            <img src={proj.image} alt={proj.name || 'Project image'} className="w-full h-full object-cover" />
+                                                            <button
+                                                                onClick={() => updateProject(proj.id, { image: undefined })}
+                                                                className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/60 text-white hover:bg-black/80"
+                                                                aria-label="Remove project image"
+                                                            >
+                                                                <X className="h-3.5 w-3.5" />
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <label
+                                                            htmlFor={`proj-image-${proj.id}`}
+                                                            className="flex items-center justify-center gap-2 w-full aspect-video rounded-md border-2 border-dashed text-sm text-muted-foreground cursor-pointer hover:bg-muted/50 transition-colors"
+                                                        >
+                                                            <ImagePlus className="h-4 w-4" /> Upload image
+                                                        </label>
+                                                    )}
+                                                    <input
+                                                        id={`proj-image-${proj.id}`}
+                                                        type="file"
+                                                        accept="image/*"
+                                                        className="hidden"
+                                                        onChange={async (e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (!file) return;
+                                                            if (file.size > 8 * 1024 * 1024) { alert('Image too large (max 8 MB).'); return; }
+                                                            try {
+                                                                const dataUrl = await compressImage(file);
+                                                                updateProject(proj.id, { image: dataUrl });
+                                                            } catch {
+                                                                alert('Could not process that image. Try a different file.');
+                                                            }
+                                                            e.target.value = '';
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="grid gap-2 content-start">
+                                                    <Label htmlFor={`proj-category-${proj.id}`}>Category <span className="text-muted-foreground font-normal">(portfolio filter)</span></Label>
+                                                    <select
+                                                        id={`proj-category-${proj.id}`}
+                                                        value={proj.category || ''}
+                                                        onChange={(e) => updateProject(proj.id, { category: e.target.value || undefined })}
+                                                        className="h-9 rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                                    >
+                                                        <option value="">None</option>
+                                                        {PROJECT_CATEGORIES.map(c => (
+                                                            <option key={c} value={c}>{c}</option>
+                                                        ))}
+                                                    </select>
                                                 </div>
                                             </div>
                                             <div className="grid gap-2">

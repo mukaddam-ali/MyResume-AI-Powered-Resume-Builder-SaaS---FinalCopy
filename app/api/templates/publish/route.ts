@@ -2,27 +2,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createRouteClient } from '@/lib/supabase-server';
 import { ResumeData } from '@/store/useResumeStore';
 import { rateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
+import { getUserAndTier } from '@/lib/entitlements-server';
 
-const MAX_TEMPLATE_BYTES = 512 * 1024; // 512 KB is plenty for a resume without photos
+const MAX_TEMPLATE_BYTES = 2 * 1024 * 1024; // 2 MB — portfolio project images live in the JSON
 
 /**
- * Remove private/contact data before a resume is shared publicly.
- * The gallery and portfolio pages only need layout + content structure.
+ * Strip internal state before a resume is shared publicly. Contact details
+ * and photo are KEPT — they power the public portfolio page the user is
+ * deliberately publishing. The community gallery API re-sanitizes its own
+ * output and never exposes them.
  */
-function sanitizeForPublishing(resumeData: ResumeData): ResumeData {
+function sanitizeForPublishing(resumeData: ResumeData, tier: 'free' | 'pro'): ResumeData & { portfolioTier: string } {
     return {
         ...resumeData,
         analysisResult: null,
         variants: undefined,
         activeVariantId: null,
-        personalInfo: {
-            ...resumeData.personalInfo,
-            // Contact details and photo never leave the owner's account
-            email: '',
-            phone: '',
-            photo: undefined,
-            photoFilters: undefined,
-        },
+        // Owner's tier at publish time selects the portfolio design
+        portfolioTier: tier,
     };
 }
 
@@ -57,7 +54,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
     }
 
-    const sanitizedData = sanitizeForPublishing(resumeData);
+    // Owner's tier selects the portfolio design (pro gets the premium layout)
+    const { tier } = await getUserAndTier();
+    const sanitizedData = sanitizeForPublishing(resumeData, tier);
 
     if (JSON.stringify(sanitizedData).length > MAX_TEMPLATE_BYTES) {
         return NextResponse.json(
