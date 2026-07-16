@@ -60,3 +60,4 @@ test-pdf.js
 test_pdf.mjs
 deploy_instruction.md
 !public/**/*.pdf
+*.zip
