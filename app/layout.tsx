@@ -5,6 +5,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { AuthProvider } from "@/lib/auth-context";
+import { Analytics } from "@vercel/analytics/next";
+import { ErrorReporter } from "@/components/ErrorReporter";
 
 // Configure base application fonts
 const inter = Inter({
@@ -52,6 +54,8 @@ export default function RootLayout({
             <Footer />
           </AuthProvider>
         </ThemeProvider>
+        <ErrorReporter />
+        <Analytics />
       </body>
     </html>
   );
