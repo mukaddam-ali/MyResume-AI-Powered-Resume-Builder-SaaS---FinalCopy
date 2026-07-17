@@ -27,7 +27,30 @@ export const DownloadResumeButton = ({
     data
 }: DownloadResumeButtonProps) => {
     const userTier = useResumeStore((state) => state.userTier);
-    const [isGenerating, setIsGenerating] = useState<null | 'standard' | 'ats'>(null);
+    const [isGenerating, setIsGenerating] = useState<null | 'standard' | 'ats' | 'docx'>(null);
+
+    const handleDocx = async () => {
+        try {
+            setIsGenerating('docx');
+            const { normalizeResumeData } = await import('@/lib/normalizeResume');
+            const { generateDocx } = await import('@/lib/docxExport');
+            const blob = await generateDocx(normalizeResumeData(data));
+
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName.replace(/\.pdf$/i, '') + '.docx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            console.error("Error generating DOCX:", error);
+            alert("Failed to generate the Word document. Please try again.");
+        } finally {
+            setIsGenerating(null);
+        }
+    };
 
     const handleDownload = async (mode: 'standard' | 'ats') => {
         try {
@@ -98,6 +121,13 @@ export const DownloadResumeButton = ({
                     <div>
                         <div className="font-medium">ATS-Safe PDF</div>
                         <div className="text-xs text-muted-foreground">Single column, standard headings, no photo — maximum parseability</div>
+                    </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDocx} className="gap-2 cursor-pointer">
+                    <FileText className="h-4 w-4 text-blue-600" />
+                    <div>
+                        <div className="font-medium">Word (.docx)</div>
+                        <div className="text-xs text-muted-foreground">Editable document for recruiters who ask for Word</div>
                     </div>
                 </DropdownMenuItem>
             </DropdownMenuContent>

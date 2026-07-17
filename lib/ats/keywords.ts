@@ -142,11 +142,136 @@ const SKILL_SYNONYMS: Record<string, string[]> = {
     'Collaboration': ['teamwork', 'team player'],
     'Time Management': ['prioritization', 'deadlines'],
     'Customer Service': ['customer support', 'client-facing', 'customer-facing'],
-    'Sales': ['business development'],
-    'Marketing': ['seo', 'digital marketing', 'content marketing'],
     'Data Analysis': ['data analytics', 'data-driven', 'analytics'],
     'Presentation': ['public speaking', 'presentations'],
     'Documentation': ['technical writing', 'technical documentation'],
+
+    // Sales & business development
+    'Sales': ['business development', 'bdr', 'sdr'],
+    'CRM': ['salesforce', 'hubspot', 'pipedrive'],
+    'Lead Generation': ['prospecting', 'lead gen', 'cold calling', 'cold outreach'],
+    'Account Management': ['account executive', 'client relationships', 'key accounts'],
+    'Negotiation': ['contract negotiation', 'deal closing', 'closing'],
+    'Quota Attainment': ['sales targets', 'quota', 'revenue targets'],
+    'Customer Success': ['customer retention', 'churn reduction', 'onboarding'],
+    'B2B Sales': ['b2b', 'enterprise sales', 'saas sales'],
+    'Retail Sales': ['pos', 'point of sale', 'merchandising', 'upselling'],
+
+    // Marketing & content
+    'Marketing': ['digital marketing', 'marketing strategy'],
+    'SEO': ['search engine optimization', 'sem', 'search marketing'],
+    'Content Marketing': ['content strategy', 'content creation', 'copywriting'],
+    'Social Media': ['social media marketing', 'social media management', 'instagram', 'tiktok', 'community management'],
+    'Email Marketing': ['mailchimp', 'klaviyo', 'email campaigns', 'newsletters'],
+    'Paid Advertising': ['google ads', 'facebook ads', 'meta ads', 'ppc', 'paid media', 'adwords'],
+    'Brand Management': ['branding', 'brand strategy'],
+    'Market Research': ['competitive analysis', 'consumer insights', 'surveys'],
+    'Google Analytics': ['ga4', 'web analytics'],
+    'Campaign Management': ['marketing campaigns', 'campaign planning'],
+
+    // Finance & accounting
+    'Accounting': ['general ledger', 'bookkeeping', 'accounts payable', 'accounts receivable', 'ap/ar'],
+    'Financial Analysis': ['financial modeling', 'financial modelling', 'valuation', 'dcf'],
+    'Budgeting': ['forecasting', 'budget management', 'financial planning', 'fp&a'],
+    'QuickBooks': [],
+    'SAP': [],
+    'GAAP': ['ifrs', 'financial reporting'],
+    'Auditing': ['internal audit', 'external audit', 'sox compliance'],
+    'Tax Preparation': ['tax returns', 'tax compliance'],
+    'Payroll': ['payroll processing', 'adp'],
+    'Reconciliation': ['account reconciliation', 'bank reconciliation'],
+    'Risk Management': ['risk assessment', 'credit risk', 'risk analysis'],
+    'CPA': ['certified public accountant'],
+    'Investment Analysis': ['portfolio management', 'equity research', 'asset management'],
+
+    // Healthcare
+    'Patient Care': ['patient assessment', 'bedside care', 'direct patient care'],
+    'Electronic Health Records': ['ehr', 'emr', 'epic', 'cerner', 'medical records'],
+    'HIPAA': ['patient privacy', 'hipaa compliance'],
+    'Vital Signs': ['patient monitoring', 'triage'],
+    'Medication Administration': ['med administration', 'pharmacology', 'medication management'],
+    'CPR': ['bls', 'acls', 'first aid', 'life support'],
+    'Registered Nurse': ['rn', 'nursing', 'licensed nurse'],
+    'Phlebotomy': ['blood draws', 'specimen collection'],
+    'Medical Terminology': ['clinical terminology'],
+    'Care Planning': ['care plans', 'discharge planning', 'case management'],
+    'Infection Control': ['sterilization', 'aseptic technique'],
+    'Medical Billing': ['medical coding', 'icd-10', 'cpt coding', 'claims processing'],
+
+    // Human resources
+    'Recruiting': ['talent acquisition', 'sourcing', 'full-cycle recruiting', 'headhunting'],
+    'Onboarding': ['new hire orientation', 'employee onboarding'],
+    'Employee Relations': ['conflict resolution', 'workplace investigations'],
+    'HRIS': ['workday', 'bamboohr', 'hr systems'],
+    'Performance Management': ['performance reviews', 'talent development'],
+    'Benefits Administration': ['compensation', 'benefits', 'total rewards'],
+    'Labor Law': ['employment law', 'hr compliance', 'eeo', 'fmla'],
+    'Training & Development': ['learning and development', 'l&d', 'employee training', 'curriculum development'],
+
+    // Operations, logistics & admin
+    'Operations Management': ['operational efficiency', 'process improvement', 'process optimization'],
+    'Supply Chain': ['supply chain management', 'procurement', 'sourcing strategy', 'vendor management'],
+    'Inventory Management': ['stock control', 'inventory control', 'warehouse management'],
+    'Logistics': ['shipping', 'freight', 'distribution', 'fleet management'],
+    'Lean Six Sigma': ['six sigma', 'lean manufacturing', 'kaizen', 'continuous improvement'],
+    'Quality Assurance': ['quality control', 'qa/qc', 'iso 9001'],
+    'Scheduling': ['calendar management', 'appointment scheduling', 'shift scheduling'],
+    'Data Entry': ['records management', 'filing', 'administrative support'],
+    'Microsoft Office': ['ms office', 'word', 'powerpoint', 'outlook', 'office suite'],
+    'Google Workspace': ['google docs', 'google sheets', 'g suite'],
+    'Event Planning': ['event coordination', 'event management'],
+    'Report Writing': ['reporting', 'business reporting'],
+
+    // Design & creative
+    'Graphic Design': ['visual design', 'brand design'],
+    'Adobe Photoshop': ['photoshop'],
+    'Adobe Illustrator': ['illustrator'],
+    'Adobe InDesign': ['indesign'],
+    'Adobe Premiere': ['premiere pro', 'video editing', 'after effects'],
+    'Canva': [],
+    'Wireframing': ['prototyping', 'mockups'],
+    'Design Systems': ['style guides', 'component libraries'],
+    'Photography': ['photo editing', 'lightroom'],
+    'Motion Graphics': ['animation', '3d modeling', 'blender'],
+
+    // Education & social services
+    'Curriculum Design': ['lesson planning', 'instructional design', 'course development'],
+    'Classroom Management': ['student engagement', 'behavior management'],
+    'Tutoring': ['academic support', 'teaching', 'instruction'],
+    'Special Education': ['iep', 'sped', 'differentiated instruction'],
+    'Counseling': ['crisis intervention', 'case work', 'social work'],
+
+    // Legal
+    'Legal Research': ['westlaw', 'lexisnexis', 'case law research'],
+    'Contract Drafting': ['contract review', 'legal drafting', 'contract management'],
+    'Litigation': ['discovery', 'depositions', 'trial preparation'],
+    'Regulatory Compliance': ['compliance', 'regulatory affairs', 'due diligence'],
+    'Paralegal': ['legal assistant', 'legal support'],
+
+    // Hospitality & food service
+    'Food Safety': ['servsafe', 'haccp', 'food handling'],
+    'Hospitality': ['guest services', 'front desk', 'concierge', 'guest relations'],
+    'Bartending': ['mixology', 'barista'],
+    'Kitchen Management': ['food preparation', 'line cook', 'culinary', 'menu planning'],
+    'Reservations': ['booking systems', 'opentable'],
+
+    // Skilled trades & field work
+    'Electrical': ['electrician', 'wiring', 'electrical systems'],
+    'HVAC': ['heating and cooling', 'refrigeration'],
+    'Plumbing': ['pipefitting'],
+    'Welding': ['fabrication', 'mig', 'tig'],
+    'Carpentry': ['framing', 'woodworking'],
+    'Blueprint Reading': ['schematics', 'technical drawings', 'cad', 'autocad'],
+    'Forklift Operation': ['forklift certified', 'heavy machinery', 'osha'],
+    'Preventive Maintenance': ['equipment maintenance', 'troubleshooting equipment'],
+
+    // Languages (commonly requested in JDs)
+    'Spanish': ['bilingual spanish', 'fluent in spanish'],
+    'French': ['fluent in french'],
+    'Mandarin': ['chinese', 'fluent in mandarin'],
+    'Arabic': ['fluent in arabic'],
+    'German': ['fluent in german'],
+    'Bilingual': ['multilingual'],
 };
 
 // Precompile: variant -> canonical
