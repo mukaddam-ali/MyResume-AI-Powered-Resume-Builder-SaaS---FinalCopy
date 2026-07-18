@@ -90,8 +90,17 @@ export function PublicToggle() {
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800/50 text-xs font-medium text-green-700 dark:text-green-400 max-w-[180px] overflow-hidden">
-                                <ExternalLink className="h-3 w-3 shrink-0" />
-                                <span className="truncate">/p/{activeResume.id.substring(0, 8)}…</span>
+                                {/* Opens the live portfolio in a new tab */}
+                                <a
+                                    href={portfolioUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1.5 min-w-0 hover:text-green-900 dark:hover:text-green-200 transition-colors"
+                                    aria-label="Open portfolio in a new tab"
+                                >
+                                    <ExternalLink className="h-3 w-3 shrink-0" />
+                                    <span className="truncate">/p/{activeResume.id.substring(0, 8)}…</span>
+                                </a>
                                 <button
                                     onClick={handleCopy}
                                     className="ml-1 shrink-0 hover:text-green-900 dark:hover:text-green-200 transition-colors"
@@ -107,7 +116,7 @@ export function PublicToggle() {
                         </TooltipTrigger>
                         <TooltipContent side="bottom">
                             <p className="text-xs font-mono">{portfolioUrl}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">Click copy to share your portfolio</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">Click the link to open your portfolio · click copy to share it</p>
                         </TooltipContent>
                     </Tooltip>
                 )}
