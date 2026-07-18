@@ -55,7 +55,7 @@
 
 ### 💾 Export & Download
 - **PDF Export** — High-fidelity PDF via `@react-pdf/renderer`
-- **Community Templates** — Publish your resume as a public template for others to use
+- **Public Portfolio Pages** — Publish your resume as a personal portfolio site with a shareable link
 
 ### 💳 Monetization
 - **Pro Plan** — Stripe-powered subscription for premium features

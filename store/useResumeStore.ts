@@ -262,8 +262,6 @@ interface ResumeState {
 
     // Public/Private Visibility Actions
     toggleResumeVisibility: (resumeId: string) => void;
-    copyResumeTemplate: (sourceResumeId: string) => string | null;
-    getPublicResumes: () => ResumeData[];
 
     // Variant Management Actions
     addVariant: (resumeId: string, name: string) => void;
@@ -1125,38 +1123,6 @@ export const useResumeStore = create<ResumeState>()(
                         alert((error as Error).message || 'Could not update visibility. Please try again.');
                     }
                 }
-            },
-
-            copyResumeTemplate: (sourceResumeId) => {
-                const state = get();
-                const sourceResume = state.resumes[sourceResumeId];
-
-                // Only allow copying public resumes
-                if (!sourceResume || !sourceResume.isPublic) {
-                    return null;
-                }
-
-                const newId = crypto.randomUUID();
-                const newResume: ResumeData = {
-                    ...sourceResume,
-                    id: newId,
-                    name: `${sourceResume.name} (Copy)`,
-                    isPublic: false, // Copies are always private
-                    lastModified: Date.now(),
-                    analysisResult: null // Don't copy analysis results
-                };
-
-                set((state) => ({
-                    resumes: { ...state.resumes, [newId]: newResume },
-                    activeResumeId: newId
-                }));
-
-                return newId;
-            },
-
-            getPublicResumes: () => {
-                const state = get();
-                return Object.values(state.resumes).filter(resume => resume.isPublic === true);
             },
 
             // --- Variant Management Actions ---

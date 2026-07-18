@@ -5,15 +5,8 @@ import { LazySection } from "@/components/home/LazySection";
 import dynamic from "next/dynamic";
 
 // Lazy-load below-the-fold sections so they don't block the initial hero paint.
-// FeaturesSection and TemplateGallery both import framer-motion and (in the case
-// of TemplateGallery) the full LiveResume renderer — keeping them out of the
-// initial bundle dramatically reduces TBT and LCP.
 const FeaturesSection = dynamic(
   () => import("@/components/home/FeaturesSection").then((m) => ({ default: m.FeaturesSection }))
-);
-
-const TemplateGallery = dynamic(
-  () => import("@/components/home/TemplateGallery").then((m) => ({ default: m.TemplateGallery }))
 );
 
 // FeedbackWidget is a floating widget not required for the initial paint/LCP.
@@ -30,9 +23,6 @@ export default function Home() {
       {/* Below-the-fold sections — loaded lazily after hero paints */}
       <LazySection minHeight="400px">
         <FeaturesSection />
-      </LazySection>
-      <LazySection minHeight="500px">
-        <TemplateGallery />
       </LazySection>
 
       {/* CTA Section */}

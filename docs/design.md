@@ -726,7 +726,6 @@ Interaction patterns:
 
 - Zoom controls: `Minus` / `Plus` buttons + `RotateCcw` reset, numeric % display
 - **Fullscreen mode:** `Maximize2` button creates a full-viewport portal overlay; closed via `Escape` key
-- **Heatmap overlay:** `Flame` button toggles recruiter attention visualization (Premium feature)
 - Download: `DownloadResumeButton` generates and downloads the PDF
 - Post-import caution banner: amber-toned warning panel about AI import accuracy
 - Empty state (no resume selected): centered `FileText` icon with "Create a new resume" CTA
@@ -773,7 +772,6 @@ flex items-center gap-3 bg-white dark:bg-gray-900 rounded-lg p-3 border
 5. Premium fonts (9 options)
 6. Custom theme colors (hex picker)
 7. Remove Branding toggle
-8. Heatmap overlay (recruiter attention map)
 9. Variant Manager (job-specific resume variants)
 
 **Trust badges:** Secure (Shield) | Instant Access (Check) | No Subscription (Star)
@@ -915,7 +913,6 @@ Mobile-first approach. All layouts default to single-column mobile and expand vi
 | `Star`         | Upgrade / Pro plan trigger                    |
 | `Zap`          | Instant preview, AI analysis                  |
 | `Shield`       | Privacy, security (Stripe badge)              |
-| `Flame`        | Heatmap overlay toggle                        |
 | `Cloud`        | Sync idle state                               |
 | `Loader2`      | Loading spinner — always paired with `animate-spin` |
 | `GripVertical` | Drag handle on sortable tabs/items            |
@@ -1004,7 +1001,7 @@ Mobile-first approach. All layouts default to single-column mobile and expand vi
 | `components/editor/TemplateSelector.tsx`     | Template picker with live miniature previews       |
 | `components/editor/ResumeScore.tsx`          | AI resume scoring and completeness widget          |
 | `components/preview/LiveResume.tsx`          | Live resume renderer for all 5 templates           |
-| `components/preview/PreviewPanel.tsx`        | Preview panel with zoom, fullscreen, heatmap       |
+| `components/preview/PreviewPanel.tsx`        | Preview panel with zoom and fullscreen       |
 | `components/payment/UpgradeButton.tsx`       | Premium upgrade button trigger and dialog          |
 | `components/payment/PaymentModal.tsx`        | Stripe payment modal UI design                     |
 | `components/ui/button.tsx`                   | Button component with all variant definitions      |
