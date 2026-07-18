@@ -2,8 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from 'next/font/google';
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
+import { AppShell } from "@/components/layout/AppShell";
 import { AuthProvider } from "@/lib/auth-context";
 import { Analytics } from "@vercel/analytics/next";
 import { ErrorReporter } from "@/components/ErrorReporter";
@@ -45,13 +44,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <Navbar />
-            <div className="flex-1 flex flex-col">
-              <main className="flex-1 flex flex-col">
-                {children}
-              </main>
-            </div>
-            <Footer />
+            <AppShell>{children}</AppShell>
           </AuthProvider>
         </ThemeProvider>
         <ErrorReporter />

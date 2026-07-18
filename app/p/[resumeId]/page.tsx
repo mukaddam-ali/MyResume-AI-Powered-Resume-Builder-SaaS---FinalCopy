@@ -1,7 +1,6 @@
 import { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
 import { notFound } from "next/navigation";
-import PortfolioPage from "@/components/portfolio/PortfolioPage";
 import PortfolioPro from "@/components/portfolio/PortfolioPro";
 
 interface Props {
@@ -54,10 +53,5 @@ export default async function PublicPortfolioPage({ params }: Props) {
 
     const resumeData = template.resume_data as any;
 
-    // Pro publishers get the premium portfolio design (tier recorded at publish time)
-    if (resumeData?.portfolioTier === 'pro') {
-        return <PortfolioPro resumeData={resumeData} resumeId={resumeId} />;
-    }
-
-    return <PortfolioPage resumeData={resumeData} resumeId={resumeId} />;
+    return <PortfolioPro resumeData={resumeData} resumeId={resumeId} />;
 }

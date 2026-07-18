@@ -257,7 +257,7 @@ function Projects({ projects }: { projects: Project[] }) {
     );
 
     return (
-        <section id="projects" className="py-20 bg-muted/30">
+        <section id="projects" className="py-20 bg-muted/30 scroll-mt-16">
             <div className="container mx-auto px-4">
                 <div className="flex flex-col items-center mb-12">
                     <h2 className="text-3xl font-bold tracking-tight mb-4">Featured Projects</h2>
@@ -301,7 +301,7 @@ function Skills({ skills }: { skills: string[] }) {
     }, [skills]);
 
     return (
-        <section id="skills" className="py-20">
+        <section id="skills" className="py-20 scroll-mt-16">
             <div className="container mx-auto px-4">
                 <div className="text-center mb-12">
                     <h2 className="text-3xl font-bold tracking-tight mb-4">Technical Skills</h2>
@@ -337,7 +337,7 @@ function Skills({ skills }: { skills: string[] }) {
 // ─── Experience ──────────────────────────────────────────────────────────────
 function Experience({ data }: { data: ResumeData }) {
     return (
-        <section id="experience" className="py-20 bg-muted/30">
+        <section id="experience" className="py-20 bg-muted/30 scroll-mt-16">
             <div className="container mx-auto px-4">
                 <h2 className="text-3xl font-bold tracking-tight mb-12 text-center">Experience</h2>
                 <div className="max-w-3xl mx-auto space-y-8">
@@ -376,7 +376,7 @@ function Education({ data }: { data: ResumeData }) {
     const customSections = (data.customSections || []).filter(cs => visible(cs.id));
 
     return (
-        <section id="education" className="py-20">
+        <section id="education" className="py-20 scroll-mt-16">
             <div className="container mx-auto px-4">
                 <h2 className="text-3xl font-bold tracking-tight mb-12 text-center">Education</h2>
                 <div className="max-w-3xl mx-auto">
@@ -444,7 +444,7 @@ function Contact({ data }: { data: ResumeData }) {
     };
 
     return (
-        <section id="contact" className="py-20 bg-muted/30">
+        <section id="contact" className="py-20 bg-muted/30 scroll-mt-16">
             <div className="container mx-auto px-4 max-w-5xl">
                 <div className="text-center mb-12">
                     <h2 className="text-3xl font-bold tracking-tight mb-4">Get In Touch</h2>
@@ -595,7 +595,7 @@ export default function PortfolioPro({ resumeData }: PortfolioProProps) {
     ];
 
     return (
-        <div className="min-h-screen bg-background text-foreground">
+        <div className="min-h-screen bg-background text-foreground scroll-smooth">
             <Header
                 name={resumeData.personalInfo.fullName}
                 photo={resumeData.personalInfo.photo}
