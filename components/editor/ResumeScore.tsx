@@ -165,11 +165,18 @@ export function ResumeScore() {
                 throw new Error(scan.error);
             }
 
-            // Merge: deterministic scores + parse test are authoritative; AI
-            // contributes qualitative rewrite suggestions when available.
+            // Merge: deterministic scores + parse test remain the authoritative
+            // "ATS Score" (reproducible, based on an actual PDF parse test).
+            // The AI call additionally contributes its own holistic quality
+            // read (ai_score/ai_summary) plus rewrite suggestions — shown
+            // alongside, not blended into, the deterministic score.
+            const aiOk = ai && !ai.error;
             const merged = {
                 ...scan,
-                suggested_edits: ai && !ai.error && Array.isArray(ai.suggested_edits) ? ai.suggested_edits : [],
+                suggested_edits: aiOk && Array.isArray(ai.suggested_edits) ? ai.suggested_edits : [],
+                ai_score: aiOk && typeof ai.score === 'number' ? ai.score : null,
+                ai_category_scores: aiOk ? ai.category_scores : null,
+                ai_summary: aiOk ? ai.summary : null,
             };
 
             setAnalysisCache(cacheKey, merged);

@@ -37,6 +37,17 @@ interface ATSResultsProps {
             suggestion: string;
             reason: string;
         }>;
+        // AI holistic quality read — a second opinion alongside the
+        // deterministic score, judging real substance rather than literal
+        // metrics/keyword rules. null when the AI call failed or was skipped.
+        ai_score?: number | null;
+        ai_category_scores?: {
+            impact: number;
+            brevity: number;
+            style: number;
+            structure: number;
+        } | null;
+        ai_summary?: string | null;
         // Deterministic scan extras
         deterministic?: boolean;
         parse_score?: number;
@@ -202,6 +213,21 @@ export function ATSResults({ data, loading }: ATSResultsProps) {
                     </div>
                 </div>
 
+                {typeof premiumData.ai_score === 'number' && (
+                    <div className="mt-4 flex items-start gap-2.5 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 rounded-lg p-3">
+                        <Sparkles className="h-4 w-4 text-indigo-500 mt-0.5 shrink-0" />
+                        <div className="min-w-0">
+                            <p className="text-sm">
+                                <span className={`font-bold ${getScoreColor(premiumData.ai_score)}`}>AI Quality Score: {premiumData.ai_score}/100</span>
+                                <span className="text-muted-foreground"> — a holistic read of your resume's real substance, separate from the deterministic ATS score above.</span>
+                            </p>
+                            {premiumData.ai_summary && (
+                                <p className="text-xs text-muted-foreground mt-1">{premiumData.ai_summary}</p>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {/* Main Score Dashboard */}
                 <div className="flex items-center gap-8 mt-6">
                     <div className="relative flex items-center justify-center w-32 h-32 flex-shrink-0">
@@ -222,7 +248,7 @@ export function ATSResults({ data, loading }: ATSResultsProps) {
                         </svg>
                         <div className="absolute flex flex-col items-center">
                             <span className={`text-3xl font-bold ${getScoreColor(displayScore)}`}>{displayScore}</span>
-                            <span className="text-xs uppercase font-bold text-muted-foreground">Score</span>
+                            <span className="text-xs uppercase font-bold text-muted-foreground">ATS Score</span>
                         </div>
                     </div>
 

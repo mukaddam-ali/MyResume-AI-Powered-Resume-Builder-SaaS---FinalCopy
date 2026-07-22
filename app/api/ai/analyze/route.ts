@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createGroq } from "@ai-sdk/groq";
 import { generateText } from "ai";
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
+import { getUserAndTier } from "@/lib/entitlements-server";
 
 /**
  * Optimize resume data to reduce token usage
@@ -12,21 +13,27 @@ function optimizeResumeData(data: any) {
         jobTitle: data.personalInfo?.jobTitle,
         skills: Array.isArray(data.skills) ? data.skills.slice(0, 30) : [],
         experience: data.experience?.map((exp: any) => ({
-            role: exp.title,
+            role: exp.role,
             company: exp.company,
-            highlights: exp.description?.substring(0, 300)
+            highlights: exp.description?.substring(0, 400)
         })).slice(0, 5),
+        // Projects were previously omitted entirely — for early-career resumes
+        // this is often where the strongest, most concrete evidence lives.
+        projects: Array.isArray(data.projects) ? data.projects.slice(0, 4).map((p: any) => ({
+            name: p.name,
+            technologies: p.technologies,
+            highlights: p.description?.substring(0, 400)
+        })) : [],
         education: data.education?.map((edu: any) => ({
             degree: edu.degree,
-            field: edu.field,
             school: edu.school
         })).slice(0, 2)
     };
 }
 
 export async function POST(req: Request) {
-    const limit = rateLimit(`ai-analyze:${getClientIp(req)}`, 6, 60_000);
-    if (!limit.allowed) return rateLimitResponse(limit);
+    const ipLimit = rateLimit(`ai-analyze:${getClientIp(req)}`, 6, 60_000);
+    if (!ipLimit.allowed) return rateLimitResponse(ipLimit);
 
     try {
         const apiKey = process.env.GROQ_API_KEY;
@@ -43,14 +50,27 @@ export async function POST(req: Request) {
             );
         }
 
+        const { user, tier } = await getUserAndTier();
+        if (!user) {
+            return NextResponse.json({ error: "Sign in to run the AI analysis." }, { status: 401 });
+        }
+        if (tier !== "pro") {
+            return NextResponse.json({ error: "AI resume analysis is a Pro feature." }, { status: 403 });
+        }
+        const userLimit = rateLimit(`ai-analyze-user:${user.id}`, 20, 24 * 60 * 60_000);
+        if (!userLimit.allowed) return rateLimitResponse(userLimit);
+
         console.log("✅ Using Groq API (generateText + JSON parse)");
 
         const { resumeData, jobDescription } = await req.json();
 
         const optimizedResume = optimizeResumeData(resumeData);
 
-        const prompt = `You are a strict ATS (Applicant Tracking System) and expert Resume Coach.
-Analyze the resume data below and respond ONLY with a valid JSON object — no markdown, no code fences, no extra text.
+        const prompt = `You are an experienced technical recruiter and resume coach giving a candidate an honest, holistic read of their resume — the way you'd actually evaluate one in a stack of real applications, not a rigid keyword scraper.
+
+A separate deterministic system already checks hard ATS-parseability facts (does the PDF text-extract cleanly, are section headings standard, etc.) — that is NOT your job here. Your score is a QUALITY read: is this a strong resume for the level it's targeting? Judge the real substance of what the candidate built and did, not just whether every bullet has a number in it. A resume with a couple of genuinely strong, technically substantial projects/experiences described in dense paragraphs can still be a strong resume — note the formatting weakness in feedback, but don't let it alone crater the score the way a truly weak, generic resume would.
+
+Respond ONLY with a valid JSON object — no markdown, no code fences, no extra text.
 
 REQUIRED JSON STRUCTURE:
 {
@@ -72,6 +92,13 @@ REQUIRED JSON STRUCTURE:
     { "section": "<section name>", "suggestion": "<what to change>", "reason": "<why>" }
   ]
 }
+
+SCORE CALIBRATION — apply this, don't invent your own scale:
+- 90-100: exceptional, top-tier resume for its level — rare.
+- 75-89: strong resume with real, substantial, relevant experience/projects — most solid candidates with genuine hands-on work land here, even with room to tighten writing/formatting.
+- 55-74: decent foundation but with real gaps (thin experience, generic descriptions, weak structure).
+- Below 55: reserve for resumes with serious structural or content problems (missing sections, no real evidence of relevant work, unreadable).
+- Weigh actual technical/professional substance heaviest. Formatting polish (bullet structure, quantified metrics) matters and should show up in "feedback" and pull category scores like impact/brevity down somewhat — but should not by itself drag a resume with genuinely strong, relevant work down into "weak" territory.
 
 RULES:
 - All scores MUST be integers, not decimals.
