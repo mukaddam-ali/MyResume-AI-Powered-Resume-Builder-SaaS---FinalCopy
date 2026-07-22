@@ -11,9 +11,17 @@ import {
 } from "@/components/ui/dialog";
 import { useResumeStore } from "@/store/useResumeStore";
 import { useAuth } from "@/lib/auth-context";
-import { FileText, Loader2, Copy, Check, Download, Sparkles, Lock, Info, AlertTriangle } from "lucide-react";
+import { FileText, Loader2, Copy, Check, Download, Sparkles, Lock, Info, AlertTriangle, CheckCircle2, Circle } from "lucide-react";
+import type { CoverLetterStageName } from "@/lib/ai/coverLetter/types";
 
 type Tone = "professional" | "enthusiastic" | "concise";
+
+const STAGE_ORDER: { key: CoverLetterStageName; label: string }[] = [
+    { key: "analyze", label: "Analyzing the job description" },
+    { key: "outline", label: "Planning your letter" },
+    { key: "draft", label: "Writing your draft" },
+    { key: "critique", label: "Polishing & fact-checking" },
+];
 
 export function CoverLetterGenerator() {
     const { resumes, activeResumeId } = useResumeStore();
@@ -25,12 +33,14 @@ export function CoverLetterGenerator() {
     const [company, setCompany] = useState("");
     const [tone, setTone] = useState<Tone>("professional");
     const [letter, setLetter] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [stage, setStage] = useState<CoverLetterStageName | null>(null);
     const [downloadingPdf, setDownloadingPdf] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
 
     if (!activeResume) return null;
+
+    const loading = stage !== null;
 
     // The AI writes the letter FROM the resume — warn when key sections are
     // empty so users know why their letter might come out generic.
@@ -42,7 +52,7 @@ export function CoverLetterGenerator() {
     if (!activeResume.skills?.length) missingParts.push("skills");
 
     const handleGenerate = async () => {
-        setLoading(true);
+        setStage("analyze");
         setError(null);
         try {
             const res = await fetch("/api/ai/cover-letter", {
@@ -50,13 +60,44 @@ export function CoverLetterGenerator() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ resumeData: activeResume, jobDescription, company, tone }),
             });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || "Generation failed.");
-            setLetter(data.coverLetter);
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || `Generation failed (${res.status}).`);
+            }
+            if (!res.body) {
+                throw new Error("Streaming isn't supported in this browser — try a different browser.");
+            }
+
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = "";
+            let finalLetter: string | null = null;
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                // NDJSON: chunk boundaries never line up with line boundaries,
+                // so buffer until we see a complete "\n"-terminated line.
+                buffer += decoder.decode(value, { stream: true });
+                let newlineIndex;
+                while ((newlineIndex = buffer.indexOf("\n")) >= 0) {
+                    const line = buffer.slice(0, newlineIndex).trim();
+                    buffer = buffer.slice(newlineIndex + 1);
+                    if (!line) continue;
+                    const event = JSON.parse(line);
+                    if (event.type === "stage") setStage(event.stage);
+                    else if (event.type === "result") finalLetter = event.coverLetter;
+                    else if (event.type === "error") throw new Error(event.message);
+                }
+            }
+
+            if (finalLetter == null) throw new Error("Generation ended unexpectedly. Please try again.");
+            setLetter(finalLetter);
         } catch (e) {
             setError((e as Error).message);
         } finally {
-            setLoading(false);
+            setStage(null);
         }
     };
 
@@ -105,6 +146,8 @@ export function CoverLetterGenerator() {
             setDownloadingPdf(false);
         }
     };
+
+    const activeStageIndex = stage ? STAGE_ORDER.findIndex((s) => s.key === stage) : -1;
 
     return (
         <>
@@ -158,8 +201,8 @@ export function CoverLetterGenerator() {
                                 <div className="flex items-start gap-2.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                                     <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
                                     <p className="text-sm text-blue-800 dark:text-blue-200">
-                                        The AI reads your resume (summary, experience, skills) and matches
-                                        it to the job description — your real achievements, never invented ones.
+                                        The AI reads your resume (summary, experience, skills, projects) and
+                                        matches it to the job description — your real achievements, never invented ones.
                                     </p>
                                 </div>
                             )}
@@ -171,7 +214,8 @@ export function CoverLetterGenerator() {
                                     value={company}
                                     onChange={(e) => setCompany(e.target.value.slice(0, 120))}
                                     placeholder="e.g. Acme Corp"
-                                    className="w-full text-sm p-2.5 rounded-md border bg-background focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
+                                    disabled={loading}
+                                    className="w-full text-sm p-2.5 rounded-md border bg-background focus:outline-none focus:ring-2 focus:ring-indigo-400/40 disabled:opacity-60"
                                 />
                             </div>
                             <div className="space-y-1.5">
@@ -182,7 +226,8 @@ export function CoverLetterGenerator() {
                                     onChange={(e) => setJobDescription(e.target.value.slice(0, 5000))}
                                     placeholder="Paste the full job posting here…"
                                     rows={8}
-                                    className="w-full text-sm p-3 rounded-md border bg-background resize-y focus:outline-none focus:ring-2 focus:ring-indigo-400/40"
+                                    disabled={loading}
+                                    className="w-full text-sm p-3 rounded-md border bg-background resize-y focus:outline-none focus:ring-2 focus:ring-indigo-400/40 disabled:opacity-60"
                                 />
                             </div>
                             <div className="space-y-1.5">
@@ -192,7 +237,8 @@ export function CoverLetterGenerator() {
                                         <button
                                             key={t}
                                             onClick={() => setTone(t)}
-                                            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors capitalize ${tone === t
+                                            disabled={loading}
+                                            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors capitalize disabled:opacity-60 ${tone === t
                                                 ? "bg-indigo-600 text-white border-indigo-600"
                                                 : "bg-background text-muted-foreground hover:bg-muted"}`}
                                         >
@@ -201,6 +247,29 @@ export function CoverLetterGenerator() {
                                     ))}
                                 </div>
                             </div>
+
+                            {loading && (
+                                <div className="space-y-2 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 rounded-lg p-3">
+                                    {STAGE_ORDER.map((s, i) => {
+                                        const isDone = i < activeStageIndex;
+                                        const isActive = i === activeStageIndex;
+                                        return (
+                                            <div key={s.key} className="flex items-center gap-2 text-sm">
+                                                {isDone ? (
+                                                    <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+                                                ) : isActive ? (
+                                                    <Loader2 className="h-4 w-4 text-indigo-600 animate-spin shrink-0" />
+                                                ) : (
+                                                    <Circle className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                                                )}
+                                                <span className={isDone ? "text-muted-foreground" : isActive ? "text-indigo-700 dark:text-indigo-300 font-medium" : "text-muted-foreground/60"}>
+                                                    {s.label}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
 
                             {error && (
                                 <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-md p-3">{error}</p>
@@ -213,7 +282,7 @@ export function CoverLetterGenerator() {
                                 size="lg"
                             >
                                 {loading ? (
-                                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Writing your letter…</>
+                                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Working…</>
                                 ) : (
                                     <><Sparkles className="h-4 w-4 mr-2" /> Generate Cover Letter</>
                                 )}

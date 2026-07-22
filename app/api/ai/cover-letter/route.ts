@@ -1,82 +1,95 @@
 import { NextResponse } from "next/server";
-import { createGroq } from "@ai-sdk/groq";
-import { generateText } from "ai";
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
+import { getUserAndTier } from "@/lib/entitlements-server";
+import { condenseResumeForCoverLetter } from "@/lib/ai/coverLetter/condense";
+import { runCoverLetterPipeline } from "@/lib/ai/coverLetter/pipeline";
+import type { CoverLetterStreamEvent, Tone } from "@/lib/ai/coverLetter/types";
+
+// The 4-stage pipeline is ~4x the wall-clock of the old single call.
+export const maxDuration = 90;
 
 /**
  * POST /api/ai/cover-letter
- * Generates a tailored cover letter from the resume + a job description.
+ * Streams NDJSON progress events (one JSON object per line) while running a
+ * 4-stage Groq pipeline (analyze -> outline -> draft -> critique), ending
+ * with a `result` event containing the final cover letter.
+ *
+ * IMPORTANT: every check that can 400/401/403/429/500 must happen and
+ * `return NextResponse.json(...)` BEFORE the ReadableStream below is opened —
+ * HTTP status can't change once streaming starts.
  */
 export async function POST(req: Request) {
-    const limit = rateLimit(`ai-cover-letter:${getClientIp(req)}`, 5, 60_000);
-    if (!limit.allowed) return rateLimitResponse(limit);
+    const ipLimit = rateLimit(`ai-cover-letter:${getClientIp(req)}`, 5, 60_000);
+    if (!ipLimit.allowed) return rateLimitResponse(ipLimit);
 
-    try {
-        if (!process.env.GROQ_API_KEY) {
-            return NextResponse.json({ error: "AI service is not configured." }, { status: 500 });
-        }
-
-        const { resumeData, jobDescription, company, tone } = await req.json();
-
-        if (!resumeData || typeof resumeData !== 'object') {
-            return NextResponse.json({ error: "Resume data is required." }, { status: 400 });
-        }
-        if (!jobDescription || typeof jobDescription !== 'string' || jobDescription.trim().length < 30) {
-            return NextResponse.json({ error: "Please paste the job description (at least a few sentences)." }, { status: 400 });
-        }
-
-        // Only send what the letter needs — keeps tokens low and avoids
-        // leaking layout/settings into the prompt
-        const condensed = {
-            name: resumeData.personalInfo?.fullName,
-            jobTitle: resumeData.personalInfo?.jobTitle,
-            summary: resumeData.personalInfo?.summary,
-            skills: Array.isArray(resumeData.skills) ? resumeData.skills.slice(0, 25) : [],
-            experience: (resumeData.experience || []).slice(0, 4).map((e: any) => ({
-                role: e.role,
-                company: e.company,
-                highlights: (e.description || '').substring(0, 400),
-            })),
-            education: (resumeData.education || []).slice(0, 2).map((e: any) => ({
-                degree: e.degree,
-                school: e.school,
-            })),
-        };
-
-        const safeTone = ['professional', 'enthusiastic', 'concise'].includes(tone) ? tone : 'professional';
-        const safeCompany = typeof company === 'string' ? company.slice(0, 120) : '';
-
-        const prompt = `You are an expert career coach. Write a compelling cover letter for the candidate below, tailored to the job description.
-
-CANDIDATE:
-${JSON.stringify(condensed, null, 2)}
-
-JOB DESCRIPTION:
----
-${jobDescription.trim().slice(0, 4000)}
----
-${safeCompany ? `COMPANY NAME: ${safeCompany}` : ''}
-
-RULES:
-- Tone: ${safeTone}.
-- 3-4 paragraphs, 250-350 words. No address block, just start with "Dear Hiring Manager," (or the company name if provided).
-- Connect the candidate's strongest, most relevant achievements to the job's requirements — use their real numbers and skills, never invent facts.
-- End with a confident closing and the candidate's name.
-- Output ONLY the letter text. No preamble, no markdown, no notes.`;
-
-        const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
-        const { text } = await generateText({
-            model: groq("llama-3.3-70b-versatile"),
-            prompt,
-            temperature: 0.5,
-        });
-
-        return NextResponse.json({ coverLetter: text.trim() });
-    } catch (error: any) {
-        console.error("Cover letter generation error:", error);
-        return NextResponse.json(
-            { error: "Failed to generate the cover letter. Please try again." },
-            { status: 500 }
-        );
+    if (!process.env.GROQ_API_KEY) {
+        return NextResponse.json({ error: "AI service is not configured." }, { status: 500 });
     }
+
+    const { user, tier } = await getUserAndTier();
+    if (!user) {
+        return NextResponse.json({ error: "Sign in to generate a tailored cover letter." }, { status: 401 });
+    }
+    if (tier !== "pro") {
+        return NextResponse.json({ error: "The AI Cover Letter Generator is a Pro feature." }, { status: 403 });
+    }
+
+    // The pipeline costs ~4x a single call — a daily per-user cap in addition
+    // to the per-IP one above.
+    const userLimit = rateLimit(`ai-cover-letter-user:${user.id}`, 10, 24 * 60 * 60_000);
+    if (!userLimit.allowed) return rateLimitResponse(userLimit);
+
+    let resumeData: any, jobDescription: unknown, company: unknown, tone: unknown;
+    try {
+        ({ resumeData, jobDescription, company, tone } = await req.json());
+    } catch {
+        return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+    }
+
+    if (!resumeData || typeof resumeData !== "object") {
+        return NextResponse.json({ error: "Resume data is required." }, { status: 400 });
+    }
+    if (!jobDescription || typeof jobDescription !== "string" || jobDescription.trim().length < 30) {
+        return NextResponse.json({ error: "Please paste the job description (at least a few sentences)." }, { status: 400 });
+    }
+
+    const safeTone: Tone = ["professional", "enthusiastic", "concise"].includes(tone as string)
+        ? (tone as Tone)
+        : "professional";
+    const safeCompany = typeof company === "string" ? company.slice(0, 120) : "";
+    const safeJobDescription = jobDescription.trim().slice(0, 4000);
+    const condensed = condenseResumeForCoverLetter(resumeData);
+
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+        async start(controller) {
+            const emit = (event: CoverLetterStreamEvent) => {
+                controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
+            };
+            try {
+                const result = await runCoverLetterPipeline({
+                    condensed,
+                    jobDescription: safeJobDescription,
+                    company: safeCompany,
+                    tone: safeTone,
+                    emit,
+                });
+                emit({ type: "result", coverLetter: result.coverLetter, meta: result.meta });
+            } catch (error) {
+                console.error("Cover letter pipeline failed:", error);
+                emit({ type: "error", message: "Failed to generate the cover letter. Please try again." });
+            } finally {
+                controller.close();
+            }
+        },
+    });
+
+    return new Response(stream, {
+        status: 200,
+        headers: {
+            "Content-Type": "application/x-ndjson; charset=utf-8",
+            "Cache-Control": "no-cache, no-transform",
+            "X-Accel-Buffering": "no",
+        },
+    });
 }
