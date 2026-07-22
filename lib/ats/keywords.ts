@@ -281,6 +281,15 @@ for (const [canonical, synonyms] of Object.entries(SKILL_SYNONYMS)) {
     for (const s of synonyms) VARIANT_TO_CANONICAL.set(s.toLowerCase(), canonical);
 }
 
+// Skills that are modeled as their own separate canonical entry (because a JD
+// may ask for them specifically) but that also, unambiguously and by
+// definition, demonstrate a broader skill — e.g. knowing PostgreSQL means you
+// know SQL. Only used for genuinely uncontroversial "is-a" relationships, not
+// judgment calls (those belong to the AI-reasoned match, not the dictionary).
+const IMPLIED_SKILLS: Record<string, string[]> = {
+    'SQL': ['PostgreSQL', 'MySQL', 'SQLite'],
+};
+
 /** Escape a variant for regex use; match on word-ish boundaries. */
 function variantRegex(variant: string): RegExp {
     const escaped = variant.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -297,6 +306,9 @@ function skillsInText(text: string): Set<string> {
         // Fast pre-check before regex
         if (!lower.includes(variant.slice(0, Math.min(4, variant.length)))) continue;
         if (variantRegex(variant).test(text)) found.add(canonical);
+    }
+    for (const [broad, specifics] of Object.entries(IMPLIED_SKILLS)) {
+        if (!found.has(broad) && specifics.some((s) => found.has(s))) found.add(broad);
     }
     return found;
 }
