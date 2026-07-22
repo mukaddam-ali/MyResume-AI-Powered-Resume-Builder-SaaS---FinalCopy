@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -11,8 +11,9 @@ import {
 } from "@/components/ui/dialog";
 import { useResumeStore } from "@/store/useResumeStore";
 import { useAuth } from "@/lib/auth-context";
-import { FileText, Loader2, Copy, Check, Download, Sparkles, Lock, Info, AlertTriangle, CheckCircle2, Circle } from "lucide-react";
-import type { CoverLetterStageName } from "@/lib/ai/coverLetter/types";
+import { FileText, Loader2, Copy, Check, Download, Sparkles, Lock, Info, AlertTriangle, CheckCircle2, Circle, ChevronDown, ChevronUp, XCircle, Lightbulb } from "lucide-react";
+import type { CoverLetterStageName, CoverLetterAnalysis } from "@/lib/ai/coverLetter/types";
+import { matchJobDescription } from "@/lib/ats/keywords";
 
 type Tone = "professional" | "enthusiastic" | "concise";
 
@@ -37,6 +38,18 @@ export function CoverLetterGenerator() {
     const [downloadingPdf, setDownloadingPdf] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
+    const [showAllSkills, setShowAllSkills] = useState(false);
+    const [aiInsight, setAiInsight] = useState<CoverLetterAnalysis | null>(null);
+    const [insightLoading, setInsightLoading] = useState(false);
+    const [insightError, setInsightError] = useState<string | null>(null);
+
+    // Instant, free, deterministic keyword match — same matcher the ATS
+    // Scanner uses. Runs client-side on every keystroke; it's pure regex
+    // matching against a skill dictionary, cheap enough to skip debouncing.
+    const keywordMatch = useMemo(() => {
+        if (!activeResume || jobDescription.trim().length < 30) return null;
+        return matchJobDescription(activeResume, jobDescription);
+    }, [activeResume, jobDescription]);
 
     if (!activeResume) return null;
 
@@ -98,6 +111,25 @@ export function CoverLetterGenerator() {
             setError((e as Error).message);
         } finally {
             setStage(null);
+        }
+    };
+
+    const handleGetInsight = async () => {
+        setInsightLoading(true);
+        setInsightError(null);
+        try {
+            const res = await fetch("/api/ai/job-match", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ resumeData: activeResume, jobDescription }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || `Request failed (${res.status}).`);
+            setAiInsight(data.analysis);
+        } catch (e) {
+            setInsightError((e as Error).message);
+        } finally {
+            setInsightLoading(false);
         }
     };
 
@@ -223,13 +255,118 @@ export function CoverLetterGenerator() {
                                 <textarea
                                     id="cl-jd"
                                     value={jobDescription}
-                                    onChange={(e) => setJobDescription(e.target.value.slice(0, 5000))}
+                                    onChange={(e) => {
+                                        setJobDescription(e.target.value.slice(0, 5000));
+                                        // A stale insight for the old JD text would be misleading
+                                        setAiInsight(null);
+                                        setInsightError(null);
+                                    }}
                                     placeholder="Paste the full job posting here…"
                                     rows={8}
                                     disabled={loading}
                                     className="w-full text-sm p-3 rounded-md border bg-background resize-y focus:outline-none focus:ring-2 focus:ring-indigo-400/40 disabled:opacity-60"
                                 />
                             </div>
+
+                            {keywordMatch && (
+                                <div className="space-y-3 bg-background border rounded-lg p-3">
+                                    <div className="flex items-center gap-3">
+                                        <div
+                                            className={`shrink-0 h-12 w-12 rounded-full flex items-center justify-center text-sm font-bold border-4 ${
+                                                keywordMatch.matchRate >= 75
+                                                    ? "border-green-500 text-green-700 dark:text-green-400"
+                                                    : keywordMatch.matchRate >= 45
+                                                    ? "border-amber-500 text-amber-700 dark:text-amber-400"
+                                                    : "border-red-500 text-red-700 dark:text-red-400"
+                                            }`}
+                                        >
+                                            {keywordMatch.matchRate}%
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-medium">
+                                                {keywordMatch.jdSkillCount === 0
+                                                    ? "No specific skills detected in this job description"
+                                                    : `${keywordMatch.found.length} of ${keywordMatch.jdSkillCount} key skills/terms matched`}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                Deterministic keyword match — same as the ATS Scanner, free and instant.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {(keywordMatch.found.length > 0 || keywordMatch.missing.length > 0) && (
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {(showAllSkills ? keywordMatch.found : keywordMatch.found.slice(0, 8)).map((s) => (
+                                                <span key={`f-${s}`} className="text-[11px] px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-900">
+                                                    ✓ {s}
+                                                </span>
+                                            ))}
+                                            {(showAllSkills ? keywordMatch.missing : keywordMatch.missing.slice(0, 8)).map((s) => (
+                                                <span key={`m-${s}`} className="text-[11px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900">
+                                                    {s}
+                                                </span>
+                                            ))}
+                                            {(keywordMatch.found.length + keywordMatch.missing.length > 16) && (
+                                                <button
+                                                    onClick={() => setShowAllSkills(!showAllSkills)}
+                                                    className="text-[11px] px-2 py-0.5 rounded-full border text-muted-foreground hover:bg-muted flex items-center gap-0.5"
+                                                >
+                                                    {showAllSkills ? <><ChevronUp className="h-3 w-3" /> Show less</> : <><ChevronDown className="h-3 w-3" /> Show all</>}
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {!aiInsight && (
+                                        <Button
+                                            onClick={handleGetInsight}
+                                            disabled={insightLoading}
+                                            variant="outline"
+                                            size="sm"
+                                            className="gap-1.5 text-xs"
+                                        >
+                                            {insightLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lightbulb className="h-3.5 w-3.5" />}
+                                            {insightLoading ? "Analyzing fit…" : "Get AI insight: is this a good match?"}
+                                        </Button>
+                                    )}
+
+                                    {insightError && (
+                                        <p className="text-xs text-red-600 dark:text-red-400">{insightError}</p>
+                                    )}
+
+                                    {aiInsight && (
+                                        <div className="space-y-2.5 border-t pt-2.5">
+                                            {aiInsight.matchingEvidence.length > 0 && (
+                                                <div className="space-y-1">
+                                                    <p className="text-xs font-semibold text-green-700 dark:text-green-400 flex items-center gap-1">
+                                                        <CheckCircle2 className="h-3.5 w-3.5" /> Why this could be a strong match
+                                                    </p>
+                                                    <ul className="space-y-1">
+                                                        {aiInsight.matchingEvidence.slice(0, 4).map((e, i) => (
+                                                            <li key={i} className="text-xs text-muted-foreground pl-5">
+                                                                <span className="font-medium text-foreground">{e.label}:</span> {e.detail}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
+                                            {aiInsight.gaps.length > 0 && (
+                                                <div className="space-y-1">
+                                                    <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                                                        <XCircle className="h-3.5 w-3.5" /> Potential gaps
+                                                    </p>
+                                                    <ul className="space-y-1">
+                                                        {aiInsight.gaps.slice(0, 4).map((g, i) => (
+                                                            <li key={i} className="text-xs text-muted-foreground pl-5">{g}</li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             <div className="space-y-1.5">
                                 <span className="text-sm font-medium">Tone</span>
                                 <div className="flex gap-2">
