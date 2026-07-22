@@ -22,7 +22,9 @@ export function buildAnalyzePrompt(
     company: string,
     tone: Tone
 ): StagePrompt {
-    const system = `You are a senior technical recruiter and hiring manager with 15 years of experience screening thousands of candidates. Your job in this step is pure analysis — you are not writing anything yet. Read the job description the way a hiring manager actually reads one: what would make you say yes, what's a hard requirement versus a nice-to-have, and what would make a candidate stand out from a stack of similar resumes.`;
+    const system = `You are a senior technical recruiter and hiring manager with 15 years of experience screening thousands of candidates. Your job in this step is pure analysis — you are not writing anything yet. Read the job description the way a hiring manager actually reads one: what would make you say yes, what's a hard requirement versus a nice-to-have, and what would make a candidate stand out from a stack of similar resumes.
+
+You are explicitly NOT a keyword-matching ATS scraper. A naive scraper only counts literal string overlap (e.g. it would miss that a candidate who "built a SaaS platform using Google Gemini's API for real-time AI content suggestions" has genuine hands-on LLM/AI-integration experience just because the resume never uses the exact words "RAG" or "LangChain"). You reason about REAL, functional fit: what the candidate actually built and did, and whether that transfers to what this job needs — the same judgment call a human hiring manager makes, not literal string matching.`;
 
     const prompt = `${jsonOnlyInstruction}
 
@@ -36,6 +38,8 @@ ${jobDescription}
 
 Analyze both and produce JSON with this exact shape:
 {
+  "matchScore": number,          // 0-100: your holistic judgment of real fit for THIS role, as an experienced hiring manager would score it — see rubric below
+  "matchSummary": string,        // 1-2 sentences explaining the score in plain language — lead with the strongest reason, then the biggest real gap if any
   "jdKeywords": string[],        // exact terms/phrases an ATS or recruiter would scan for (tools, skills, certifications, domain terms)
   "jdRequirements": string[],    // the real requirements, phrased as what a hiring manager cares about, hard requirements first
   "companyValues": string[],     // values/culture signals inferable from the JD wording (e.g. "moves fast", "customer-obsessed") — [] if none inferable, do not invent
@@ -46,6 +50,13 @@ Analyze both and produce JSON with this exact shape:
   "transferableSkills": string[], // skills/experience that aren't a direct match but genuinely transfer, with the connection made explicit in the string itself
   "gaps": string[]                // real gaps between the JD and the resume — used later to write around honestly, not to apologize for
 }
+
+MATCHSCORE RUBRIC — apply exactly this reasoning, not literal keyword counting:
+- Give FULL credit for functionally equivalent experience. If the JD wants "RAG" / "vector databases" / "LangChain" and the candidate built an AI feature with the Gemini API, OpenAI API, or any LLM integration that does retrieval/generation, that counts as strong direct evidence — the underlying skill transfers even when the exact vocabulary differs. Judge what they DID, not which brand names they used.
+- Weigh core technical stack overlap heaviest, then directly relevant project/work experience, then transferable skills.
+- Education and location fit matter only as minor, secondary signals — never let them drag down an otherwise strong technical match, and never let a mismatch here override strong hands-on evidence.
+- Only meaningfully deduct points for gaps that would genuinely block someone from doing the job well (e.g. required years of experience far exceeding what's shown, or a completely different domain with no transferable overlap at all). Do NOT deduct points for terminology or phrasing differences alone.
+- Most reasonably-qualified candidates with real, relevant hands-on work should score in the 60-90 range. Reserve under 40 for genuinely weak fits (wrong domain entirely, no relevant technical overlap), and 90+ for near-perfect matches.
 
 Tone target for later stages: ${tone} — ${toneGuidance[tone]}
 Prioritize quality over quantity in "matchingEvidence": 3-6 strong, specific items beat ten generic ones.`;

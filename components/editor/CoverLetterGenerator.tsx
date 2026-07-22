@@ -206,8 +206,8 @@ export function CoverLetterGenerator() {
             </Button>
 
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="sm:max-w-[640px] max-h-[85vh] overflow-y-auto">
-                    <DialogHeader>
+                <DialogContent className="sm:max-w-[640px] max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden">
+                    <DialogHeader className="px-6 pt-6 pb-4 shrink-0 border-b">
                         <DialogTitle className="flex items-center gap-2">
                             <Sparkles className="h-5 w-5 text-indigo-500" />
                             AI Cover Letter
@@ -217,6 +217,7 @@ export function CoverLetterGenerator() {
                         </DialogDescription>
                     </DialogHeader>
 
+                    <div className="flex-1 overflow-y-auto px-6 py-4">
                     {!letter ? (
                         <div className="space-y-4">
                             {/* The letter is only as good as the resume it reads */}
@@ -270,29 +271,54 @@ export function CoverLetterGenerator() {
 
                             {keywordMatch && (
                                 <div className="space-y-3 bg-background border rounded-lg p-3">
-                                    <div className="flex items-center gap-3">
-                                        <div
-                                            className={`shrink-0 h-12 w-12 rounded-full flex items-center justify-center text-sm font-bold border-4 ${
-                                                keywordMatch.matchRate >= 75
-                                                    ? "border-green-500 text-green-700 dark:text-green-400"
-                                                    : keywordMatch.matchRate >= 45
-                                                    ? "border-amber-500 text-amber-700 dark:text-amber-400"
-                                                    : "border-red-500 text-red-700 dark:text-red-400"
-                                            }`}
-                                        >
-                                            {keywordMatch.matchRate}%
+                                    {aiInsight ? (
+                                        <div className="flex items-center gap-3">
+                                            <div
+                                                className={`shrink-0 h-14 w-14 rounded-full flex items-center justify-center text-base font-bold border-4 ${
+                                                    aiInsight.matchScore >= 75
+                                                        ? "border-green-500 text-green-700 dark:text-green-400"
+                                                        : aiInsight.matchScore >= 45
+                                                        ? "border-amber-500 text-amber-700 dark:text-amber-400"
+                                                        : "border-red-500 text-red-700 dark:text-red-400"
+                                                }`}
+                                            >
+                                                {aiInsight.matchScore}%
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-semibold flex items-center gap-1">
+                                                    <Lightbulb className="h-3.5 w-3.5 text-indigo-500" /> AI Match Score
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {aiInsight.matchSummary || "Weighs your real, functional experience — not just exact keyword overlap."}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div className="min-w-0">
-                                            <p className="text-sm font-medium">
-                                                {keywordMatch.jdSkillCount === 0
-                                                    ? "No specific skills detected in this job description"
-                                                    : `${keywordMatch.found.length} of ${keywordMatch.jdSkillCount} key skills/terms matched`}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">
-                                                Deterministic keyword match — same as the ATS Scanner, free and instant.
-                                            </p>
+                                    ) : (
+                                        <div className="flex items-center gap-3">
+                                            <div
+                                                className={`shrink-0 h-12 w-12 rounded-full flex items-center justify-center text-sm font-bold border-4 ${
+                                                    keywordMatch.matchRate >= 75
+                                                        ? "border-green-500 text-green-700 dark:text-green-400"
+                                                        : keywordMatch.matchRate >= 45
+                                                        ? "border-amber-500 text-amber-700 dark:text-amber-400"
+                                                        : "border-red-500 text-red-700 dark:text-red-400"
+                                                }`}
+                                            >
+                                                {keywordMatch.matchRate}%
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-medium">
+                                                    {keywordMatch.jdSkillCount === 0
+                                                        ? "No specific skills detected in this job description"
+                                                        : `${keywordMatch.found.length} of ${keywordMatch.jdSkillCount} key skills/terms matched`}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Rough keyword-only estimate — it misses skills that don't use the exact same
+                                                    wording as the job posting. Click below for an accurate AI-reasoned score.
+                                                </p>
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
 
                                     {(keywordMatch.found.length > 0 || keywordMatch.missing.length > 0) && (
                                         <div className="flex flex-wrap gap-1.5">
@@ -323,10 +349,10 @@ export function CoverLetterGenerator() {
                                             disabled={insightLoading}
                                             variant="outline"
                                             size="sm"
-                                            className="gap-1.5 text-xs"
+                                            className="gap-1.5 text-xs border-indigo-300 text-indigo-700 dark:text-indigo-300 dark:border-indigo-800"
                                         >
                                             {insightLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lightbulb className="h-3.5 w-3.5" />}
-                                            {insightLoading ? "Analyzing fit…" : "Get AI insight: is this a good match?"}
+                                            {insightLoading ? "Analyzing your real fit…" : "Get accurate AI match score"}
                                         </Button>
                                     )}
 
@@ -460,6 +486,7 @@ export function CoverLetterGenerator() {
                             </div>
                         </div>
                     )}
+                    </div>
                 </DialogContent>
             </Dialog>
         </>

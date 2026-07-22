@@ -29,6 +29,8 @@ const evidenceItemSchema = z.object({
 });
 
 export const coverLetterAnalysisSchema = z.object({
+    matchScore: z.number().int().min(0).max(100).catch(50),
+    matchSummary: z.string().catch(""),
     jdKeywords: z.array(z.string()).catch([]),
     jdRequirements: z.array(z.string()).catch([]),
     companyValues: z.array(z.string()).catch([]),
