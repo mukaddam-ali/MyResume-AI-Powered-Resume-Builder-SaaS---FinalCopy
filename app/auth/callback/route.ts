@@ -6,6 +6,8 @@ export async function GET(request: Request) {
     const requestUrl = new URL(request.url)
     const code = requestUrl.searchParams.get('code')
     const origin = requestUrl.origin
+    const nextParam = requestUrl.searchParams.get('next')
+    const next = nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/dashboard'
 
     if (code) {
         const cookieStore = await cookies()
@@ -36,7 +38,7 @@ export async function GET(request: Request) {
         const { error } = await supabase.auth.exchangeCodeForSession(code)
 
         if (!error) {
-            return NextResponse.redirect(`${origin}/dashboard`)
+            return NextResponse.redirect(`${origin}${next}`)
         } else {
             console.error('exchangeCodeForSession error:', error)
             return NextResponse.redirect(`${origin}/?error=${encodeURIComponent(error.message || 'unknown_auth_error')}`)

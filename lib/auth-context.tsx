@@ -119,10 +119,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.warn('Supabase is not configured. Please set up environment variables.');
             return;
         }
+        const next = window.location.pathname === '/auth/login' ? '/dashboard' : window.location.pathname;
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${window.location.origin}/auth/callback`,
+                redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
             },
         });
         if (error) console.error('Error signing in with Google:', error);
