@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, AlertTriangle, XCircle, Search, Target, Zap, Layout, Type, Sparkles, Plus } from 'lucide-react';
+import { CheckCircle, AlertTriangle, XCircle, Search, Target, Zap, Layout, Type, Sparkles, Plus, Wand2, CheckCheck } from 'lucide-react';
 import { useResumeStore } from '@/store/useResumeStore';
+import { wrapBulletReplacement } from '@/lib/ats/metrics';
 
 interface ATSResultsProps {
     data: {
@@ -37,14 +38,22 @@ interface ATSResultsProps {
             original: string;
             suggestion: string;
             reason: string;
+            entryType?: 'experience' | 'project' | 'custom';
+            entryId?: string;
+            customSectionId?: string;
+            raw?: string;
         }>;
         // Deterministic — the exact bullets dragging the score down, with
         // their location (which entry, which line) and why they're flagged.
         weak_bullets?: Array<{
             section: string;
             entryLabel: string;
+            entryType: 'experience' | 'project' | 'custom';
+            entryId: string;
+            customSectionId?: string;
             index: number;
             text: string;
+            raw: string;
             issues: string[];
         }>;
         // AI holistic quality read — a second opinion alongside the
@@ -106,6 +115,7 @@ function CheckRow({ ok, label, detail }: { ok: boolean; label: string; detail?: 
 export function ATSResults({ data, loading }: ATSResultsProps) {
     const { resumes, activeResumeId, setSkills } = useResumeStore();
     const activeResume = activeResumeId ? resumes[activeResumeId] : null;
+    const [appliedEdits, setAppliedEdits] = React.useState<Set<number>>(new Set());
 
     // One-click JD tailoring: move a missing keyword straight into Skills
     const addKeywordToSkills = (keyword: string) => {
@@ -113,6 +123,41 @@ export function ATSResults({ data, loading }: ATSResultsProps) {
         const current = Array.isArray(activeResume.skills) ? activeResume.skills : [];
         if (current.some(s => s.toLowerCase() === keyword.toLowerCase())) return;
         setSkills([...current, keyword]);
+    };
+
+    // Splice an AI-rewritten bullet directly into the resume data. Reads the
+    // freshest store state on every call (rather than the render-time
+    // `activeResume` closure) so "Apply All" can safely apply several
+    // rewrites into the same entry back-to-back without one clobbering another.
+    const applyRewrite = (edit: { entryType?: string; entryId?: string; customSectionId?: string; raw?: string; suggestion: string }): boolean => {
+        if (!edit.entryType || !edit.entryId || !edit.raw) return false;
+        const state = useResumeStore.getState();
+        const resumeId = state.activeResumeId;
+        if (!resumeId) return false;
+        const resume = state.resumes[resumeId];
+        if (!resume) return false;
+        const newRaw = wrapBulletReplacement(edit.raw, edit.suggestion);
+
+        if (edit.entryType === 'experience') {
+            const exp = resume.experience?.find(e => e.id === edit.entryId);
+            if (!exp || !exp.description.includes(edit.raw)) return false;
+            state.updateExperience(edit.entryId, { description: exp.description.replace(edit.raw, newRaw) });
+            return true;
+        }
+        if (edit.entryType === 'project') {
+            const proj = resume.projects?.find(p => p.id === edit.entryId);
+            if (!proj || !proj.description.includes(edit.raw)) return false;
+            state.updateProject(edit.entryId, { description: proj.description.replace(edit.raw, newRaw) });
+            return true;
+        }
+        if (edit.entryType === 'custom' && edit.customSectionId) {
+            const cs = resume.customSections?.find(s => s.id === edit.customSectionId);
+            const item = cs?.items.find(it => it.id === edit.entryId);
+            if (!item || !item.description.includes(edit.raw)) return false;
+            state.updateCustomItem(edit.customSectionId, edit.entryId, { description: item.description.replace(edit.raw, newRaw) });
+            return true;
+        }
+        return false;
     };
 
     if (loading) {
@@ -178,6 +223,24 @@ export function ATSResults({ data, loading }: ATSResultsProps) {
 
     // Premium tier analysis - full AI-powered feedback
     const premiumData = data as Required<typeof data>;
+
+    const applicableEditIndices = (premiumData.suggested_edits || [])
+        .map((e, i) => (e.entryId && e.entryType && e.raw ? i : -1))
+        .filter(i => i >= 0);
+
+    const handleApply = (index: number) => {
+        const edit = premiumData.suggested_edits?.[index];
+        if (!edit) return;
+        if (applyRewrite(edit)) setAppliedEdits(prev => new Set(prev).add(index));
+    };
+
+    const handleApplyAll = () => {
+        const newlyApplied = new Set(appliedEdits);
+        (premiumData.suggested_edits || []).forEach((edit, i) => {
+            if (!newlyApplied.has(i) && applyRewrite(edit)) newlyApplied.add(i);
+        });
+        setAppliedEdits(newlyApplied);
+    };
 
     // Ensure score is 0-100 (handle 0-1 decimals just in case)
     const displayScore = premiumData.score <= 1 && premiumData.score > 0
@@ -328,31 +391,62 @@ export function ATSResults({ data, loading }: ATSResultsProps) {
                         <TabsContent value="suggestions" className="mt-0 space-y-6">
                             {premiumData.suggested_edits && premiumData.suggested_edits.length > 0 && (
                                 <div className="space-y-4">
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">AI Rewrites</p>
-                                    {premiumData.suggested_edits.map((edit, i) => (
-                                        <div key={i} className="rounded-lg border bg-card text-card-foreground shadow-sm">
-                                            <div className="p-4 space-y-3">
-                                                {edit.location && (
-                                                    <Badge variant="outline">{edit.location}</Badge>
-                                                )}
-                                                {edit.original && (
-                                                    <div className="space-y-1">
-                                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Currently</p>
-                                                        <p className="text-sm text-muted-foreground line-through decoration-red-400/60">"{edit.original}"</p>
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">AI Rewrites</p>
+                                        {applicableEditIndices.length > 1 && applicableEditIndices.some(i => !appliedEdits.has(i)) && (
+                                            <button
+                                                onClick={handleApplyAll}
+                                                className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                                            >
+                                                <CheckCheck className="h-3.5 w-3.5" /> Apply All
+                                            </button>
+                                        )}
+                                    </div>
+                                    {premiumData.suggested_edits.map((edit, i) => {
+                                        const canApply = !!(edit.entryId && edit.entryType && edit.raw);
+                                        const applied = appliedEdits.has(i);
+                                        return (
+                                            <div key={i} className="rounded-lg border bg-card text-card-foreground shadow-sm">
+                                                <div className="p-4 space-y-3">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        {edit.location ? (
+                                                            <Badge variant="outline">{edit.location}</Badge>
+                                                        ) : <span />}
+                                                        {canApply && (
+                                                            <button
+                                                                onClick={() => handleApply(i)}
+                                                                disabled={applied}
+                                                                className={`flex items-center gap-1.5 text-xs font-medium rounded-md px-2.5 py-1 transition-colors ${applied
+                                                                    ? 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400 cursor-default'
+                                                                    : 'bg-primary/10 text-primary hover:bg-primary/20'}`}
+                                                            >
+                                                                {applied ? <CheckCircle className="h-3.5 w-3.5" /> : <Wand2 className="h-3.5 w-3.5" />}
+                                                                {applied ? 'Applied' : 'Apply'}
+                                                            </button>
+                                                        )}
                                                     </div>
-                                                )}
-                                                <div className="space-y-1 bg-muted/40 p-3 rounded-md border border-dashed">
-                                                    <p className="text-xs font-semibold text-primary uppercase tracking-wider flex items-center gap-1">
-                                                        <Sparkles className="h-3 w-3" /> Change To
-                                                    </p>
-                                                    <p className="text-sm text-foreground/90 leading-relaxed">"{edit.suggestion}"</p>
+                                                    {edit.original && (
+                                                        <div className="space-y-1">
+                                                            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Currently</p>
+                                                            <p className="text-sm text-muted-foreground line-through decoration-red-400/60">"{edit.original}"</p>
+                                                        </div>
+                                                    )}
+                                                    <div className="space-y-1 bg-muted/40 p-3 rounded-md border border-dashed">
+                                                        <p className="text-xs font-semibold text-primary uppercase tracking-wider flex items-center gap-1">
+                                                            <Sparkles className="h-3 w-3" /> Change To
+                                                        </p>
+                                                        <p className="text-sm text-foreground/90 leading-relaxed">"{edit.suggestion}"</p>
+                                                    </div>
+                                                    {edit.reason && (
+                                                        <p className="text-xs text-muted-foreground">{edit.reason}</p>
+                                                    )}
+                                                    {applied && (
+                                                        <p className="text-xs text-muted-foreground italic">Applied — navigate to this section in the editor if you'd like to tweak the wording further.</p>
+                                                    )}
                                                 </div>
-                                                {edit.reason && (
-                                                    <p className="text-xs text-muted-foreground">{edit.reason}</p>
-                                                )}
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
 

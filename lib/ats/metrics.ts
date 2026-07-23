@@ -135,25 +135,100 @@ export function computeWritingMetrics(data: ResumeData): WritingMetrics {
     };
 }
 
+export interface BulletSegment {
+    text: string;   // plain text, for issue detection
+    raw: string;    // verbatim HTML fragment (the <li>...</li> or <p>...</p>), for splicing a rewrite back in
+}
+
+/**
+ * Split a Tiptap HTML description into ordered, atomic bullet segments,
+ * keeping the raw HTML fragment alongside the plain text so a rewrite can
+ * be spliced back into the description verbatim (string replace on `raw`).
+ * Each <li> (or, if there's no list, each <p>) is treated as one atomic
+ * unit — manual <br>-separated pseudo-bullets within a single block are not
+ * split further here (computeWritingMetrics/toPlainLines still handles that
+ * for aggregate scoring; this function is only used for locating + applying
+ * specific rewrites, so that tradeoff doesn't affect the score).
+ */
+export function getBulletSegments(description: string | undefined): BulletSegment[] {
+    if (!description) return [];
+    const liMatches = description.match(/<li\b[^>]*>[\s\S]*?<\/li>/gi);
+    const blocks = liMatches && liMatches.length > 0
+        ? liMatches
+        : (description.match(/<p\b[^>]*>[\s\S]*?<\/p>/gi) || []);
+
+    return blocks
+        .map(raw => {
+            const text = raw
+                .replace(/<[^>]+>/g, '')
+                .replace(/\*\*(.*?)\*\*/g, '$1')
+                .replace(/&nbsp;/g, ' ')
+                .replace(/&amp;/g, '&')
+                .replace(/^[•\-*]\s*/, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            return { text, raw };
+        })
+        .filter(seg => seg.text.length > 2);
+}
+
+function escapeHtml(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/**
+ * Rebuild a bullet's raw HTML fragment with new text, preserving its outer
+ * <li>/<p> wrapper (and inner <p> if the list item had one) so the rewrite
+ * drops in cleanly. Any inline formatting inside the original bullet is not
+ * preserved — the rewrite replaces the bullet's content wholesale.
+ */
+export function wrapBulletReplacement(raw: string, newText: string): string {
+    const escaped = escapeHtml(newText);
+    const liMatch = raw.match(/^(<li[^>]*>)([\s\S]*)(<\/li>)$/i);
+    if (liMatch) {
+        const inner = liMatch[2].trim();
+        const pMatch = inner.match(/^(<p[^>]*>)[\s\S]*(<\/p>)$/i);
+        return pMatch
+            ? `${liMatch[1]}${pMatch[1]}${escaped}${pMatch[2]}${liMatch[3]}`
+            : `${liMatch[1]}${escaped}${liMatch[3]}`;
+    }
+    const pMatch = raw.match(/^(<p[^>]*>)([\s\S]*)(<\/p>)$/i);
+    if (pMatch) {
+        return `${pMatch[1]}${escaped}${pMatch[3]}`;
+    }
+    return escaped;
+}
+
 export interface WeakBullet {
     section: string;       // 'Experience' | 'Projects' | custom section title
     entryLabel: string;    // e.g. "Software Engineer — Acme Corp"
-    index: number;         // 1-based bullet position within that entry
-    text: string;          // the actual bullet text, verbatim
-    issues: string[];      // human-readable reasons this bullet was flagged
+    entryType: 'experience' | 'project' | 'custom';
+    entryId: string;
+    customSectionId?: string; // set only when entryType === 'custom'
+    index: number;          // 1-based bullet position within that entry
+    text: string;           // the actual bullet text, verbatim
+    raw: string;            // verbatim HTML fragment — used to splice a rewrite back in
+    issues: string[];       // human-readable reasons this bullet was flagged
 }
 
 /**
  * Locate the specific bullets dragging the score down — not just an
  * aggregate percentage, but which entry and which line, so a user can go
- * straight to the spot that needs editing.
+ * straight to the spot that needs editing (or apply a rewrite there).
  */
 export function findWeakBullets(data: ResumeData): WeakBullet[] {
     const results: WeakBullet[] = [];
 
-    const analyze = (section: string, entryLabel: string, description: string | undefined) => {
-        toPlainLines(description).forEach((text, i) => {
-            const words = text.split(/\s+/).filter(Boolean);
+    const analyze = (
+        section: string,
+        entryLabel: string,
+        entryType: WeakBullet['entryType'],
+        entryId: string,
+        customSectionId: string | undefined,
+        description: string | undefined
+    ) => {
+        getBulletSegments(description).forEach((seg, i) => {
+            const words = seg.text.split(/\s+/).filter(Boolean);
             const first = (words[0] || '').toLowerCase().replace(/[^a-z]/g, '');
             const issues: string[] = [];
 
@@ -162,10 +237,10 @@ export function findWeakBullets(data: ResumeData): WeakBullet[] {
             } else if (!ACTION_VERBS.has(first) && !ACTION_VERBS.has(first.replace(/ing$/, ''))) {
                 issues.push('Doesn\'t open with a strong action verb.');
             }
-            if (!NUMBERISH.test(text)) {
+            if (!NUMBERISH.test(seg.text)) {
                 issues.push('No measurable result — add a number (%, $, count, or time saved).');
             }
-            if (FIRST_PERSON.test(text)) {
+            if (FIRST_PERSON.test(seg.text)) {
                 issues.push('Uses first-person ("I"/"my") — resumes omit pronouns.');
             }
             if (words.length > 32) {
@@ -173,20 +248,20 @@ export function findWeakBullets(data: ResumeData): WeakBullet[] {
             }
 
             if (issues.length > 0) {
-                results.push({ section, entryLabel, index: i + 1, text, issues });
+                results.push({ section, entryLabel, entryType, entryId, customSectionId, index: i + 1, text: seg.text, raw: seg.raw, issues });
             }
         });
     };
 
     for (const exp of data.experience || []) {
-        analyze('Experience', [exp.role, exp.company].filter(Boolean).join(' — ') || 'Experience entry', exp.description);
+        analyze('Experience', [exp.role, exp.company].filter(Boolean).join(' — ') || 'Experience entry', 'experience', exp.id, undefined, exp.description);
     }
     for (const proj of data.projects || []) {
-        analyze('Projects', proj.name || 'Project', proj.description);
+        analyze('Projects', proj.name || 'Project', 'project', proj.id, undefined, proj.description);
     }
     for (const cs of data.customSections || []) {
         for (const item of cs.items || []) {
-            analyze(cs.title || 'Custom section', item.name || 'Item', item.description);
+            analyze(cs.title || 'Custom section', item.name || 'Item', 'custom', item.id, cs.id, item.description);
         }
     }
 

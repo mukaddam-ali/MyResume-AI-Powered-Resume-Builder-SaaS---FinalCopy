@@ -170,12 +170,27 @@ ${jobDescription ? `\nJOB DESCRIPTION:\n${jobDescription.slice(0, 1500)}` : ""}`
             red_flags: Array.isArray(parsed.red_flags) ? parsed.red_flags : [],
             summary: parsed.summary ?? "",
             suggested_edits: Array.isArray(parsed.suggested_edits)
-                ? parsed.suggested_edits.map((e: any) => ({
-                    location: typeof e?.location === 'string' ? e.location : (typeof e?.section === 'string' ? e.section : ''),
-                    original: typeof e?.original === 'string' ? e.original : '',
-                    suggestion: typeof e?.suggestion === 'string' ? e.suggestion : '',
-                    reason: typeof e?.reason === 'string' ? e.reason : '',
-                })).filter((e: any) => e.suggestion)
+                ? parsed.suggested_edits.map((e: any) => {
+                    const original = typeof e?.original === 'string' ? e.original : '';
+                    // Match the model's echoed "original" back to the real flagged
+                    // bullet so the client can splice a rewrite into the actual
+                    // resume data (entryId/raw), not just display advice text.
+                    const norm = (s: string) => s.trim().toLowerCase();
+                    const source = weakBullets.find(b => norm(b.text) === norm(original))
+                        || weakBullets.find(b => original && (norm(b.text).includes(norm(original)) || norm(original).includes(norm(b.text))));
+                    return {
+                        location: typeof e?.location === 'string' && e.location
+                            ? e.location
+                            : (source ? `${source.section} — ${source.entryLabel}, bullet ${source.index}` : (typeof e?.section === 'string' ? e.section : '')),
+                        original,
+                        suggestion: typeof e?.suggestion === 'string' ? e.suggestion : '',
+                        reason: typeof e?.reason === 'string' ? e.reason : '',
+                        entryType: source?.entryType,
+                        entryId: source?.entryId,
+                        customSectionId: source?.customSectionId,
+                        raw: source?.raw,
+                    };
+                }).filter((e: any) => e.suggestion)
                 : [],
         };
 

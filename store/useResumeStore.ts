@@ -164,8 +164,29 @@ export interface ATSAnalysisResult {
         avgBulletWords: number;
         totalWords: number;
     };
-    suggested_edits?: Array<{ location: string; original: string; suggestion: string; reason: string }>;
-    weak_bullets?: Array<{ section: string; entryLabel: string; index: number; text: string; issues: string[] }>;
+    suggested_edits?: Array<{
+        location: string;
+        original: string;
+        suggestion: string;
+        reason: string;
+        // Present when matched back to a real flagged bullet — lets the UI
+        // apply the rewrite directly into the resume data.
+        entryType?: 'experience' | 'project' | 'custom';
+        entryId?: string;
+        customSectionId?: string;
+        raw?: string;
+    }>;
+    weak_bullets?: Array<{
+        section: string;
+        entryLabel: string;
+        entryType: 'experience' | 'project' | 'custom';
+        entryId: string;
+        customSectionId?: string;
+        index: number;
+        text: string;
+        raw: string;
+        issues: string[];
+    }>;
 }
 
 export interface FreeAnalysisResult {
