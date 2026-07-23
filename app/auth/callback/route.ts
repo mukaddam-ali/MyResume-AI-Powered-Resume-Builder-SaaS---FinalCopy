@@ -36,7 +36,7 @@ export async function GET(request: Request) {
         const { error } = await supabase.auth.exchangeCodeForSession(code)
 
         if (!error) {
-            return NextResponse.redirect(`${origin}/editor`)
+            return NextResponse.redirect(`${origin}/dashboard`)
         } else {
             console.error('exchangeCodeForSession error:', error)
             return NextResponse.redirect(`${origin}/?error=${encodeURIComponent(error.message || 'unknown_auth_error')}`)
