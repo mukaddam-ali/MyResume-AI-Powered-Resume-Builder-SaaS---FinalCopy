@@ -33,9 +33,19 @@ interface ATSResultsProps {
         red_flags?: string[];
         summary?: string;
         suggested_edits?: Array<{
-            section: string;
+            location: string;
+            original: string;
             suggestion: string;
             reason: string;
+        }>;
+        // Deterministic — the exact bullets dragging the score down, with
+        // their location (which entry, which line) and why they're flagged.
+        weak_bullets?: Array<{
+            section: string;
+            entryLabel: string;
+            index: number;
+            text: string;
+            issues: string[];
         }>;
         // AI holistic quality read — a second opinion alongside the
         // deterministic score, judging real substance rather than literal
@@ -290,7 +300,10 @@ export function ATSResults({ data, loading }: ATSResultsProps) {
                     <TabsList className="w-full justify-start rounded-none border-b bg-background px-4 h-12">
                         <TabsTrigger value="suggestions" className="data-[state=active]:bg-primary/5">
                             Suggestions
-                            {premiumData.suggested_edits && premiumData.suggested_edits.length > 0 && <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-[10px] bg-primary/10 text-primary">{premiumData.suggested_edits.length}</Badge>}
+                            {(() => {
+                                const count = (premiumData.weak_bullets?.length || 0) || (premiumData.suggested_edits?.length || 0);
+                                return count > 0 ? <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-[10px] bg-primary/10 text-primary">{count}</Badge> : null;
+                            })()}
                         </TabsTrigger>
                         <TabsTrigger value="feedback" className="data-[state=active]:bg-primary/5">Feedback</TabsTrigger>
                         <TabsTrigger value="keywords" className="data-[state=active]:bg-primary/5">
@@ -312,31 +325,63 @@ export function ATSResults({ data, loading }: ATSResultsProps) {
                     </TabsList>
 
                     <div className="p-6">
-                        <TabsContent value="suggestions" className="mt-0 space-y-4">
-                            {premiumData.suggested_edits && premiumData.suggested_edits.length > 0 ? (
-                                premiumData.suggested_edits.map((edit, i) => (
-                                    <div key={i} className="rounded-lg border bg-card text-card-foreground shadow-sm">
-                                        <div className="p-4 space-y-3">
-                                            <div className="flex items-center justify-between">
-                                                <Badge variant="outline" className="capitalize">{edit.section}</Badge>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <p className="text-sm font-medium text-muted-foreground">Reasoning</p>
-                                                <p className="text-sm text-foreground">{edit.reason}</p>
-                                            </div>
-                                            <div className="space-y-1 bg-muted/40 p-3 rounded-md border border-dashed">
-                                                <p className="text-xs font-semibold text-primary uppercase tracking-wider flex items-center gap-1">
-                                                    <Sparkles className="h-3 w-3" /> Try This
-                                                </p>
-                                                <p className="text-sm italic text-foreground/90 leading-relaxed">"{edit.suggestion}"</p>
+                        <TabsContent value="suggestions" className="mt-0 space-y-6">
+                            {premiumData.suggested_edits && premiumData.suggested_edits.length > 0 && (
+                                <div className="space-y-4">
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">AI Rewrites</p>
+                                    {premiumData.suggested_edits.map((edit, i) => (
+                                        <div key={i} className="rounded-lg border bg-card text-card-foreground shadow-sm">
+                                            <div className="p-4 space-y-3">
+                                                {edit.location && (
+                                                    <Badge variant="outline">{edit.location}</Badge>
+                                                )}
+                                                {edit.original && (
+                                                    <div className="space-y-1">
+                                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Currently</p>
+                                                        <p className="text-sm text-muted-foreground line-through decoration-red-400/60">"{edit.original}"</p>
+                                                    </div>
+                                                )}
+                                                <div className="space-y-1 bg-muted/40 p-3 rounded-md border border-dashed">
+                                                    <p className="text-xs font-semibold text-primary uppercase tracking-wider flex items-center gap-1">
+                                                        <Sparkles className="h-3 w-3" /> Change To
+                                                    </p>
+                                                    <p className="text-sm text-foreground/90 leading-relaxed">"{edit.suggestion}"</p>
+                                                </div>
+                                                {edit.reason && (
+                                                    <p className="text-xs text-muted-foreground">{edit.reason}</p>
+                                                )}
                                             </div>
                                         </div>
-                                    </div>
-                                ))
-                            ) : (
+                                    ))}
+                                </div>
+                            )}
+
+                            {premiumData.weak_bullets && premiumData.weak_bullets.length > 0 ? (
+                                <div className="space-y-4">
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                        Exactly Where To Fix{premiumData.suggested_edits && premiumData.suggested_edits.length > 0 ? ' (full list)' : ''}
+                                    </p>
+                                    {premiumData.weak_bullets.map((b, i) => (
+                                        <div key={i} className="rounded-lg border bg-card text-card-foreground shadow-sm">
+                                            <div className="p-4 space-y-2">
+                                                <Badge variant="outline">{b.section} → {b.entryLabel} → bullet {b.index}</Badge>
+                                                <p className="text-sm text-foreground/90 leading-relaxed">"{b.text}"</p>
+                                                <ul className="space-y-1 pt-1">
+                                                    {b.issues.map((issue, j) => (
+                                                        <li key={j} className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-500">
+                                                            <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />
+                                                            <span>{issue}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (!premiumData.suggested_edits || premiumData.suggested_edits.length === 0) && (
                                 <div className="text-center py-8 text-muted-foreground">
                                     <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-20" />
-                                    <p>No specific rewrite suggestions generated. Your content might already be strong!</p>
+                                    <p>No weak bullets found — your content already passes the deterministic checks!</p>
                                 </div>
                             )}
                         </TabsContent>

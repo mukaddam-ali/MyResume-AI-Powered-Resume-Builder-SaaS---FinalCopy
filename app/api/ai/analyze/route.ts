@@ -3,6 +3,8 @@ import { createGroq } from "@ai-sdk/groq";
 import { generateText } from "ai";
 import { rateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
 import { getUserAndTier } from "@/lib/entitlements-server";
+import { normalizeResumeData } from "@/lib/normalizeResume";
+import { findWeakBullets } from "@/lib/ats/metrics";
 
 /**
  * Optimize resume data to reduce token usage
@@ -66,9 +68,24 @@ export async function POST(req: Request) {
 
         const optimizedResume = optimizeResumeData(resumeData);
 
+        // Deterministic pass already found the specific weak bullets (which
+        // entry, which line, why). Hand those to the model to rewrite instead
+        // of letting it invent vague, unlocated advice.
+        const weakBullets = findWeakBullets(normalizeResumeData(resumeData)).slice(0, 6);
+        const weakBulletsBlock = weakBullets.length > 0
+            ? weakBullets.map((b, i) =>
+                `${i + 1}. [${b.section} — ${b.entryLabel}, bullet ${b.index}] "${b.text}"\n   Issues: ${b.issues.join(' ')}`
+            ).join('\n')
+            : '(none detected — bullets already pass the deterministic checks)';
+
         const prompt = `You are an experienced technical recruiter and resume coach giving a candidate an honest, holistic read of their resume — the way you'd actually evaluate one in a stack of real applications, not a rigid keyword scraper.
 
 A separate deterministic system already checks hard ATS-parseability facts (does the PDF text-extract cleanly, are section headings standard, etc.) — that is NOT your job here. Your score is a QUALITY read: is this a strong resume for the level it's targeting? Judge the real substance of what the candidate built and did, not just whether every bullet has a number in it. A resume with a couple of genuinely strong, technically substantial projects/experiences described in dense paragraphs can still be a strong resume — note the formatting weakness in feedback, but don't let it alone crater the score the way a truly weak, generic resume would.
+
+That same deterministic system already flagged specific weak bullets below, with their exact location and reason. Your job for "suggested_edits" is to REWRITE THOSE EXACT BULLETS — concrete, specific rewrites the candidate can paste in directly — not to give generic advice.
+
+WEAK BULLETS FLAGGED (rewrite these, in order of severity):
+${weakBulletsBlock}
 
 Respond ONLY with a valid JSON object — no markdown, no code fences, no extra text.
 
@@ -89,7 +106,7 @@ REQUIRED JSON STRUCTURE:
   "red_flags": ["<issue string>", ...],
   "summary": "<1-2 sentence analysis summary>",
   "suggested_edits": [
-    { "section": "<section name>", "suggestion": "<what to change>", "reason": "<why>" }
+    { "location": "<e.g. 'Experience — Software Engineer, Acme Corp, bullet 2'>", "original": "<the exact flagged bullet text, verbatim>", "suggestion": "<the rewritten bullet, ready to paste in>", "reason": "<why this rewrite is stronger>" }
   ]
 }
 
@@ -105,7 +122,7 @@ RULES:
 - "summary" MUST be a non-empty string.
 - "feedback" MUST have at least 2 items.
 - "red_flags" can be an empty array [].
-- "suggested_edits" is optional, include 2-3 max if relevant.
+- "suggested_edits": one entry per flagged weak bullet above (skip only if none were flagged), each tied to a real "original" bullet — never invent a bullet that isn't in the resume data.
 - Output ONLY the JSON object. Nothing else.
 ${jobDescription ? "Also compare relevance to the JOB DESCRIPTION provided." : ""}
 
@@ -152,7 +169,14 @@ ${jobDescription ? `\nJOB DESCRIPTION:\n${jobDescription.slice(0, 1500)}` : ""}`
             feedback: Array.isArray(parsed.feedback) ? parsed.feedback : [],
             red_flags: Array.isArray(parsed.red_flags) ? parsed.red_flags : [],
             summary: parsed.summary ?? "",
-            suggested_edits: Array.isArray(parsed.suggested_edits) ? parsed.suggested_edits : [],
+            suggested_edits: Array.isArray(parsed.suggested_edits)
+                ? parsed.suggested_edits.map((e: any) => ({
+                    location: typeof e?.location === 'string' ? e.location : (typeof e?.section === 'string' ? e.section : ''),
+                    original: typeof e?.original === 'string' ? e.original : '',
+                    suggestion: typeof e?.suggestion === 'string' ? e.suggestion : '',
+                    reason: typeof e?.reason === 'string' ? e.reason : '',
+                })).filter((e: any) => e.suggestion)
+                : [],
         };
 
         return NextResponse.json(result);

@@ -135,6 +135,65 @@ export function computeWritingMetrics(data: ResumeData): WritingMetrics {
     };
 }
 
+export interface WeakBullet {
+    section: string;       // 'Experience' | 'Projects' | custom section title
+    entryLabel: string;    // e.g. "Software Engineer — Acme Corp"
+    index: number;         // 1-based bullet position within that entry
+    text: string;          // the actual bullet text, verbatim
+    issues: string[];      // human-readable reasons this bullet was flagged
+}
+
+/**
+ * Locate the specific bullets dragging the score down — not just an
+ * aggregate percentage, but which entry and which line, so a user can go
+ * straight to the spot that needs editing.
+ */
+export function findWeakBullets(data: ResumeData): WeakBullet[] {
+    const results: WeakBullet[] = [];
+
+    const analyze = (section: string, entryLabel: string, description: string | undefined) => {
+        toPlainLines(description).forEach((text, i) => {
+            const words = text.split(/\s+/).filter(Boolean);
+            const first = (words[0] || '').toLowerCase().replace(/[^a-z]/g, '');
+            const issues: string[] = [];
+
+            if (WEAK_OPENERS.has(first)) {
+                issues.push(`Starts with a weak phrase ("${words[0]}") — lead with an action verb instead.`);
+            } else if (!ACTION_VERBS.has(first) && !ACTION_VERBS.has(first.replace(/ing$/, ''))) {
+                issues.push('Doesn\'t open with a strong action verb.');
+            }
+            if (!NUMBERISH.test(text)) {
+                issues.push('No measurable result — add a number (%, $, count, or time saved).');
+            }
+            if (FIRST_PERSON.test(text)) {
+                issues.push('Uses first-person ("I"/"my") — resumes omit pronouns.');
+            }
+            if (words.length > 32) {
+                issues.push(`Too long (${words.length} words) — tighten to under ~25.`);
+            }
+
+            if (issues.length > 0) {
+                results.push({ section, entryLabel, index: i + 1, text, issues });
+            }
+        });
+    };
+
+    for (const exp of data.experience || []) {
+        analyze('Experience', [exp.role, exp.company].filter(Boolean).join(' — ') || 'Experience entry', exp.description);
+    }
+    for (const proj of data.projects || []) {
+        analyze('Projects', proj.name || 'Project', proj.description);
+    }
+    for (const cs of data.customSections || []) {
+        for (const item of cs.items || []) {
+            analyze(cs.title || 'Custom section', item.name || 'Item', item.description);
+        }
+    }
+
+    // Worst offenders first; cap so the list stays actionable rather than overwhelming.
+    return results.sort((a, b) => b.issues.length - a.issues.length).slice(0, 15);
+}
+
 export interface StructureMetrics {
     hasName: boolean;
     hasEmail: boolean;

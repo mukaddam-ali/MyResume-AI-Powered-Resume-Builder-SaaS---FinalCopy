@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { normalizeResumeData } from '@/lib/normalizeResume';
 import { runParseTest, scoreParse } from '@/lib/ats/parse-test';
-import { computeWritingMetrics, computeStructureMetrics, scoreCategories } from '@/lib/ats/metrics';
+import { computeWritingMetrics, computeStructureMetrics, scoreCategories, findWeakBullets } from '@/lib/ats/metrics';
 import { matchJobDescription, detectResumeSkills } from '@/lib/ats/keywords';
 import { getUserAndTier } from '@/lib/entitlements-server';
 import { rateLimit, getClientIp, rateLimitResponse } from '@/lib/rate-limit';
@@ -47,6 +47,7 @@ export async function POST(req: Request) {
         const writing = computeWritingMetrics(data);
         const structure = computeStructureMetrics(data);
         const categories = scoreCategories(writing, structure);
+        const weakBullets = findWeakBullets(data);
         const parseScore = scoreParse(parse, structure.hasEmail, structure.hasPhone);
 
         // JD keyword matching is a Pro feature
@@ -130,6 +131,7 @@ export async function POST(req: Request) {
                 avgBulletWords: writing.avgBulletWords,
                 totalWords: writing.totalWords,
             },
+            weak_bullets: weakBullets,
             feedback,
             red_flags,
             summary,
