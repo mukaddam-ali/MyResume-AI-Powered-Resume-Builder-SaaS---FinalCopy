@@ -84,6 +84,13 @@ A separate deterministic system already checks hard ATS-parseability facts (does
 
 That same deterministic system already flagged specific weak bullets below, with their exact location and reason. Your job for "suggested_edits" is to REWRITE THOSE EXACT BULLETS — concrete, specific rewrites the candidate can paste in directly — not to give generic advice.
 
+CRITICAL — do not shorten or genericize a bullet just because you're rewriting it:
+- Fix ONLY the specific issue(s) listed for that bullet. If "too long" is not one of its listed issues, the rewrite's length should stay close to the original (within ~15%) — do not compress it into a terse one-liner.
+- Keep every concrete detail from the original: technologies, tools, scope, numbers, names of systems/projects. Never replace specifics with vaguer, more generic language.
+- If the issue is "no measurable result", don't fabricate a fake statistic. Either infer a plausible metric ONLY if it's clearly implied by the original text, or insert an explicit placeholder like "[X]%" / "[Y hours]" for the candidate to fill in with their real number — do not invent precision that isn't there.
+- If the issue is a weak opener or missing action verb, fix just the opening — keep the rest of the sentence's content intact.
+- Only bullets flagged "too long" should actually get shorter, and even then, trim filler words rather than cutting real content/specifics.
+
 WEAK BULLETS FLAGGED (rewrite these, in order of severity):
 ${weakBulletsBlock}
 
@@ -123,6 +130,7 @@ RULES:
 - "feedback" MUST have at least 2 items.
 - "red_flags" can be an empty array [].
 - "suggested_edits": one entry per flagged weak bullet above (skip only if none were flagged), each tied to a real "original" bullet — never invent a bullet that isn't in the resume data.
+- Do NOT shorten a bullet unless "too long" is one of its listed issues. Preserve original length and every concrete detail — fix only the specific listed issue(s).
 - Output ONLY the JSON object. Nothing else.
 ${jobDescription ? "Also compare relevance to the JOB DESCRIPTION provided." : ""}
 
