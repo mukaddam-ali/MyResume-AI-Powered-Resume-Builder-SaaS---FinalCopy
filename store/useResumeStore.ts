@@ -164,7 +164,8 @@ export interface ATSAnalysisResult {
         avgBulletWords: number;
         totalWords: number;
     };
-    suggested_edits?: Array<{ section: string; suggestion: string; reason: string }>;
+    suggested_edits?: Array<{ location: string; original: string; suggestion: string; reason: string }>;
+    weak_bullets?: Array<{ section: string; entryLabel: string; index: number; text: string; issues: string[] }>;
 }
 
 export interface FreeAnalysisResult {
