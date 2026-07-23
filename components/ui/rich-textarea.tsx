@@ -3,7 +3,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
-import { Bold, Italic, Underline as UnderlineIcon, Code, List, ListOrdered, Quote, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import { Bold, Italic, Underline as UnderlineIcon, Code, List, ListOrdered, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { cn } from '@/lib/utils';
 
@@ -139,16 +139,6 @@ export const RichTextarea = ({ id, value = '', onValueChange, className, placeho
                     className="h-8 w-8 p-0"
                 >
                     <ListOrdered className="h-4 w-4" />
-                </Toggle>
-
-                <Toggle
-                    size="sm"
-                    pressed={editor.isActive('blockquote')}
-                    onPressedChange={() => editor.chain().focus().toggleBlockquote().run()}
-                    aria-label="Toggle quote"
-                    className="h-8 w-8 p-0"
-                >
-                    <Quote className="h-4 w-4" />
                 </Toggle>
             </div>
             {/* Editor Area */}

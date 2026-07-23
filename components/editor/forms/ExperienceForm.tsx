@@ -9,6 +9,7 @@ import { RichTextarea } from '@/components/ui/rich-textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MetricsUpgradeModal } from "@/components/editor/MetricsUpgradeModal";
 import { useAuth } from "@/lib/auth-context";
+import { bulletTextToHtml } from "@/lib/utils";
 
 import {
     DndContext,
@@ -82,11 +83,14 @@ export function ExperienceForm() {
 
             if (!response.ok) throw new Error(data.error || "Generation failed");
 
-            // Append the generated content
+            // Append the generated content as a real bullet list, not raw text
+            // (raw "\n" gets collapsed when merged into existing HTML, which is
+            // what squashes every bullet into a single line/paragraph)
             const currentExp = experience.find(e => e.id === id);
+            const generatedHtml = bulletTextToHtml(data.content);
             const newDescription = currentExp?.description
-                ? `${currentExp.description}\n\n${data.content}`
-                : data.content;
+                ? `${currentExp.description}${generatedHtml}`
+                : generatedHtml;
 
             updateExperience(id, { description: newDescription });
 
@@ -252,7 +256,7 @@ export function ExperienceForm() {
                     onClose={() => setMetricsModalExp(null)}
                     description={metricsModalExp.description}
                     onAccept={(upgraded) => {
-                        updateExperience(metricsModalExp.id, { description: upgraded });
+                        updateExperience(metricsModalExp.id, { description: bulletTextToHtml(upgraded) });
                         setMetricsModalExp(null);
                     }}
                 />

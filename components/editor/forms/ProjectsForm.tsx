@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RichTextarea } from "@/components/ui/rich-textarea";
 import { Loader2, Plus, Sparkles, Trash2, ImagePlus, X } from "lucide-react";
+import { bulletTextToHtml } from "@/lib/utils";
 import {
     Card,
     CardContent,
@@ -165,9 +166,10 @@ export function ProjectsForm() {
             if (!response.ok) throw new Error(data.error || "Generation failed");
 
             const currentProj = projects.find(p => p.id === id);
+            const generatedHtml = bulletTextToHtml(data.content);
             const newDescription = currentProj?.description
-                ? `${currentProj.description}\n\n${data.content}`
-                : data.content;
+                ? `${currentProj.description}${generatedHtml}`
+                : generatedHtml;
 
             updateProject(id, { description: newDescription });
 
