@@ -23,6 +23,10 @@ const WEAK_OPENERS = new Set([
 
 const FIRST_PERSON = /\b(i|me|my|mine|myself|we|our)\b/i;
 
+// Custom section titles whose content is a keyword/tag list rather than
+// prose achievement bullets (see findWeakBullets below).
+const NON_BULLET_SECTION_TITLES = /\b(skills?|technolog(?:y|ies)|tech\s*stack|tools?|languages?|proficienc(?:y|ies))\b/i;
+
 /** Strip Tiptap HTML / markdown noise down to plain text lines. */
 export function toPlainLines(description: string | undefined): string[] {
     if (!description) return [];
@@ -260,6 +264,11 @@ export function findWeakBullets(data: ResumeData): WeakBullet[] {
         analyze('Projects', proj.name || 'Project', 'project', proj.id, undefined, proj.description);
     }
     for (const cs of data.customSections || []) {
+        // Skills/tools/tech/language sections are keyword lists, not prose
+        // achievement bullets — the action-verb/length heuristics below (and
+        // the AI rewrite they trigger) would "condense" a dense keyword dump
+        // into a vague sentence, destroying exactly the keywords ATS matches on.
+        if (cs.title && NON_BULLET_SECTION_TITLES.test(cs.title)) continue;
         for (const item of cs.items || []) {
             analyze(cs.title || 'Custom section', item.name || 'Item', 'custom', item.id, cs.id, item.description);
         }
