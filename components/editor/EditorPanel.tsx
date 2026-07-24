@@ -55,6 +55,7 @@ import { Button } from "@/components/ui/button";
 import { PublicToggle } from "./PublicToggle";
 import { VariantManager } from "./VariantManager";
 import { CoverLetterGenerator } from "./CoverLetterGenerator";
+import { JobMatchFinder } from "./JobMatchFinder";
 
 // Update SECTION_LABELS to be a helper function or fallback
 const getSectionLabel = (id: string, customSections: any[], sectionTitles: Record<string, string> = {}) => {
@@ -315,7 +316,8 @@ export function EditorPanel() {
             </div>
             <div className="flex-1">
                 <div className="py-6 px-3 overflow-x-hidden max-w-full">
-                    <div className="mb-4 flex justify-end">
+                    <div className="mb-4 flex justify-end gap-2">
+                        <JobMatchFinder />
                         <CoverLetterGenerator />
                     </div>
                     <ResumeScore />
