@@ -10,7 +10,8 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { useResumeStore } from "@/store/useResumeStore";
-import { Briefcase, Loader2, ExternalLink, MapPin, Building2 } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import { Briefcase, Loader2, ExternalLink, MapPin, Building2, Sparkles, Lock } from "lucide-react";
 
 interface MatchedJob {
     title: string;
@@ -21,6 +22,9 @@ interface MatchedJob {
     matchRate: number;
     found: string[];
     missing: string[];
+    descriptionText: string;
+    aiMatchScore?: number;
+    aiSummary?: string | null;
 }
 
 function getScoreColor(rate: number): string {
@@ -32,12 +36,15 @@ function getScoreColor(rate: number): string {
 export function JobMatchFinder() {
     const { resumes, activeResumeId } = useResumeStore();
     const activeResume = activeResumeId ? resumes[activeResumeId] : null;
+    const { isPremium } = useAuth();
 
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [jobs, setJobs] = useState<MatchedJob[] | null>(null);
     const [totalScanned, setTotalScanned] = useState(0);
+    const [aiRanking, setAiRanking] = useState(false);
+    const [aiRanked, setAiRanked] = useState(false);
 
     if (!activeResume) return null;
 
@@ -65,7 +72,33 @@ export function JobMatchFinder() {
 
     const handleRefresh = () => {
         setJobs(null);
+        setAiRanked(false);
         handleOpen();
+    };
+
+    const handleAiRank = async () => {
+        if (!isPremium) {
+            alert("✨ AI-ranked job matching is a Pro feature. Upgrade to catch matches keyword search misses (e.g. \"algorithms\" experience matching a \"Data Science\" role).");
+            return;
+        }
+        if (!jobs || jobs.length === 0) return;
+        setAiRanking(true);
+        setError(null);
+        try {
+            const res = await fetch("/api/jobs/rerank", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ resumeData: activeResume, jobs: jobs.slice(0, 10) }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "AI ranking failed");
+            setJobs(data.jobs);
+            setAiRanked(true);
+        } catch (e: any) {
+            setError(e.message || "Couldn't get AI-ranked matches right now. Please try again.");
+        } finally {
+            setAiRanking(false);
+        }
     };
 
     return (
@@ -116,9 +149,27 @@ export function JobMatchFinder() {
 
                         {!loading && !error && jobs && jobs.length > 0 && (
                             <div className="space-y-3">
-                                <p className="text-xs text-muted-foreground">
-                                    Scanned {totalScanned} open roles — showing the top {jobs.length} matches.
-                                </p>
+                                <div className="flex items-center justify-between gap-2">
+                                    <p className="text-xs text-muted-foreground">
+                                        {aiRanked
+                                            ? "AI-ranked for real fit, not just matching words."
+                                            : `Scanned ${totalScanned} open roles — showing the top ${jobs.length} keyword matches.`}
+                                    </p>
+                                    {!aiRanked && (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={handleAiRank}
+                                            disabled={aiRanking}
+                                            className="h-6 text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/30 gap-1 shrink-0"
+                                            title="Re-score with AI — catches relevant experience keyword matching misses (e.g. 'algorithms' work fitting a 'Data Science' role)"
+                                        >
+                                            {aiRanking ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                                            {aiRanking ? "Ranking..." : "AI-rank top matches"}
+                                            {!isPremium && <Lock className="h-2.5 w-2.5" />}
+                                        </Button>
+                                    )}
+                                </div>
                                 {jobs.map((job, i) => (
                                     <a
                                         key={i}
@@ -136,17 +187,19 @@ export function JobMatchFinder() {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-1.5 shrink-0">
-                                                <span className={`text-sm font-bold tabular-nums ${getScoreColor(job.matchRate)}`}>
-                                                    {job.matchRate}%
+                                                <span className={`text-sm font-bold tabular-nums ${getScoreColor(aiRanked ? (job.aiMatchScore ?? job.matchRate) : job.matchRate)}`}>
+                                                    {aiRanked ? job.aiMatchScore : job.matchRate}%
                                                 </span>
                                                 <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
                                             </div>
                                         </div>
-                                        {job.found.length > 0 && (
+                                        {aiRanked && job.aiSummary ? (
+                                            <p className="text-xs text-muted-foreground mt-2">{job.aiSummary}</p>
+                                        ) : job.found.length > 0 ? (
                                             <p className="text-xs text-muted-foreground mt-2 truncate">
                                                 Matches: {job.found.slice(0, 6).join(", ")}{job.found.length > 6 ? "…" : ""}
                                             </p>
-                                        )}
+                                        ) : null}
                                     </a>
                                 ))}
                                 <button

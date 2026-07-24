@@ -43,6 +43,9 @@ export async function POST(req: Request) {
                 matchRate: match.matchRate,
                 found: match.found,
                 missing: match.missing,
+                // Kept (truncated) so the client can send it straight back to
+                // /api/jobs/rerank for AI re-scoring without a second fetch.
+                descriptionText: job.descriptionText.slice(0, 4000),
             };
         })
         // A job with no dictionary skills detected at all can't be scored
