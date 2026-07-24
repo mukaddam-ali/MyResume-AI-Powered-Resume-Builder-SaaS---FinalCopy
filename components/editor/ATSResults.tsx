@@ -405,6 +405,13 @@ export function ATSResults({ data, loading }: ATSResultsProps) {
                                     {premiumData.suggested_edits.map((edit, i) => {
                                         const canApply = !!(edit.entryId && edit.entryType && edit.raw);
                                         const applied = appliedEdits.has(i);
+                                        // A rewrite may be several "• " lines (splitting one
+                                        // overstuffed bullet into separate achievements) —
+                                        // render those as an actual list, not one run-on line.
+                                        const suggestionLines = edit.suggestion
+                                            .split(/\r?\n/)
+                                            .map(l => l.replace(/^[\s•\-*]+/, '').trim())
+                                            .filter(Boolean);
                                         return (
                                             <div key={i} className="rounded-lg border bg-card text-card-foreground shadow-sm">
                                                 <div className="p-4 space-y-3">
@@ -435,7 +442,13 @@ export function ATSResults({ data, loading }: ATSResultsProps) {
                                                         <p className="text-xs font-semibold text-primary uppercase tracking-wider flex items-center gap-1">
                                                             <Sparkles className="h-3 w-3" /> Change To
                                                         </p>
-                                                        <p className="text-sm text-foreground/90 leading-relaxed">"{edit.suggestion}"</p>
+                                                        {suggestionLines.length > 1 ? (
+                                                            <ul className="text-sm text-foreground/90 leading-relaxed list-disc pl-4 space-y-0.5">
+                                                                {suggestionLines.map((line, li) => <li key={li}>{line}</li>)}
+                                                            </ul>
+                                                        ) : (
+                                                            <p className="text-sm text-foreground/90 leading-relaxed">"{edit.suggestion}"</p>
+                                                        )}
                                                     </div>
                                                     {edit.reason && (
                                                         <p className="text-xs text-muted-foreground">{edit.reason}</p>

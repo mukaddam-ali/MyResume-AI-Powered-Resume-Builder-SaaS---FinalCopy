@@ -185,8 +185,25 @@ function escapeHtml(s: string): string {
  * <li>/<p> wrapper (and inner <p> if the list item had one) so the rewrite
  * drops in cleanly. Any inline formatting inside the original bullet is not
  * preserved — the rewrite replaces the bullet's content wholesale.
+ *
+ * A rewrite may itself be several "• "-prefixed lines — that's the AI
+ * splitting one overstuffed bullet (multiple distinct achievements crammed
+ * into one paragraph) into several atomic ones. In that case each line
+ * becomes its own <li> (siblings replacing the original <li>, or a new <ul>
+ * if the original had no list at all) instead of being squashed back into
+ * a single line.
  */
 export function wrapBulletReplacement(raw: string, newText: string): string {
+    const lines = newText
+        .split(/\r?\n/)
+        .map(l => l.replace(/^[\s•\-*]+/, '').trim())
+        .filter(Boolean);
+
+    if (lines.length > 1) {
+        const items = lines.map(l => `<li>${escapeHtml(l)}</li>`).join('');
+        return /^<li\b/i.test(raw) ? items : `<ul>${items}</ul>`;
+    }
+
     const escaped = escapeHtml(newText);
     const liMatch = raw.match(/^(<li[^>]*>)([\s\S]*)(<\/li>)$/i);
     if (liMatch) {
@@ -248,7 +265,7 @@ export function findWeakBullets(data: ResumeData): WeakBullet[] {
                 issues.push('Uses first-person ("I"/"my") — resumes omit pronouns.');
             }
             if (words.length > 32) {
-                issues.push(`Too long (${words.length} words) — tighten to under ~25.`);
+                issues.push(`Too long (${words.length} words) — likely several achievements crammed into one bullet; split into separate bullet points instead of shortening.`);
             }
 
             if (issues.length > 0) {

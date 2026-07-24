@@ -86,10 +86,11 @@ That same deterministic system already flagged specific weak bullets below, with
 
 CRITICAL — do not shorten or genericize a bullet just because you're rewriting it:
 - Fix ONLY the specific issue(s) listed for that bullet. If "too long" is not one of its listed issues, the rewrite's length should stay close to the original (within ~15%) — do not compress it into a terse one-liner.
-- Keep every concrete detail from the original: technologies, tools, scope, numbers, names of systems/projects. Never replace specifics with vaguer, more generic language.
+- Keep every concrete detail from the original: technologies, tools, scope, numbers, names of systems/projects. Never replace specifics with vaguer, more generic language. The candidate prefers longer, detail-rich bullets over short vague ones — never trade detail away for brevity.
 - If the issue is "no measurable result", don't fabricate a fake statistic. Either infer a plausible metric ONLY if it's clearly implied by the original text, or insert an explicit placeholder like "[X]%" / "[Y hours]" for the candidate to fill in with their real number — do not invent precision that isn't there.
 - If the issue is a weak opener or missing action verb, fix just the opening — keep the rest of the sentence's content intact.
-- Only bullets flagged "too long" should actually get shorter, and even then, trim filler words rather than cutting real content/specifics.
+- If the issue is "too long", that almost always means the bullet is actually SEVERAL distinct achievements run together in one paragraph. The fix is to SPLIT it into multiple separate bullet points — one achievement per bullet — NOT to shrink it into a single shorter sentence. Every concrete detail from the original (technologies, systems, numbers) must still appear somewhere across the split bullets; you're reorganizing, not deleting. Only if a single already-atomic bullet is genuinely just wordy (no distinct sub-achievements to split out) should you trim filler words instead.
+- To output a multi-bullet split, make "suggestion" a string with each bullet on its own line, prefixed with "• " (e.g. "• First achievement...\n• Second achievement..."). Use this multi-line format whenever you're splitting a "too long" bullet; otherwise "suggestion" is a single line with no "• " prefix.
 
 WEAK BULLETS FLAGGED (rewrite these, in order of severity):
 ${weakBulletsBlock}
@@ -113,7 +114,7 @@ REQUIRED JSON STRUCTURE:
   "red_flags": ["<issue string>", ...],
   "summary": "<1-2 sentence analysis summary>",
   "suggested_edits": [
-    { "location": "<e.g. 'Experience — Software Engineer, Acme Corp, bullet 2'>", "original": "<the exact flagged bullet text, verbatim>", "suggestion": "<the rewritten bullet, ready to paste in>", "reason": "<why this rewrite is stronger>" }
+    { "location": "<e.g. 'Experience — Software Engineer, Acme Corp, bullet 2'>", "original": "<the exact flagged bullet text, verbatim>", "suggestion": "<the rewritten bullet, ready to paste in — OR, when splitting a too-long bullet, multiple lines each prefixed with '• '>", "reason": "<why this rewrite is stronger>" }
   ]
 }
 
@@ -130,7 +131,7 @@ RULES:
 - "feedback" MUST have at least 2 items.
 - "red_flags" can be an empty array [].
 - "suggested_edits": one entry per flagged weak bullet above (skip only if none were flagged), each tied to a real "original" bullet — never invent a bullet that isn't in the resume data.
-- Do NOT shorten a bullet unless "too long" is one of its listed issues. Preserve original length and every concrete detail — fix only the specific listed issue(s).
+- Do NOT shorten a bullet unless "too long" is one of its listed issues, and even then prefer splitting into multiple "• " bullets over shrinking the content. Preserve original length/detail and every concrete detail — fix only the specific listed issue(s).
 - Output ONLY the JSON object. Nothing else.
 ${jobDescription ? "Also compare relevance to the JOB DESCRIPTION provided." : ""}
 
