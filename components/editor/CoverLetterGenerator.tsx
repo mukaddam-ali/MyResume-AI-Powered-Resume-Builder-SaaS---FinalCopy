@@ -147,7 +147,9 @@ export function CoverLetterGenerator() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${(activeResume.personalInfo.fullName || "cover_letter").replace(/\s+/g, "_")}_Cover_Letter.${extension}`;
+        const namePart = (activeResume.personalInfo.fullName || "cover_letter").replace(/\s+/g, "_");
+        const companyPart = company.trim() ? `_${company.trim().replace(/\s+/g, "_")}` : "";
+        a.download = `${namePart}_Cover_Letter${companyPart}.${extension}`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
