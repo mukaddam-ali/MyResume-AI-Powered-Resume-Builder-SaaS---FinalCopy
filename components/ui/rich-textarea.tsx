@@ -37,7 +37,7 @@ export const RichTextarea = ({ id, value = '', onValueChange, className, placeho
         },
         editorProps: {
             attributes: {
-                class: 'prose prose-sm dark:prose-invert prose-ul:pl-4 prose-ol:pl-4 max-w-none focus:outline-none min-h-[100px] p-3 text-sm',
+                class: 'prose prose-sm dark:prose-invert prose-ul:pl-3 prose-ol:pl-3 max-w-none focus:outline-none min-h-[100px] p-3 text-sm',
             },
         },
     });

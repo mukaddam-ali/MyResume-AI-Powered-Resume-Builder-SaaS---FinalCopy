@@ -69,9 +69,11 @@ export async function POST(req: Request) {
         const optimizedResume = optimizeResumeData(resumeData);
 
         // Deterministic pass already found the specific weak bullets (which
-        // entry, which line, why). Hand those to the model to rewrite instead
-        // of letting it invent vague, unlocated advice.
-        const weakBullets = findWeakBullets(normalizeResumeData(resumeData)).slice(0, 6);
+        // entry, which line, why — capped at 15, worst first). Hand ALL of
+        // them to the model to rewrite so every bullet shown in "Exactly
+        // Where To Fix" gets a matching suggestion — not just the handful
+        // with the most stacked issues.
+        const weakBullets = findWeakBullets(normalizeResumeData(resumeData));
         const weakBulletsBlock = weakBullets.length > 0
             ? weakBullets.map((b, i) =>
                 `${i + 1}. [${b.section} — ${b.entryLabel}, bullet ${b.index}] "${b.text}"\n   Issues: ${b.issues.join(' ')}`
