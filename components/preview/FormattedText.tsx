@@ -20,7 +20,7 @@ export const FormattedText = ({ text = '', className }: FormattedTextProps) => {
     return (
         <div 
             className={cn(
-                "prose prose-sm prose-p:my-0 prose-ul:my-0 prose-ol:my-0 prose-li:my-0 text-current max-w-none", 
+                "prose prose-sm prose-p:my-0 prose-ul:my-0 prose-ol:my-0 prose-li:my-0 prose-ul:pl-4 prose-ol:pl-4 text-current max-w-none",
                 className
             )}
             style={{ color: 'inherit' }}
